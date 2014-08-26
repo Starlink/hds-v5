@@ -81,6 +81,7 @@ C_ROUTINES = \
 	hdsNew.c \
 	datNew.c \
 	datFind.c \
+	datName.c \
 	datnew0.c \
 	datnew1.c \
 	datAnnul.c \

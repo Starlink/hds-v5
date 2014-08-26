@@ -97,6 +97,7 @@ int main (void) {
   int64_t sumi64;
   int64_t test64;
   int64_t testin64;
+  char namestr[DAT__SZNAM+1];
   const int64_t VAL__BADK = (-9223372036854775807 - 1);
 
   emsBegin(&status);
@@ -115,6 +116,15 @@ int main (void) {
   testin64 = 9223372036854775800;
   datFind( loc1, "TESTI64", &loc2, &status );
 
+  /* Verify name */
+  datName( loc2, namestr, &status );
+  if (status == SAI__OK) {
+    if ( strcmp(namestr, "TESTI64") != 0 ) {
+      status = DAT__FATAL;
+      emsRepf("TESTNAMEI64", "Cf '%s' with '%s' fail", &status,
+              "TESTI64", namestr );
+    }
+  }
 
   datAnnul(&loc2, &status );
 
