@@ -1,0 +1,154 @@
+/*
+*+
+*  Name:
+*     datFind
+
+*  Purpose:
+*     Find named component
+
+*  Language:
+*     Starlink ANSI C
+
+*  Type of Module:
+*     Library routine
+
+*  Invocation:
+*     datFind( const HDSLoc * loc1, const char *name, HDSLoc **loc2, int * status );
+
+*  Arguments:
+*     loc1 = const HDSLoc * (Given)
+*        Structure locator.
+*     name = const char * (Given)
+*        Component name.
+*     loc2 = HDSLoc ** (Returned)
+*        Component locator.
+*     status = int* (Given and Returned)
+*        Pointer to global status.
+
+*  Description:
+*      Obtain a locator for a named component.
+
+*  Authors:
+*     TIMJ: Tim Jenness (Cornell)
+*     {enter_new_authors_here}
+
+*  Notes:
+*     If the structure is an array, loc1 must be explicitly associated
+*     with an individual cell.  If the component is a structure array,
+*     loc2 will be associated with the complete array, not the first
+*     cell.  Access to its components can only be made through another
+*     locator explicitly associated with an individual cell (see datCell).
+
+*  History:
+*     2014-08-26 (TIMJ):
+*        Initial version
+*     {enter_further_changes_here}
+
+*  Copyright:
+*     Copyright (C) 2014 Cornell University
+*     All Rights Reserved.
+
+*  Licence:
+*     Redistribution and use in source and binary forms, with or
+*     without modification, are permitted provided that the following
+*     conditions are met:
+*
+*     - Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*
+*     - Redistributions in binary form must reproduce the above
+*       copyright notice, this list of conditions and the following
+*       disclaimer in the documentation and/or other materials
+*       provided with the distribution.
+*
+*     - Neither the name of the {organization} nor the names of its
+*       contributors may be used to endorse or promote products
+*       derived from this software without specific prior written
+*       permission.
+*
+*     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+*     CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+*     INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+*     MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+*     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+*     CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+*     SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+*     LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+*     USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+*     AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+*     IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+*     THE POSSIBILITY OF SUCH DAMAGE.
+
+*  Bugs:
+*     {note_any_bugs_here}
+*-
+*/
+
+#include "hdf5.h"
+#include "hdf5_hl.h"
+
+#include "ems.h"
+
+#include "hds1.h"
+#include "dat1.h"
+#include "hds.h"
+
+#include "dat_err.h"
+#include "sae_par.h"
+
+int
+datFind( const HDSLoc   *locator1,
+         const char     *name_str,
+         HDSLoc   **locator2,
+         int      *status ) {
+
+  char cleanname[DAT__SZNAM+1];
+  HDSLoc * thisloc = NULL;
+
+  if (*status != SAI__OK) return *status;
+
+  /* containing locator must refer to a group */
+  if (locator1->group_id <= 0) {
+    *status = DAT__OBJIN;
+    emsRep("datFind_1", "Input object is not a structure",
+           status);
+    return *status;
+  }
+
+  /* Normalize the name string */
+  dau1CheckName( name_str, 1, cleanname, sizeof(cleanname), status );
+  if (*status != SAI__OK) return *status;
+
+  /* Create the locator */
+  thisloc = dat1AllocLoc( status );
+
+  /* Use the simplification layer to see if we have a dataset of this name */
+  if (H5LTfind_dataset( locator1->group_id, cleanname)) {
+    /* we are finding a dataset */
+    hid_t dataset_id;
+    CALLHDF(dataset_id,
+            H5Dopen2( locator1->group_id, cleanname, H5P_DEFAULT),
+            DAT__OBJIN,
+            emsRepf("datFind_2", "Error opening primitive named %s", status, cleanname)
+            );
+    if (*status == SAI__OK) thisloc->dataset_id = dataset_id;
+  } else {
+    /* Try to open it as a group */
+    hid_t group_id;
+    CALLHDF(group_id,
+            H5Gopen2( locator1->group_id, cleanname, H5P_DEFAULT ),
+            DAT__OBJIN,
+            emsRepf("datFind_3", "Error opening component %s", status, cleanname)
+            );
+    if (*status == SAI__OK) thisloc->group_id = group_id;
+  }
+
+  if (*status != SAI__OK) goto CLEANUP;
+  *locator2 = thisloc;
+  return *status;
+
+ CLEANUP:
+  if (thisloc) datAnnul( &thisloc, status);
+  return *status;
+}

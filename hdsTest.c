@@ -111,6 +111,12 @@ int main (void) {
   datNew0K( loc1, "TESTI64", &status );
   datNew0K( loc1, "TESTBADI64", &status );
 
+  /* Populate */
+  testin64 = 9223372036854775800;
+  datFind( loc1, "TESTI64", &loc2, &status );
+
+
+  datAnnul(&loc2, &status );
 
   /* Close the file */
   datAnnul( &loc1, &status );

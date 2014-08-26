@@ -80,6 +80,7 @@ PRIVATE_INCLUDES = \
 C_ROUTINES = \
 	hdsNew.c \
 	datNew.c \
+	datFind.c \
 	datnew0.c \
 	datnew1.c \
 	datAnnul.c \
