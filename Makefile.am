@@ -91,6 +91,7 @@ C_ROUTINES = \
 	dat1InitHDF5.c \
 	dau1CheckName.c \
 	dau1CheckType.c \
+	dat1RetrieveIdentifier.c \
 	dat1RetrieveContainer.c
 
 DAT_PAR: dat_par_f$(EXEEXT)

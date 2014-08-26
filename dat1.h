@@ -155,6 +155,7 @@ dat1New( const HDSLoc *locator, const char *name_str, const char *type_str,
         int ndim, const hdsdim dims[], int *status);
 
 hid_t dat1RetrieveContainer( const HDSLoc *locator, int * status );
+hid_t dat1RetrieveIdentifier( const HDSLoc * locator, int * status );
 
 HDSLoc * dat1FreeLoc( HDSLoc * locator, int * status );
 
