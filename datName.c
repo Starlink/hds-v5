@@ -117,7 +117,7 @@ datName(const HDSLoc *locator,
   }
 
   /* Allocate buffer of the right length */
-  tempstr = malloc( lenstr + 1 );
+  tempstr = MEM_MALLOC( lenstr + 1 );
   if (!tempstr) {
     *status = DAT__NOMEM;
     emsRep( "datName_2", "datName: Malloc error. Can not proceed",
@@ -150,7 +150,7 @@ datName(const HDSLoc *locator,
 
   }
 
-  free(tempstr);
+  MEM_FREE(tempstr);
 
   if (*status != SAI__OK) {
     emsRep("datName_4", "datName: Error obtaining a name of a locator",

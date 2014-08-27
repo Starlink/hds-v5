@@ -94,7 +94,7 @@ dat1AllocLoc( int * status ) {
   HDSLoc * newloc;
   if (*status != SAI__OK) return NULL;
 
-  newloc = calloc( 1, sizeof(*newloc) );
+  newloc = MEM_CALLOC( 1, sizeof(*newloc) );
 
   if (!newloc) {
     *status = DAT__NOMEM;

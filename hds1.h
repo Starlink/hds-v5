@@ -4,4 +4,13 @@
 
 #define HDS_INTERNAL_INCLUDES 1
 
+/* Memory Allocation Routines */
+/* ===========================*/
+/* Define macros here for to allow us to easily fallback to native free/malloc */
+#include "star/mem.h"
+#define MEM_MALLOC  starMalloc
+#define MEM_FREE    starFree
+#define MEM_REALLOC starRealloc
+#define MEM_CALLOC  starCalloc
+
 #endif

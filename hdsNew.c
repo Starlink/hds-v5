@@ -190,7 +190,7 @@ hdsNew(const char *file_str,
   /* Create buffer for file name so that we include the file extension */
   if (*status == SAI__OK) {
     size_t outstrlen = lenstr + DAT__SZFLX + 1;
-    fname = malloc( outstrlen );
+    fname = MEM_MALLOC( outstrlen );
     if (fname) {
       one_strlcpy( fname, file_str, outstrlen, status );
       if (needext) one_strlcat( fname, DAT__FLEXT, outstrlen, status );
@@ -242,6 +242,7 @@ hdsNew(const char *file_str,
   /* This includes attempting to delete the new file */
   if (thisloc) datAnnul( &thisloc, status );
   if (file_id) unlink(fname);
+  if (fname) MEM_FREE(fname);
 
   return *status;
 }

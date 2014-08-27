@@ -101,7 +101,7 @@ dat1FreeLoc( HDSLoc * locator, int * status ) {
      is bad */
 
   if (locator) {
-    free(locator);
+    MEM_FREE(locator);
   }
   return NULL;
 }
