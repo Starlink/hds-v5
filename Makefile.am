@@ -88,6 +88,7 @@ C_ROUTINES = \
 	dat1New.c \
 	dat1AllocLoc.c \
 	dat1FreeLoc.c \
+	dat1DumpLoc.c \
 	dat1H5EtoEMS.c \
 	dat1InitHDF5.c \
 	dau1CheckName.c \

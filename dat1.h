@@ -158,5 +158,5 @@ hid_t dat1RetrieveContainer( const HDSLoc *locator, int * status );
 hid_t dat1RetrieveIdentifier( const HDSLoc * locator, int * status );
 
 HDSLoc * dat1FreeLoc( HDSLoc * locator, int * status );
-
 HDSLoc * dat1AllocLoc( int * status );
+void dat1DumpLoc( const HDSLoc * locator, int * status );
