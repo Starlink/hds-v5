@@ -108,11 +108,14 @@ typedef struct LOC {
 /* Wrapper to check HDF5 status and map to EMS.
    Also does not call the routine unless status is good.
    Assumes inherited status is available in "status" and
-   that there is a CLEANUP label.
+   that there is a CLEANUP label. Use CALLHDF if the function
+   return type can be handled by a herr_t type.
  */
-#define CALLHDF( retval, hfunc, errcode, errfunc )      \
+
+#define CALLHDFE( dtype, retval, hfunc, errcode, errfunc ) \
+  retval = 0;                                           \
   if (*status == SAI__OK) {                             \
-    herr_t h5err;                                       \
+    dtype h5err;                                        \
     h5err = hfunc;                                      \
     if (h5err >= 0) {                                   \
       retval = h5err;                                   \
@@ -123,6 +126,10 @@ typedef struct LOC {
       goto CLEANUP;                                     \
     }                                                   \
   }
+
+  /* Simpler form of CALLHDFE that does not require the
+     return type to be specified */
+#define CALLHDF( retval, hfunc, errcode, errfunc )  CALLHDFE( herr_t, retval, hfunc, errcode, errfunc )
 
 /* Simpler quick wrapper when we do not care about the return value
    or including an explicit error message */
