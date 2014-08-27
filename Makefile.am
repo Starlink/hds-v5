@@ -82,6 +82,7 @@ C_ROUTINES = \
 	datNew.c \
 	datFind.c \
 	datName.c \
+	datSize.c \
 	datnew0.c \
 	datnew1.c \
 	datAnnul.c \

@@ -112,6 +112,34 @@ int main (void) {
   datNew0K( loc1, "TESTI64", &status );
   datNew0K( loc1, "TESTBADI64", &status );
 
+  /* Confirm size */
+  if (status == SAI__OK) {
+    size_t dsize;
+    datFind( loc1, "DATA_ARRAY", &loc2, &status );
+    datSize( loc2, &dsize, &status );
+    datAnnul( &loc2, &status );
+    if (status == SAI__OK) {
+      if ( dsize != ((size_t)dim[0]*(size_t)dim[1])) {
+        status = DAT__FATAL;
+        emsRepf("", "Size of DATA_ARRAY inconsistent. Got %zu expected %zu.", &status,
+                dsize, ((size_t)dim[0]*(size_t)dim[1]));
+      }
+    }
+  }
+  if (status == SAI__OK) {
+    size_t dsize;
+    datFind( loc1, "TESTI64", &loc2, &status );
+    datSize( loc2, &dsize, &status );
+    datAnnul( &loc2, &status );
+    if (status == SAI__OK) {
+      if ( dsize != 1) {
+        status = DAT__FATAL;
+        emsRepf("", "Size of TESTI64 inconsistent. Got %zu expected %zu.", &status,
+               dsize, 1);
+      }
+    }
+  }
+
   /* Populate */
   testin64 = 9223372036854775800;
   datFind( loc1, "TESTI64", &loc2, &status );
