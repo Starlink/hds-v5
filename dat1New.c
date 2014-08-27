@@ -152,7 +152,6 @@ dat1New( const HDSLoc    *locator,
   /* Now create the group or dataset at the top level */
   if (isprim) {
     /* Create a primitive */
-    hid_t dataspace_id;
 
     /* Create the data space for the dataset */
     CALLHDF( dataspace_id,
@@ -181,6 +180,7 @@ dat1New( const HDSLoc    *locator,
     } else {
       hid_t attrtype = 0;
       hid_t attribute_id = 0;
+      hid_t attr_dataspace_id = 0;
 
       CALLHDF( group_id,
                H5Gcreate2(place, cleanname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
@@ -197,13 +197,13 @@ dat1New( const HDSLoc    *locator,
       CALLHDFQ(H5Tset_size( attrtype, strlen(groupstr) ));
       CALLHDFQ(H5Tset_strpad( attrtype, H5T_STR_NULLTERM ));
 
-      CALLHDF(dataspace_id,
+      CALLHDF(attr_dataspace_id,
               H5Screate( H5S_SCALAR ),
               DAT__HDF5E,
               emsRepf("dat1New_6", "Error creating data space for structure type '%s' in structure '%s'", status, groupstr,cleanname )
               );
       CALLHDF(attribute_id,
-              H5Acreate2( group_id, "HDSTYPE", attrtype, dataspace_id,
+              H5Acreate2( group_id, "HDSTYPE", attrtype, attr_dataspace_id,
                           H5P_DEFAULT, H5P_DEFAULT),
               DAT__HDF5E,
               emsRepf("dat1New_7", "Error creating attribute for type '%s' in structure '%s'", status, groupstr, cleanname);
@@ -211,7 +211,7 @@ dat1New( const HDSLoc    *locator,
 
       CALLHDFQ(H5Awrite( attribute_id, attrtype, groupstr ));
       CALLHDFQ(H5Aclose(attribute_id));
-      CALLHDFQ(H5Sclose(dataspace_id));
+      CALLHDFQ(H5Sclose(attr_dataspace_id));
 
     }
   }
