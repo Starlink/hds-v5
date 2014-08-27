@@ -127,12 +127,26 @@ datFind( const HDSLoc   *locator1,
   if (H5LTfind_dataset( locator1->group_id, cleanname)) {
     /* we are finding a dataset */
     hid_t dataset_id;
+    hid_t dataspace_id;
+
     CALLHDF(dataset_id,
             H5Dopen2( locator1->group_id, cleanname, H5P_DEFAULT),
             DAT__OBJIN,
             emsRepf("datFind_2", "Error opening primitive named %s", status, cleanname)
             );
-    if (*status == SAI__OK) thisloc->dataset_id = dataset_id;
+
+    /* and data space */
+    CALLHDF(dataspace_id,
+            H5Dget_space( dataset_id ),
+            DAT__OBJIN,
+            emsRepf("datFind_2b", "Error retrieving data space from primitive named %s",
+                    status, cleanname)
+            );
+
+    if (*status == SAI__OK) {
+      thisloc->dataset_id = dataset_id;
+      thisloc->dataspace_id = dataspace_id;
+    }
   } else {
     /* Try to open it as a group */
     hid_t group_id;
