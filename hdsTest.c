@@ -68,6 +68,7 @@
 #include <string.h>
 
 static void cmpstrings( const char * teststr, const char * expectedstr, int *status );
+static void cmpszints( size_t result, size_t expected, int *status );
 
 int main (void) {
 
@@ -131,6 +132,13 @@ int main (void) {
   datFind( loc1, "BOOLEAN", &loc2, &status );
   datType( loc2, typestr, &status );
   cmpstrings( typestr, "_LOGICAL", &status );
+  datAnnul( &loc2, &status );
+
+  datFind( loc1, "ONEDCHAR", &loc2, &status );
+  datType( loc2, typestr, &status );
+  cmpstrings( typestr, "_CHAR*14", &status );
+  datClen(loc2, &nel, &status );
+  cmpszints( nel, 14, &status );
   datAnnul( &loc2, &status );
 
   /* Now check the type of the root group */
@@ -211,6 +219,16 @@ static void cmpstrings( const char * teststr, const char * expectedstr, int *sta
     *status = DAT__FATAL;
     emsRepf("", "Got string '%s' but expected '%s'", status,
             teststr, expectedstr );
+  }
+  return;
+}
+
+static void cmpszints( size_t result, size_t expected, int *status ) {
+  if (*status != SAI__OK) return;
+  if ( result != expected ) {
+    *status = DAT__FATAL;
+    emsRepf("", "Got int '%zu' but expected '%zu'", status,
+            result, expected );
   }
   return;
 }
