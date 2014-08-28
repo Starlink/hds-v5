@@ -89,10 +89,15 @@ C_ROUTINES = \
 	datPut.c \
 	datPutVC.c \
 	datPut1C.c \
+	datGet.c \
+	datGet1C.c \
+	datGetVC.c \
 	datnew0.c \
 	datnew1.c \
 	datput1.c \
 	datput0.c \
+	datgetx.c \
+	datget0x.c \
 	datAnnul.c \
 	dat1New.c \
 	dat1Type.c \

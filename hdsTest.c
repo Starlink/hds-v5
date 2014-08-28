@@ -189,25 +189,25 @@ int main (void) {
   cmpstrings( namestr, "TESTI64", &status );
 
   datPut0K( loc2, testin64, &status );
-  //datGet0K( loc2, &test64, &status );
+  datGet0K( loc2, &test64, &status );
   datAnnul( &loc2, &status );
   if (status == SAI__OK) {
     if ( test64 != testin64 ) {
-      //  status = DAT__FATAL;
-      //emsRepf( "TESTI64", "Test _INT64 value %" PRIi64 " did not match expected %"PRIi64,
-      //       &status, test64, testin64 );
+      status = DAT__FATAL;
+      emsRepf( "TESTI64", "Test _INT64 value %" PRIi64 " did not match expected %"PRIi64,
+               &status, test64, testin64 );
     }
   }
 
   datFind( loc1, "TESTBADI64", &loc2, &status );
   datPut0K( loc2, VAL__BADK, &status );
-//datGet0K( loc2, &test64, &status );
+  datGet0K( loc2, &test64, &status );
   datAnnul( &loc2, &status );
   if (status == SAI__OK) {
     if ( test64 != VAL__BADK ) {
-      //    status = DAT__FATAL;
-      //emsRepf( "TESTBADI64", "Test _INT64 value %" PRIi64 " did not match expected VAL__BADK",
-      //       &status, test64 );
+      status = DAT__FATAL;
+      emsRepf( "TESTBADI64", "Test _INT64 value %" PRIi64 " did not match expected VAL__BADK",
+               &status, test64 );
     }
   }
 
@@ -224,11 +224,49 @@ int main (void) {
   datFind( loc1, "ONEDCHAR", &loc2, &status );
   datPutVC( loc2, 3, chararr, &status );
 
+  /* Check contents */
+  datGetVC(loc2, 3, 1024, buffer, retchararr, &actval, &status);
+  if (status == SAI__OK) {
+    if (actval == 3) {
+      for (i = 0; i < 3; i++ ) {
+        if (strncmp( chararr[i], retchararr[i], strlen(chararr[i]) ) ) {
+           status = DAT__DIMIN;
+           emsSetc( "IN", chararr[i]);
+           emsSetc( "OUT", retchararr[i] );
+           emsRep( "GET1C","Values from Get1C differ (^IN != ^OUT)", &status);
+           break;
+         }
+      }
+    } else {
+      status = DAT__DIMIN;
+      emsRep( "GET1C","Did not get back as many strings as put in", &status);
+    }
+  }
+
   datAnnul(&loc2, &status );
 
 
   datFind( loc1, "ONEDD", &loc2, &status );
   datPutVD( loc2, 2, darr, &status );
+
+  /* Check contents */
+  datGetVD( loc2, 2, retdarr, &actval, &status);
+  if (status == SAI__OK) {
+    if (actval == 2) {
+      for (i = 0; i < 2; i++ ) {
+         if (darr[i] != retdarr[i]) {
+           status = DAT__DIMIN;
+           emsRep( "GETVD","Values from getVD differ", &status);
+           break;
+         }
+      }
+    } else {
+      status = DAT__DIMIN;
+      emsRep( "GETVD","Did not get back as many values as put in", &status);
+    }
+  }
+
+
   /* Annul */
   datAnnul( &loc2, &status );
 
