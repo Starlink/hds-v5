@@ -65,6 +65,9 @@
 #include "sae_par.h"
 #include <stdio.h>
 #include <inttypes.h>
+#include <string.h>
+
+static void cmpstrings( const char * teststr, const char * expectedstr, int *status );
 
 int main (void) {
 
@@ -98,6 +101,7 @@ int main (void) {
   int64_t test64;
   int64_t testin64;
   char namestr[DAT__SZNAM+1];
+  char typestr[DAT__SZTYP+1];
   const int64_t VAL__BADK = (-9223372036854775807 - 1);
 
   emsBegin(&status);
@@ -108,14 +112,38 @@ int main (void) {
   /* Some components */
   datNew( loc1, "DATA_ARRAY", "_INTEGER", 2, dim, &status );
   datNew1C( loc1, "ONEDCHAR", 14, 3, &status );
+  datNew1L( loc1, "BOOLEAN", 3, &status );
   datNew1D( loc1, "ONEDD", 2, &status );
   datNew0K( loc1, "TESTI64", &status );
   datNew0K( loc1, "TESTBADI64", &status );
+  datNew( loc1, "TESTSTRUCT", "ASTRUCT", 0, dim, &status );
 
-  /* Confirm size */
+  datFind( loc1, "TESTSTRUCT", &loc2, &status );
+  datType( loc2, typestr, &status );
+  cmpstrings( typestr, "ASTRUCT", &status );
+  datAnnul( &loc2, &status );
+
+  datFind( loc1, "ONEDD", &loc2, &status );
+  datType( loc2, typestr, &status );
+  cmpstrings( typestr, "_DOUBLE", &status );
+  datAnnul( &loc2, &status );
+
+  datFind( loc1, "BOOLEAN", &loc2, &status );
+  datType( loc2, typestr, &status );
+  cmpstrings( typestr, "_LOGICAL", &status );
+  datAnnul( &loc2, &status );
+
+  /* Now check the type of the root group */
+  datType( loc1, typestr, &status );
+  cmpstrings( typestr, "NDF", &status );
+
+  /* Confirm size and type */
   if (status == SAI__OK) {
     size_t dsize;
     datFind( loc1, "DATA_ARRAY", &loc2, &status );
+    datType( loc2, typestr, &status );
+    cmpstrings( typestr, "_INTEGER", &status );
+
     datSize( loc2, &dsize, &status );
     datAnnul( &loc2, &status );
     if (status == SAI__OK) {
@@ -129,6 +157,9 @@ int main (void) {
   if (status == SAI__OK) {
     size_t dsize;
     datFind( loc1, "TESTI64", &loc2, &status );
+    datType( loc2, typestr, &status );
+    cmpstrings( typestr, "_INT64", &status );
+
     datSize( loc2, &dsize, &status );
     datAnnul( &loc2, &status );
     if (status == SAI__OK) {
@@ -171,4 +202,15 @@ int main (void) {
   }
 
 
+}
+
+/* Simple routine to compare to strings and call EMS on the result */
+static void cmpstrings( const char * teststr, const char * expectedstr, int *status ) {
+  if (*status != SAI__OK) return;
+  if (strcmp( teststr, expectedstr ) != 0) {
+    *status = DAT__FATAL;
+    emsRepf("", "Got string '%s' but expected '%s'", status,
+            teststr, expectedstr );
+  }
+  return;
 }

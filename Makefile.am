@@ -82,12 +82,14 @@ C_ROUTINES = \
 	datNew.c \
 	datThere.c \
 	datFind.c \
+	datType.c \
 	datName.c \
 	datSize.c \
 	datnew0.c \
 	datnew1.c \
 	datAnnul.c \
 	dat1New.c \
+	dat1Type.c \
 	dat1AllocLoc.c \
 	dat1FreeLoc.c \
 	dat1DumpLoc.c \

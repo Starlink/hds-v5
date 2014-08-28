@@ -82,6 +82,21 @@ typedef struct LOC {
   hid_t dtype;      /* Set if a special data type was created for this locator */
 } HDSLoc;
 
+/* All the standard HDS types as an enum. For internal use only. */
+typedef enum {
+  HDSTYPE_NONE,
+  HDSTYPE_BYTE,
+  HDSTYPE_UBYTE,
+  HDSTYPE_WORD,
+  HDSTYPE_UWORD,
+  HDSTYPE_INTEGER,
+  HDSTYPE_INT64,
+  HDSTYPE_REAL,
+  HDSTYPE_DOUBLE,
+  HDSTYPE_LOGICAL,
+  HDSTYPE_CHAR,
+  HDSTYPE_STRUCTURE
+} hdstype_t;
 
 /* Global Constants:                                                        */
 /* ================                                                         */
@@ -167,3 +182,6 @@ hid_t dat1RetrieveIdentifier( const HDSLoc * locator, int * status );
 HDSLoc * dat1FreeLoc( HDSLoc * locator, int * status );
 HDSLoc * dat1AllocLoc( int * status );
 void dat1DumpLoc( const HDSLoc * locator, int * status );
+
+hdstype_t
+dat1Type( const HDSLoc *locator, int * status );
