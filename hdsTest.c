@@ -81,6 +81,7 @@ int main (void) {
   char *retchararr[4];
   char buffer[1024];  /* plenty large enough */
   double darr[] = { 4.5, 2.5 };
+  char boolarr[] = { 1, 0, 1 };
   double retdarr[2];
   void *mapv;    /* Mapped void* */
   double *mapd;  /* Mapped _DOUBLE */
@@ -185,15 +186,51 @@ int main (void) {
 
   /* Verify name */
   datName( loc2, namestr, &status );
+  cmpstrings( namestr, "TESTI64", &status );
+
+  datPut0K( loc2, testin64, &status );
+  //datGet0K( loc2, &test64, &status );
+  datAnnul( &loc2, &status );
   if (status == SAI__OK) {
-    if ( strcmp(namestr, "TESTI64") != 0 ) {
-      status = DAT__FATAL;
-      emsRepf("TESTNAMEI64", "Cf '%s' with '%s' fail", &status,
-              "TESTI64", namestr );
+    if ( test64 != testin64 ) {
+      //  status = DAT__FATAL;
+      //emsRepf( "TESTI64", "Test _INT64 value %" PRIi64 " did not match expected %"PRIi64,
+      //       &status, test64, testin64 );
     }
   }
 
+  datFind( loc1, "TESTBADI64", &loc2, &status );
+  datPut0K( loc2, VAL__BADK, &status );
+//datGet0K( loc2, &test64, &status );
+  datAnnul( &loc2, &status );
+  if (status == SAI__OK) {
+    if ( test64 != VAL__BADK ) {
+      //    status = DAT__FATAL;
+      //emsRepf( "TESTBADI64", "Test _INT64 value %" PRIi64 " did not match expected VAL__BADK",
+      //       &status, test64 );
+    }
+  }
+
+  datFind( loc1, "BOOLEAN", &loc2, &status );
+  datPutVL( loc2, 3, boolarr, &status );
+  datName( loc2, namestr, &status );
+  cmpstrings( namestr, "BOOLEAN", &status );
+  datType( loc2, typestr, &status );
+  cmpstrings( typestr, "_LOGICAL", &status );
+  /* Annul */
+  datAnnul( &loc2, &status );
+
+
+  datFind( loc1, "ONEDCHAR", &loc2, &status );
+  datPutVC( loc2, 3, chararr, &status );
+
   datAnnul(&loc2, &status );
+
+
+  datFind( loc1, "ONEDD", &loc2, &status );
+  datPutVD( loc2, 2, darr, &status );
+  /* Annul */
+  datAnnul( &loc2, &status );
 
   /* Close the file */
   datAnnul( &loc1, &status );
