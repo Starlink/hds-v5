@@ -105,6 +105,9 @@ datFind( const HDSLoc   *locator1,
 
   char cleanname[DAT__SZNAM+1];
   HDSLoc * thisloc = NULL;
+  H5O_info_t object_info;
+  int there = 0;
+  int havegroup = 0;
 
   if (*status != SAI__OK) return *status;
 
@@ -120,11 +123,42 @@ datFind( const HDSLoc   *locator1,
   dau1CheckName( name_str, 1, cleanname, sizeof(cleanname), status );
   if (*status != SAI__OK) return *status;
 
+  /* First ensure that the component exists */
+  datThere( locator1, cleanname, &there, status );
+  if (!there) {
+    if (*status == SAI__OK) {
+      *status = DAT__OBJNF;
+      emsRepf("datFind_1b", "datFind: Object '%s' not found",
+              status, cleanname);
+    }
+    return *status;
+  }
+
+  /* Check the type of the requested object */
+  CALLHDFQ( H5Oget_info_by_name( locator1->group_id, cleanname,
+                                 &object_info, H5P_DEFAULT ) );
+
+  /* Make sure we have a supported type */
+  if (*status == SAI__OK) {
+    H5O_type_t type = object_info.type;
+
+    if (type == H5O_TYPE_GROUP) {
+      havegroup = 1;
+    } else if (type == H5O_TYPE_DATASET) {
+      havegroup = 0;
+    } else {
+      *status = DAT__OBJIN;
+      emsRepf("datFind_1c", "datFind: Component '%s' exists but is neither group"
+              " nor dataset.", status, cleanname);
+      goto CLEANUP;
+    }
+  }
+
   /* Create the locator */
   thisloc = dat1AllocLoc( status );
 
   /* Use the simplification layer to see if we have a dataset of this name */
-  if (H5LTfind_dataset( locator1->group_id, cleanname)) {
+  if (!havegroup) {
     /* we are finding a dataset */
     hid_t dataset_id;
     hid_t dataspace_id;
