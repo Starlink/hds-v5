@@ -62,7 +62,7 @@
 *     - _INT64 : H5T_NATIVE_INT64
 *     - _REAL : H5T_NATIVE_FLOAT
 *     - _DOUBLE : H5T_NATIVE_DOUBLE
-*     - _LOGICAL : H5T_NATIVE_UINT8
+*     - _LOGICAL : H5T_NATIVE_B8
 *     - _CHAR*N : H5T_STRING
 
 *  History:
@@ -156,7 +156,7 @@ int dau1CheckType ( const char * type_str, hid_t * h5type,
   } else if ( norm_str[1] == 'W') {
     *h5type = H5T_NATIVE_INT16;
   } else if ( norm_str[1] == 'L') {
-    *h5type = H5T_NATIVE_INT8;
+    *h5type = H5T_NATIVE_B8;
   } else if ( strncmp( norm_str, "_INT6", 5 ) == 0 ) {
     *h5type = H5T_NATIVE_INT64;
   } else if ( strncmp( norm_str, "_UW", 3 ) == 0 ) {
