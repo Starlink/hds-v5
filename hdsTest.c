@@ -153,6 +153,15 @@ int main (void) {
     datType( loc2, typestr, &status );
     cmpstrings( typestr, "_INTEGER", &status );
 
+    {
+      hdsdim hdims[DAT__MXDIM];
+      int actdims;
+      datShape( loc2, DAT__MXDIM, hdims, &actdims, &status);
+      cmpszints( actdims, 2, &status );
+      cmpszints( hdims[0], dim[0], &status );
+      cmpszints( hdims[1], dim[1], &status );
+    }
+
     datSize( loc2, &dsize, &status );
     datAnnul( &loc2, &status );
     if (status == SAI__OK) {

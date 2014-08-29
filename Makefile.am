@@ -86,6 +86,7 @@ C_ROUTINES = \
 	datClen.c \
 	datName.c \
 	datSize.c \
+	datShape.c \
 	datPut.c \
 	datPutVC.c \
 	datPut1C.c \
