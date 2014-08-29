@@ -41,6 +41,8 @@
 *  History:
 *     2014-08-26 (TIMJ):
 *        Initial version
+*     2014-08-29 (TIMJ):
+*        datUnmap just in case.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -81,6 +83,9 @@ int datAnnul( HDSLoc **locator, int * status ) {
   /* Sanity check argument */
   if (!locator) return *status;
   if (! *locator) return *status;
+
+  /* Sort out any memory mapping */
+  datUnmap( *locator, status );
 
   thisloc = *locator;
 

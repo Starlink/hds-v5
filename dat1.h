@@ -73,18 +73,17 @@
 #include "hds1.h"
 #include "hds_types.h"
 
-/* Private definition of the HDS locator struct */
-typedef struct LOC {
-  hid_t file_id;    /* Set if this locator is associated with a root file */
-  hid_t dataset_id; /* Set if this is a dataset "primitive type" */
-  hid_t dataspace_id; /* Set if this is a primitive with dimensions */
-  hid_t group_id;   /* Set if this locator is associated with a group */
-  hid_t dtype;      /* Set if a special data type was created for this locator */
-} HDSLoc;
+/* Access mode requested for a particular primitive type */
+typedef enum {
+  HDSMODE_UNKNOWN = 0,
+  HDSMODE_READ,
+  HDSMODE_WRITE,
+  HDSMODE_UPDATE
+} hdsmode_t;
 
 /* All the standard HDS types as an enum. For internal use only. */
 typedef enum {
-  HDSTYPE_NONE,
+  HDSTYPE_NONE = 0,
   HDSTYPE_BYTE,
   HDSTYPE_UBYTE,
   HDSTYPE_WORD,
@@ -119,6 +118,21 @@ typedef enum {
 /* Internal Constants */
 #define DAT__MXCHR 0xffff        /* Max characters in a character data type */
 
+
+/* Private definition of the HDS locator struct */
+typedef struct LOC {
+  void *pntr;       /* Pointer to memory mapped data array [datMap only] */
+  size_t bytesmapped; /* Number of bytes mapped into memory [datMap only] */
+  hid_t file_id;    /* Set if this locator is associated with a root file */
+  hid_t dataset_id; /* Set if this is a dataset "primitive type" */
+  hid_t dataspace_id; /* Set if this is a primitive with dimensions */
+  hid_t group_id;   /* Set if this locator is associated with a group */
+  hid_t dtype;      /* Set if a special data type was created for this locator */
+  hdsmode_t accmode; /* Access mode for memory mapped data [datMap only] */
+  int ndims;         /* Number of dimensions in mapdims [datMap only] */
+  hdsdim mapdims[DAT__MXDIM]; /* Dimensionality of mapped dims [datMap only] */
+  char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */
+} HDSLoc;
 
 /* Wrapper to check HDF5 status and map to EMS.
    Also does not call the routine unless status is good.

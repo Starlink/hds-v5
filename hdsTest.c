@@ -275,6 +275,53 @@ int main (void) {
     }
   }
 
+  /* Try mapping - _DOUBLE */
+  dimd[0] = 2;
+  datMapD(loc2, "READ", 1, dimd, &mapd, &status);
+  if (status == SAI__OK) {
+      for (i = 0; i < 2; i++ ) {
+         if (darr[i] != mapd[i]) {
+           status = DAT__DIMIN;
+           emsRep( "MAPD","Values from MapD differ", &status);
+           break;
+         }
+      }
+  }
+  datUnmap(loc2, &status);
+
+  /* Try mapping - _FLOAT */
+  datMapR(loc2, "READ", 1, dimd, &mapf, &status);
+  if (status == SAI__OK) {
+      for (i = 0; i < 2; i++ ) {
+         if ( (float)darr[i] != mapf[i]) {
+           status = DAT__DIMIN;
+           emsRep( "MAPR","Values from MapR differ", &status);
+           break;
+         }
+      }
+  }
+  datUnmap(loc2, &status);
+
+  /* Find and map DATA_ARRAY */
+  datFind( loc1, "DATA_ARRAY", &loc2, &status );
+  datMapV( loc2, "_REAL", "WRITE", &mapv, &nel, &status );
+  mapf = mapv;
+  if (status == SAI__OK) {
+    nelt = dim[0] * dim[1];
+    if ( nelt != nel) {
+      status = DAT__FATAL;
+      emsSeti( "NEL", (int)nel );
+      emsSeti( "NORI", (int)nelt );
+      emsRep( "SIZE","Number of elements originally (^NORI) not the same as now (^NEL)", &status);
+    }
+  }
+  sumd = 0.0;
+  for (i = 1; i <= nel; i++) {
+    mapf[i-1] = (float)i;
+    sumd += (double)i;
+  }
+  datUnmap( loc2, &status );
+  datAnnul( &loc2, &status );
 
   /* Annul */
   datAnnul( &loc2, &status );

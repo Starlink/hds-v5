@@ -497,7 +497,7 @@ datLen(const HDSLoc *locator,
 /*===========================*/
 
 int
-datMap(const HDSLoc     *locator,
+datMap(HDSLoc     *locator,
        const char       *type_str,
        const char       *mode_str,
        int        ndim,
@@ -510,7 +510,7 @@ datMap(const HDSLoc     *locator,
 /*==================================*/
 
 int
-datMapC(const HDSLoc    *locator,
+datMapC(HDSLoc    *locator,
         const char      *mode_str,
         int       ndim,
         const hdsdim    dims[],
@@ -522,7 +522,7 @@ datMapC(const HDSLoc    *locator,
 /*====================================*/
 
 int
-datMapD(const HDSLoc    *locator,
+datMapD(HDSLoc    *locator,
         const char      *mode_str,
         int       ndim,
         const hdsdim    dims[],
@@ -534,7 +534,7 @@ datMapD(const HDSLoc    *locator,
 /*=====================================*/
 
 int
-datMapI(const HDSLoc    *locator,
+datMapI(HDSLoc    *locator,
         const char      *mode_str,
         int       ndim,
         const hdsdim    dims[],
@@ -546,7 +546,7 @@ datMapI(const HDSLoc    *locator,
 /*=====================================*/
 
 int
-datMapK(const HDSLoc    *locator,
+datMapK(HDSLoc    *locator,
         const char      *mode_str,
         int       ndim,
         const hdsdim    dims[],
@@ -558,7 +558,7 @@ datMapK(const HDSLoc    *locator,
 /*=====================================*/
 
 int
-datMapL(const HDSLoc *locator,
+datMapL(HDSLoc *locator,
         const char      *mode_str,
         int       ndim,
         const hdsdim dims[],
@@ -570,7 +570,7 @@ datMapL(const HDSLoc *locator,
 /*==================================*/
 
 int
-datMapR(const HDSLoc *locator,
+datMapR(HDSLoc *locator,
         const char      *mode_str,
         int       ndim,
         const hdsdim dims[],
@@ -583,7 +583,7 @@ datMapR(const HDSLoc *locator,
 /*========================================*/
 
 int
-datMapN(const HDSLoc     *locator,
+datMapN(HDSLoc     *locator,
 	const char       *type_str,
         const char       *mode_str,
 	int        ndim,
@@ -596,7 +596,7 @@ datMapN(const HDSLoc     *locator,
 /*==================================*/
 
 int
-datMapV(const HDSLoc    *locator,
+datMapV(HDSLoc    *locator,
         const char      *type_str,
         const char      *mode_str,
         void      **pntr,
@@ -1314,7 +1314,7 @@ datType(const HDSLoc *locator,
 /*=========================*/
 
 int
-datUnmap(const HDSLoc *locator,
+datUnmap(HDSLoc *locator,
          int  *status);
 
 /*==================================*/

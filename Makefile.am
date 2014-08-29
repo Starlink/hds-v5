@@ -93,6 +93,8 @@ C_ROUTINES = \
 	datGet.c \
 	datGet1C.c \
 	datGetVC.c \
+	datMap.c \
+	datUnmap.c \
 	datnew0.c \
 	datnew1.c \
 	datput1.c \
@@ -101,6 +103,7 @@ C_ROUTINES = \
 	datget0x.c \
 	datAnnul.c \
 	dat1New.c \
+	datmapx.c \
 	dat1Type.c \
 	dat1AllocLoc.c \
 	dat1FreeLoc.c \
