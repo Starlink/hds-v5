@@ -179,6 +179,8 @@ typedef struct LOC {
 void dau1CheckName( const char * name, int isname, char * buf,
                     size_t buflen, int * status );
 
+char * dau1CheckFileName( const char * file_str, int *status );
+
 int dau1CheckType ( const char * type_str, hid_t * h5type,
                     char * norm_str, size_t normlen, int *typcreat, int * status );
 

@@ -112,6 +112,7 @@ C_ROUTINES = \
 	dat1InitHDF5.c \
 	dau1CheckName.c \
 	dau1CheckType.c \
+	dau1CheckFileName.c \
 	dat1RetrieveIdentifier.c \
 	dat1RetrieveContainer.c
 

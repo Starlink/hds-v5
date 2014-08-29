@@ -138,9 +138,7 @@ hdsNew(const char *file_str,
   int isprim;
   hid_t h5type = 0;
   int typcreat = 0;
-  size_t lenstr;
   char *fname = NULL;
-  int needext = 0;
 
   /* Returns the inherited status for compatibility reasons */
   if (*status != SAI__OK) return *status;
@@ -148,23 +146,6 @@ hdsNew(const char *file_str,
   /* Configure the HDF5 library for our needs as this routine could be called
      before any others. */
   dat1InitHDF5();
-
-  /* Check to see if we need to add a file extension. If we find no dot before the
-     final slash we add an extension later */
-  {
-    size_t i;
-    lenstr = strlen(file_str);
-    needext = 1; /* Assume we will need to add the suffix */
-    for (i=0; i < lenstr; i++) {
-      /* start from the end */
-      size_t iposn = lenstr - (i + 1);
-      if ( file_str[iposn] == '/' ) break;
-      if ( file_str[iposn] == '.') {
-        needext = 0;
-        break;
-      }
-    }
-  }
 
   /* The name can not have "." in it as this will confuse things
      even though HDF5 will be using a "/" */
@@ -188,20 +169,7 @@ hdsNew(const char *file_str,
      simply return on error but have to ensure we clean up */
 
   /* Create buffer for file name so that we include the file extension */
-  if (*status == SAI__OK) {
-    size_t outstrlen = lenstr + DAT__SZFLX + 1;
-    fname = MEM_MALLOC( outstrlen );
-    if (fname) {
-      one_strlcpy( fname, file_str, outstrlen, status );
-      if (needext) one_strlcat( fname, DAT__FLEXT, outstrlen, status );
-    } else {
-      *status = DAT__NOMEM;
-      emsRep("", "Error in a string malloc. This is not good",
-             status );
-      goto CLEANUP;
-    }
-
-  }
+  fname = dau1CheckFileName( file_str, status );
 
   /* Create the HDF5 file */
   CALLHDF( file_id,
