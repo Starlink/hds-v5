@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     
+*     datAnnul
 
 *  Purpose:
-*     
+*     Annul locator
 
 *  Language:
 *     Starlink ANSI C
@@ -13,21 +13,30 @@
 *     Library routine
 
 *  Invocation:
-*     (  int * status );
+*     datAnnul( HDSLoc **locator, int * status );
 
 *  Arguments:
+*     locator = HDSLoc ** (Given and Returned)
+*        Locator to free. Will be NULL on exit.
 *     status = int* (Given and Returned)
-*        Pointer to global status.
+*        Pointer to global status. Attempts to run even
+*        if status is bad.
 
 *  Description:
-
+*     Free up resources associated with a locator. Cancel the
+*     association between a locator and an object.  Any primitive
+*     value currently mapped to the locator is automatically unmapped.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
 *  Notes:
-*     
+*     This routine attempts to execute even if status is set on entry,
+*     although no further error report will be made if it subsequently
+*     fails under these circumstances. In particular, it will fail if
+*     the locator supplied is not valid, but this will only be
+*     reported if status is set to SAI__OK on entry.
 
 *  History:
 *     2014-08-26 (TIMJ):
