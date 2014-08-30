@@ -205,7 +205,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     accmode = HDSMODE_WRITE;
     break;
   default:
-    *status = DAT__FILMP;
+    *status = DAT__MODIN;
     emsRepf("datMap_6", "Unrecognized mode string '%s' for datMap",
             status, mode_str);
   }
