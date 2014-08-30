@@ -323,12 +323,84 @@ int main (void) {
   datUnmap( loc2, &status );
   datAnnul( &loc2, &status );
 
-  /* Annul */
-  datAnnul( &loc2, &status );
-
   /* Close the file */
   datAnnul( &loc1, &status );
 
+
+  /* Re-open */
+  hdsOpen( path, "UPDATE", &loc1, &status );
+
+  /* Look for the data array and map it */
+  datFind( loc1, "DATA_ARRAY", &loc2, &status );
+  /*
+  datVec( loc2, &loc3, &status );
+  datSize( loc3, &nel, &status);
+  if (status == SAI__OK) {
+    nelt = dim[0] * dim[1];
+    if ( nelt != nel) {
+      status = DAT__FATAL;
+      emsSeti( "NEL", (int)nel );
+      emsSeti( "NORI", (int)nelt );
+      emsRep( "SIZE","Number of elements before (^NORI) not the same as now (^NEL)", &status);
+    }
+  }
+
+  datAnnul( &loc3, &status );
+  */
+  datMapV( loc2, "_INTEGER", "READ", &mapv, &nel, &status );
+  mapi = mapv;
+  if (status == SAI__OK) {
+    nelt = dim[0] * dim[1];
+    if ( nelt != nel) {
+      status = DAT__FATAL;
+      emsSeti( "NEL", (int)nel );
+      emsSeti( "NORI", (int)nelt );
+      emsRep( "SIZE","Number of elements originally (^NORI) not the same as now (^NEL)", &status);
+    }
+  }
+  sumi = 0;
+  for (i = 0; i < nel; i++) {
+    sumi += mapi[i];
+  }
+  datUnmap( loc2, &status );
+
+  if (status == SAI__OK) {
+    if (sumi != (int)sumd) {
+      status = DAT__FATAL;
+      emsSeti( "I", sumi );
+      emsSeti( "D", (int)sumd );
+      emsRep("SUM","Sum was not correct. Got ^I rather than ^D", &status );
+    }
+  }
+
+  /* _INT64 test */
+  datMapV( loc2, "_INT64", "READ", &mapv, &nel, &status );
+  mapi64 = mapv;
+  if (status == SAI__OK) {
+    nelt = dim[0] * dim[1];
+    if ( nelt != nel) {
+      status = DAT__FATAL;
+      emsSeti( "NEL", (int)nel );
+      emsSeti( "NORI", (int)nelt );
+      emsRep( "SIZE","Number of elements originally (^NORI) not the same as now (^NEL)", &status);
+    }
+  }
+  sumi64 = 0;
+  for (i = 0; i < nel; i++) {
+    sumi64 += mapi64[i];
+  }
+  datUnmap( loc2, &status );
+
+  if (status == SAI__OK) {
+    if (sumi64 != (int)sumd) {
+      status = DAT__FATAL;
+      emsSeti( "I", (int)sumi64 );
+      emsSeti( "D", (int)sumd );
+      emsRep("SUM","Sum was not correct. Got ^I rather than ^D", &status );
+    }
+  }
+
+  datAnnul( &loc1, &status );
 
   if (status == SAI__OK) {
     printf("HDS C installation test succeeded\n");
