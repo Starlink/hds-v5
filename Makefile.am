@@ -80,6 +80,7 @@ PRIVATE_INCLUDES = \
 C_ROUTINES = \
 	hdsNew.c \
 	hdsOpen.c \
+	hdsTrace.c \
 	datNew.c \
 	datThere.c \
 	datFind.c \

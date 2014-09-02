@@ -224,6 +224,18 @@ int main (void) {
   /* Verify name */
   datName( loc2, namestr, &status );
   cmpstrings( namestr, "TESTI64", &status );
+  {
+    char path_str[1024];
+    char file_str[2048];
+    int nlev;
+    hdsTrace( loc2, &nlev, path_str, file_str,
+              &status, sizeof(path_str),
+              sizeof(file_str));
+    printf("File: '%s' Path: '%s' Level=%d\n", file_str,
+           path_str, nlev);
+    cmpstrings( path_str, "HDS_TEST.TESTI64", &status);
+    cmpszints( nlev, 2, &status);
+  }
 
   datPut0K( loc2, testin64, &status );
   datGet0K( loc2, &test64, &status );
