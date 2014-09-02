@@ -69,6 +69,7 @@
 
 static void cmpstrings( const char * teststr, const char * expectedstr, int *status );
 static void cmpszints( size_t result, size_t expected, int *status );
+static void cmpprec ( const HDSLoc * loc1, const char * name, int * status );
 
 int main (void) {
 
@@ -145,6 +146,33 @@ int main (void) {
   /* Now check the type of the root group */
   datType( loc1, typestr, &status );
   cmpstrings( typestr, "NDF", &status );
+
+  { /* Create structure and then put a
+       component of each type in it */
+
+//    datNew0B( loc1, "BYTE", &status);
+//    datNew0UB( loc1, "UBYTE", &status);
+    datNew0W( loc1, "WORD", &status);
+    datNew0UW( loc1, "UWORD", &status);
+    datNew0I( loc1, "INTEGER", &status);
+    datNew0K( loc1, "INT64", &status);
+    datNew0L( loc1, "LOGICAL", &status);
+    datNew0R( loc1, "REAL", &status);
+    datNew0D( loc1, "DOUBLE", &status);
+    datNew0C( loc1, "CHAR", 12, &status );
+
+//    cmpprec( loc1, "BYTE", &status );
+//    cmpprec( loc1, "UBYTE", &status );
+    cmpprec( loc1, "WORD", &status );
+    cmpprec( loc1, "UWORD", &status );
+    cmpprec( loc1, "INTEGER", &status );
+    cmpprec( loc1, "INT64", &status );
+    cmpprec( loc1, "LOGICAL", &status );
+    cmpprec( loc1, "REAL", &status );
+    cmpprec( loc1, "DOUBLE", &status );
+    cmpprec( loc1, "CHAR", &status );
+  }
+
 
   /* Confirm size and type */
   if (status == SAI__OK) {
@@ -347,6 +375,16 @@ int main (void) {
 
   datAnnul( &loc3, &status );
   */
+
+  datPrec( loc2, &nbytes, &status );
+  if (status == SAI__OK) {
+    if ( nbytes != 4) {
+      status = DAT__FATAL;
+      emsSeti( "NB", nbytes );
+      emsRep( "PREC","Precision for _REAL not 4 bytes but ^NB", &status);
+    }
+  }
+
   datMapV( loc2, "_INTEGER", "READ", &mapv, &nel, &status );
   mapi = mapv;
   if (status == SAI__OK) {
@@ -434,4 +472,19 @@ static void cmpszints( size_t result, size_t expected, int *status ) {
             result, expected );
   }
   return;
+}
+
+static void cmpprec ( const HDSLoc * loc1, const char * name, int * status ) {
+    HDSLoc * locator = NULL;
+    size_t complen = 0;
+    size_t compprec = 0;
+
+    datFind( loc1, name, &locator, status);
+    datPrec( locator, &compprec, status);
+    datLen( locator, &complen, status);
+    datAnnul(&locator, status );
+    if ( compprec != complen ) {
+      *status = DAT__FATAL;
+      printf("%s precision: %zu length: %zu\n", name, compprec, complen);
+    }
 }

@@ -83,6 +83,8 @@ C_ROUTINES = \
 	datNew.c \
 	datThere.c \
 	datFind.c \
+	datPrec.c \
+	datLen.c \
 	datType.c \
 	datClen.c \
 	datCctyp.c \
