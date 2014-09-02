@@ -85,6 +85,7 @@ C_ROUTINES = \
 	datFind.c \
 	datType.c \
 	datClen.c \
+	datCctyp.c \
 	datName.c \
 	datSize.c \
 	datShape.c \

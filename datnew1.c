@@ -44,19 +44,6 @@ datNewC(const HDSLoc    *locator,
    return *status;
 }
 
-/*====================================*/
-/* DAT_CCTYP - Create type string     */
-/*====================================*/
-
-void
-datCctyp( size_t size,
-          char *type )
-{
-  /* have to assume the buffer is big enough - should be DAT__SZTYP+1
-      - noting that snprintf is C99 so not used (yet) */
-  sprintf( type, "_CHAR*%lu", (unsigned long)size);
-}
-
 /*================================================*/
 /* DAT_NEW1 - Create a vector structure component */
 /*================================================*/
