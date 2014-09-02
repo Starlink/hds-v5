@@ -212,7 +212,7 @@ int main (void) {
       if ( dsize != 1) {
         status = DAT__FATAL;
         emsRepf("", "Size of TESTI64 inconsistent. Got %zu expected %zu.", &status,
-               dsize, 1);
+                dsize, (size_t)1);
       }
     }
   }
