@@ -97,7 +97,7 @@ datSize(const HDSLoc *locator,
 
   if (*status != SAI__OK) return *status;
 
-  if (locator->dataset_id > 0) {
+  if (! dat1IsStructure(locator, status)) {
     int rank;
 
     /* start by looking at the rank */
