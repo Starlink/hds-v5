@@ -237,6 +237,23 @@ int main (void) {
     cmpszints( nlev, 2, &status);
   }
 
+  if (status == SAI__OK) {
+    /* Do not use MERS in test. We create an error message
+       with EMS and then extract it as text */
+    int lstat = DAT__FATAL;
+    char param[10];
+    char opstr[2048];
+    int oplen;
+    int parlen;
+    emsMark();
+    datMsg("OBJ", loc2 );
+    emsRep("", "^OBJ", &lstat);
+    emsEload( param, &parlen, opstr, &oplen, &lstat);
+    printf("datMsg: %s\n", opstr);
+    emsAnnul(&lstat);
+    emsRlse();
+  }
+
   datPut0K( loc2, testin64, &status );
   datGet0K( loc2, &test64, &status );
   datAnnul( &loc2, &status );
