@@ -121,6 +121,8 @@ C_ROUTINES = \
 	dau1CheckName.c \
 	dau1CheckType.c \
 	dau1CheckFileName.c \
+	dat1ImportDims.c \
+	dat1ExportDims.c \
 	dat1IsStructure.c \
 	dat1RetrieveIdentifier.c \
 	dat1RetrieveContainer.c

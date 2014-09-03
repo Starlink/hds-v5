@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     datShape
+*     dat1ImportDims
 
 *  Purpose:
-*     Enquire object shape
+*     Import HDS dims and map them to HDF5 dimensions
 
 *  Language:
 *     Starlink ANSI C
@@ -13,30 +13,32 @@
 *     Library routine
 
 *  Invocation:
-*     datShape( const HDSLoc *locator, int maxdim, hdsdim dims[],
-*               int *actdim, int * status );
+*     void dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
+*                          int * status );
 
 *  Arguments:
-*     locator = const HDSLoc * (Given)
-*        Object locator
-*     maxdim = int (Given)
-*        Allocated size of dims[]
-*     dims = hdsdim [] (Returned)
-*        Object dimensions.
-*     actdim = int * (Returned)
-*        Number of dimensions filled in dims[].
+*     ndims = int (Given)
+*        Number of dimensions to import.
+*     hdsdims = const hdsdim[] (Given)
+*        Dimensions to import. Only ndims will be accessed.
+*     h5dims = hsize_t [] (Returned)
+*        Array to receive imported dimensions. Must be at least ndims in size.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-*     Enquire the shape of an object.
+*     Import the dimensions in HDS form and convert them to the dimensions
+*     suitable for use in HDF5 calls.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
+*  Notes:
+*     - Does not assume that hdsdim and hsize_t are the same type.
+
 *  History:
-*     2014-08-29 (TIMJ):
+*     2014-09-03 (TIMJ):
 *        Initial version
 *     {enter_further_changes_here}
 
@@ -91,35 +93,17 @@
 #include "dat1.h"
 #include "hds.h"
 
-#include "dat_err.h"
+void
+dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
+                int *status ) {
+  int i;
 
-int
-datShape( const HDSLoc *locator, int maxdim, hdsdim dims[],
-          int *actdim, int * status ) {
+  if (*status != SAI__OK) return;
+  if (ndims == 0) return;
 
-  hsize_t h5dims[DAT__MXDIM];
-  int rank = 0;
-
-  if (*status != SAI__OK) return *status;
-
-  CALLHDFE( int,
-            rank,
-            H5Sget_simple_extent_dims( locator->dataspace_id, h5dims, NULL ),
-            DAT__DIMIN,
-            emsRep("datshape_1", "datShape: Error obtaining shape of object",
-                   status)
-            );
-
-  if (rank > maxdim) {
-    *status = DAT__DIMIN;
-    emsRepf("datshape_1b", "datShape: Dimensions of object exceed maximum allowed size of %d",
-            status, maxdim);
-    goto CLEANUP;
+  /* We may have to transpose these dimensions */
+  for (i=0; i<ndims; i++) {
+    h5dims[i] = hdsdims[i];
   }
-
-  dat1ExportDims( rank, h5dims, dims, status );
-  *actdim = rank;
-
- CLEANUP:
-  return *status;
+  return;
 }

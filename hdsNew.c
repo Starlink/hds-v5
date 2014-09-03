@@ -131,7 +131,6 @@ hdsNew(const char *file_str,
 
   char cleanname[DAT__SZNAM+1];
   char groupstr[DAT__SZTYP+1];
-  size_t i;
   hid_t file_id = 0;
   hsize_t h5dims[DAT__MXDIM];
   HDSLoc * thisloc = NULL;
@@ -153,11 +152,7 @@ hdsNew(const char *file_str,
   if (*status != SAI__OK) return *status;
 
   /* Copy dimensions if appropriate */
-  if (ndim > 0 ) { /* Consider enforcing hdsdim type == hsize_t */
-    for (i=0; i<(size_t)ndim; i++) {
-      h5dims[i] = dims[i];
-    }
-  }
+  dat1ImportDims( ndim, dims, h5dims, status );
 
   /* Convert the HDS data type to HDF5 data type as an early sanity
      check. */

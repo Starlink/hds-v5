@@ -128,12 +128,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   if (*status != SAI__OK) goto CLEANUP;
 
   /* Copy dimensions if appropriate */
-  if (ndim > 0 ) { /* Consider enforcing hdsdim type == hsize_t */
-    size_t i;
-    for (i=0; i<(size_t)ndim; i++) {
-      h5dims[i] = dims[i];
-    }
-  }
+  dat1ImportDims( ndim, dims, h5dims, status );
 
   /* Create a memory dataspace for the incoming data */
   CALLHDF( mem_dataspace_id,

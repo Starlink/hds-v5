@@ -204,3 +204,11 @@ dat1Type( const HDSLoc *locator, int * status );
 
 int
 dat1IsStructure( const HDSLoc * locator, int * status );
+
+void
+dat1ExportDims( int ndims, const hsize_t h5dims[], hdsdim hdsdims[],
+                int *status );
+
+void
+dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
+                int *status );
