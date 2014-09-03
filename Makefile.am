@@ -75,58 +75,67 @@ PUBLIC_INCLUDES = DAT_PAR dat_par.h
 
 PRIVATE_INCLUDES = \
 	hds1_types.h \
+	dat1.h \
 	$(noinst_MESSAGES)
 
 C_ROUTINES = \
-	hdsNew.c \
-	hdsOpen.c \
-	hdsTrace.c \
-	datNew.c \
-	datThere.c \
-	datFind.c \
-	datPrec.c \
-	datLen.c \
-	datType.c \
-	datClen.c \
-	datCctyp.c \
-	datName.c \
-	datNcomp.c \
-	datMsg.c \
-	datSize.c \
-	datShape.c \
-	datStruc.c \
-	datPrim.c \
-	datPut.c \
-	datPutVC.c \
-	datPut1C.c \
-	datGet.c \
-	datGet1C.c \
-	datGetVC.c \
-	datMap.c \
-	datUnmap.c \
-	datnew0.c \
-	datnew1.c \
-	datput1.c \
-	datput0.c \
-	datgetx.c \
-	datget0x.c \
-	datAnnul.c \
-	dat1New.c \
-	datmapx.c \
-	dat1Type.c \
-	dat1AllocLoc.c \
-	dat1FreeLoc.c \
-	dat1DumpLoc.c \
-	dat1H5EtoEMS.c \
-	dat1InitHDF5.c \
-	dau1CheckName.c \
-	dau1CheckType.c \
-	dau1CheckFileName.c \
-	dat1ImportDims.c \
-	dat1ExportDims.c \
-	dat1IsStructure.c \
-	dat1RetrieveIdentifier.c \
-	dat1RetrieveContainer.c
+	$(PUBLIC_C_ROUTINES) \
+	$(PRIVATE_C_ROUTINES)
+
+PUBLIC_C_ROUTINES = \
+datAnnul.c \
+datCctyp.c \
+datClen.c \
+datFind.c \
+datGet.c \
+datGet1C.c \
+datGetVC.c \
+datLen.c \
+datMap.c \
+datMsg.c \
+datName.c \
+datNcomp.c \
+datNew.c \
+datPrec.c \
+datPrim.c \
+datPut.c \
+datPut1C.c \
+datPutVC.c \
+datRef.c \
+datShape.c \
+datSize.c \
+datStruc.c \
+datThere.c \
+datType.c \
+datUnmap.c \
+hdsNew.c \
+hdsOpen.c \
+hdsTest.c \
+hdsTrace.c \
+datget0x.c \
+datgetx.c \
+datmapx.c \
+datnew0.c \
+datnew1.c \
+datput0.c \
+datput1.c
+
+PRIVATE_C_ROUTINES = \
+dat1AllocLoc.c \
+dat1DumpLoc.c \
+dat1ExportDims.c \
+dat1FreeLoc.c \
+dat1H5EtoEMS.c \
+dat1ImportDims.c \
+dat1InitHDF5.c \
+dat1IsStructure.c \
+dat1New.c \
+dat1RetrieveContainer.c \
+dat1RetrieveIdentifier.c \
+dat1Type.c \
+dau1CheckFileName.c \
+dau1CheckName.c \
+dau1CheckType.c
 
 DAT_PAR: dat_par_f$(EXEEXT)
 	./dat_par_f > DAT_PAR
