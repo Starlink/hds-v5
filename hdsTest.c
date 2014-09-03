@@ -167,6 +167,7 @@ int main (void) {
   {
     int struc;
     int prim;
+    int ncomp;
     /* Put a component of each type in test structure */
     datFind( loc1, "TESTSTRUCT", &loc2, &status );
 
@@ -193,6 +194,15 @@ int main (void) {
     datNew0R( loc2, "REAL", &status);
     datNew0D( loc2, "DOUBLE", &status);
     datNew0C( loc2, "CHAR", 12, &status );
+
+    datNcomp( loc2, &ncomp, &status );
+    if (status == SAI__OK) {
+      if (ncomp != 8) {
+        status = DAT__FATAL;
+        emsRepf("", "Got %d components in structure rather than %d\n",
+                &status, ncomp, 8 );
+      }
+    }
 
 //    cmpprec( loc2, "BYTE", &status );
 //    cmpprec( loc2, "UBYTE", &status );
