@@ -147,30 +147,33 @@ int main (void) {
   datType( loc1, typestr, &status );
   cmpstrings( typestr, "NDF", &status );
 
-  { /* Create structure and then put a
-       component of each type in it */
+  {
+    /* Put a component of each type in test structure */
+    datFind( loc1, "TESTSTRUCT", &loc2, &status );
 
-//    datNew0B( loc1, "BYTE", &status);
-//    datNew0UB( loc1, "UBYTE", &status);
-    datNew0W( loc1, "WORD", &status);
-    datNew0UW( loc1, "UWORD", &status);
-    datNew0I( loc1, "INTEGER", &status);
-    datNew0K( loc1, "INT64", &status);
-    datNew0L( loc1, "LOGICAL", &status);
-    datNew0R( loc1, "REAL", &status);
-    datNew0D( loc1, "DOUBLE", &status);
-    datNew0C( loc1, "CHAR", 12, &status );
+//    datNew0B( loc2, "BYTE", &status);
+//    datNew0UB( loc2, "UBYTE", &status);
 
-//    cmpprec( loc1, "BYTE", &status );
-//    cmpprec( loc1, "UBYTE", &status );
-    cmpprec( loc1, "WORD", &status );
-    cmpprec( loc1, "UWORD", &status );
-    cmpprec( loc1, "INTEGER", &status );
-    cmpprec( loc1, "INT64", &status );
-    cmpprec( loc1, "LOGICAL", &status );
-    cmpprec( loc1, "REAL", &status );
-    cmpprec( loc1, "DOUBLE", &status );
-    cmpprec( loc1, "CHAR", &status );
+    datNew0W( loc2, "WORD", &status);
+    datNew0UW( loc2, "UWORD", &status);
+    datNew0I( loc2, "INTEGER", &status);
+    datNew0K( loc2, "INT64", &status);
+    datNew0L( loc2, "LOGICAL", &status);
+    datNew0R( loc2, "REAL", &status);
+    datNew0D( loc2, "DOUBLE", &status);
+    datNew0C( loc2, "CHAR", 12, &status );
+
+//    cmpprec( loc2, "BYTE", &status );
+//    cmpprec( loc2, "UBYTE", &status );
+    cmpprec( loc2, "WORD", &status );
+    cmpprec( loc2, "UWORD", &status );
+    cmpprec( loc2, "INTEGER", &status );
+    cmpprec( loc2, "INT64", &status );
+    cmpprec( loc2, "LOGICAL", &status );
+    cmpprec( loc2, "REAL", &status );
+    cmpprec( loc2, "DOUBLE", &status );
+    cmpprec( loc2, "CHAR", &status );
+    datAnnul( &loc2, &status );
   }
 
 
