@@ -8,19 +8,19 @@ noinst_PROGRAMS = dat_par_f dat_par_h make-hds-types
 AM_CFLAGS = -g -O0
 
 # libhdsf is for fortran interface
-lib_LTLIBRARIES = libhdsonhdf5.la
+lib_LTLIBRARIES = libhdsh5.la
 
 TESTS = hdsTest
 check_PROGRAMS = hdsTest
 
-libhdsonhdf5_la_SOURCES = \
+libhdsh5_la_SOURCES = \
 	$(PUBLIC_INCLUDES) \
 	$(PUBLIC_CINCLUDES) \
 	$(include_MESSAGES) \
 	$(PRIVATE_INCLUDES) \
 	$(C_ROUTINES)
 
-libhdsonhdf5_la_LIBADD = `starmem_link` `ems_link`
+libhdsh5_la_LIBADD = `starmem_link` `ems_link`
 
 ##libhdsf_la_SOURCES = \
 ##	$(F_ROUTINES) \
@@ -32,8 +32,8 @@ libhdsonhdf5_la_LIBADD = `starmem_link` `ems_link`
 # Make all library code position independent. This is handy for creating
 # shareable libraries from the static ones (Java JNI libraries).
 if !NOPIC
-libhdsonhdf5_la_CFLAGS = $(AM_CFLAGS) -prefer-pic
-libhdsonhdf5_la_FCFLAGS = $(AM_FCFLAGS) -prefer-pic
+libhdsh5_la_CFLAGS = $(AM_CFLAGS) -prefer-pic
+libhdsh5_la_FCFLAGS = $(AM_FCFLAGS) -prefer-pic
 libhdsf_la_CFLAGS = $(AM_CFLAGS) -prefer-pic
 libhdsf_la_FCFLAGS = $(AM_FCFLAGS) -prefer-pic
 endif
@@ -57,7 +57,7 @@ dat_par_h_DEPENDENCIES = hds_types.h hds1_types.h dat1.h
 ## hds_test_LDADD = libhdsf.la libhds.la `ems_link` `chr_link` `cnf_link`
 
 hdsTest_SOURCES = hdsTest.c
-hdsTest_LDADD = libhdsonhdf5.la `ems_link` `one_link`
+hdsTest_LDADD = libhdsh5.la `ems_link` `one_link`
 
 ## hds_test_prm_SOURCES = hds_test_prm.c
 ## hds_test_prm_LDADD = libhds.la `ems_link` `cnf_link` `cnf_link`
