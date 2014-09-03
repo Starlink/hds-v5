@@ -201,3 +201,6 @@ void dat1DumpLoc( const HDSLoc * locator, int * status );
 
 hdstype_t
 dat1Type( const HDSLoc *locator, int * status );
+
+int
+dat1IsStructure( const HDSLoc * locator, int * status );

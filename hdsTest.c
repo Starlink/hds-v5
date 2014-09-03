@@ -141,6 +141,23 @@ int main (void) {
   cmpstrings( typestr, "_CHAR*14", &status );
   datClen(loc2, &nel, &status );
   cmpszints( nel, 14, &status );
+
+  /* Now test it is a primitive */
+  {
+    int prim;
+    int struc;
+    datPrim( loc2, &prim, &status );
+    if (!prim && status == SAI__OK) {
+      status = DAT__FATAL;
+      emsRep("", "Primitive does not seem to be primitive", &status);
+    }
+    datStruc( loc2, &struc, &status );
+    if (struc && status == SAI__OK) {
+      status = DAT__FATAL;
+      emsRep("", "Primitive seems to be a structure", &status);
+    }
+  }
+
   datAnnul( &loc2, &status );
 
   /* Now check the type of the root group */
@@ -148,8 +165,22 @@ int main (void) {
   cmpstrings( typestr, "NDF", &status );
 
   {
+    int struc;
+    int prim;
     /* Put a component of each type in test structure */
     datFind( loc1, "TESTSTRUCT", &loc2, &status );
+
+    /* First test it is a structure */
+    datPrim( loc2, &prim, &status );
+    if (prim && status == SAI__OK) {
+      status = DAT__FATAL;
+      emsRep("", "Structure seems to be primitive", &status);
+    }
+    datStruc( loc2, &struc, &status );
+    if (!struc && status == SAI__OK) {
+      status = DAT__FATAL;
+      emsRep("", "Structure does not seem to be a structure", &status);
+    }
 
 //    datNew0B( loc2, "BYTE", &status);
 //    datNew0UB( loc2, "UBYTE", &status);

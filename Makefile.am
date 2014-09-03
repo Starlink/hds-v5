@@ -93,6 +93,8 @@ C_ROUTINES = \
 	datMsg.c \
 	datSize.c \
 	datShape.c \
+	datStruc.c \
+	datPrim.c \
 	datPut.c \
 	datPutVC.c \
 	datPut1C.c \
@@ -119,6 +121,7 @@ C_ROUTINES = \
 	dau1CheckName.c \
 	dau1CheckType.c \
 	dau1CheckFileName.c \
+	dat1IsStructure.c \
 	dat1RetrieveIdentifier.c \
 	dat1RetrieveContainer.c
 
