@@ -296,6 +296,10 @@ int main (void) {
     printf("datMsg: %s\n", opstr);
     emsAnnul(&lstat);
     emsRlse();
+
+    /* Now for datRef */
+    datRef( loc2, opstr, sizeof(opstr), &status);
+    printf("datRef: %s\n", opstr);
   }
 
   datPut0K( loc2, testin64, &status );
