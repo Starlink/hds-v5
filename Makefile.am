@@ -112,7 +112,6 @@ datType.c \
 datUnmap.c \
 hdsNew.c \
 hdsOpen.c \
-hdsTest.c \
 hdsTrace.c \
 datget0x.c \
 datgetx.c \
