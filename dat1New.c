@@ -173,9 +173,6 @@ dat1New( const HDSLoc    *locator,
       }
       goto CLEANUP;
     } else {
-      hid_t attrtype = 0;
-      hid_t attribute_id = 0;
-      hid_t attr_dataspace_id = 0;
 
       CALLHDF( group_id,
                H5Gcreate2(place, cleanname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
@@ -184,30 +181,7 @@ dat1New( const HDSLoc    *locator,
                );
 
       /* Actual data type of the structure/group must be stored in an attribute */
-      CALLHDF( attrtype,
-               H5Tcopy(H5T_C_S1),
-               DAT__HDF5E,
-               emsRepf("dat1New_5", "Error copying data type during creation of strucutre/group '%s'", status, cleanname );
-               );
-      CALLHDFQ(H5Tset_size( attrtype, strlen(groupstr) ));
-      CALLHDFQ(H5Tset_strpad( attrtype, H5T_STR_NULLTERM ));
-
-      CALLHDF(attr_dataspace_id,
-              H5Screate( H5S_SCALAR ),
-              DAT__HDF5E,
-              emsRepf("dat1New_6", "Error creating data space for structure type '%s' in structure '%s'", status, groupstr,cleanname )
-              );
-      CALLHDF(attribute_id,
-              H5Acreate2( group_id, "HDSTYPE", attrtype, attr_dataspace_id,
-                          H5P_DEFAULT, H5P_DEFAULT),
-              DAT__HDF5E,
-              emsRepf("dat1New_7", "Error creating attribute for type '%s' in structure '%s'", status, groupstr, cleanname);
-              );
-
-      CALLHDFQ(H5Awrite( attribute_id, attrtype, groupstr ));
-      CALLHDFQ(H5Aclose(attribute_id));
-      CALLHDFQ(H5Sclose(attr_dataspace_id));
-
+      CALLHDFQ( H5LTset_attribute_string( group_id, ".", "HDSTYPE", groupstr ) );
     }
   }
 
