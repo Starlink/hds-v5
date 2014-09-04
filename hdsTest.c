@@ -183,6 +183,11 @@ int main (void) {
       emsRep("", "Structure does not seem to be a structure", &status);
     }
 
+    datClone( loc2, &loc3, &status );
+    datName( loc3, namestr, &status );
+    cmpstrings( namestr, "TESTSTRUCT", &status );
+    datAnnul( &loc3, &status );
+
 //    datNew0B( loc2, "BYTE", &status);
 //    datNew0UB( loc2, "UBYTE", &status);
 
@@ -242,7 +247,13 @@ int main (void) {
     datFind( loc1, "DATA_ARRAY", &loc2, &status );
     datParen( loc2, &loc3, &status );
     datName( loc3, namestr, &status );
+    datAnnul( &loc3, &status );
     cmpstrings( namestr, "HDS_TEST", &status );
+
+    datClone( loc2, &loc3, &status );
+    datName( loc3, namestr, &status );
+    cmpstrings( namestr, "DATA_ARRAY", &status );
+    datAnnul( &loc3, &status );
 
     datType( loc2, typestr, &status );
     cmpstrings( typestr, "_INTEGER", &status );
