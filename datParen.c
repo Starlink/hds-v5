@@ -142,7 +142,7 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   }
 
   /* if this seems to be the root group we return an error */
-  if (strlen(tempstr) == 0) {
+  if (tempstr[0] == '\0') {
     if (*status == SAI__OK) {
       *status = DAT__OBJIN;
       emsRep("datParen_1",

@@ -217,6 +217,24 @@ int main (void) {
     datAnnul( &loc2, &status );
   }
 
+  /* Check that we can not ask for the parent of the
+     root locator */
+  if (status == SAI__OK) {
+    int trigger = 0;
+    emsMark();
+    datParen( loc1, &loc3, &status );
+    if (status == SAI__OK) {
+      trigger = 1;
+    } else {
+      emsAnnul( &status );
+    }
+    emsRlse();
+    if (trigger) {
+      status = DAT__FATAL;
+      emsRep("", "Was able to obtain parent locator of root locator!",
+             &status );
+    }
+  }
 
   /* Confirm size and type */
   if (status == SAI__OK) {
