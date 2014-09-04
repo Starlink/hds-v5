@@ -44,9 +44,17 @@
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
+*  Notes:
+*     - Primitive non-scalar types are created with unlimited dimensions to
+*       allow resizing but the chunk size is configured to match the supplied
+*       dimensions. The HDS API has no means to control whether resizing will
+*       be required and how the chunking should be handled.
+
 *  History:
 *     2014-08-20 (TIMJ):
 *        Initial version
+*     2014-09-04 (TIMJ):
+*        Unlimited dimensions.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -117,6 +125,7 @@ dat1New( const HDSLoc    *locator,
   hid_t group_id = 0;
   hid_t dataset_id = 0;
   hid_t dataspace_id = 0;
+  hid_t cparms = 0;
   hid_t h5type = 0;
   hid_t place = 0;
   int isprim;
@@ -146,21 +155,55 @@ dat1New( const HDSLoc    *locator,
 
   /* Now create the group or dataset at the top level */
   if (isprim) {
-    /* Create a primitive */
+    if (ndim == 0) {
 
-    /* Create the data space for the dataset */
-    CALLHDF( dataspace_id,
-             H5Screate_simple( ndim, h5dims, NULL ),
-             DAT__HDF5E,
-             emsRepf("dat1New_1", "Error allocating data space", status )
-             );
+      CALLHDF( dataspace_id,
+               H5Screate( H5S_SCALAR ),
+               DAT__HDF5E,
+               emsRepf("dat1New_0", "Error allocating data space for scalar %s",
+                       status, cleanname )
+               );
+
+      cparms = H5P_DEFAULT;
+
+    } else {
+
+      /* Create a primitive -- HDS assumes you are going to adjust
+         the dimensions of any data array so you must create these primitives
+         to take that possibility into account. */
+
+      const hsize_t h5max[DAT__MXDIM] = { H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED,
+                                          H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED,
+                                          H5S_UNLIMITED };
+
+      /* Create the data space for the dataset */
+      CALLHDF( dataspace_id,
+               H5Screate_simple( ndim, h5dims, h5max ),
+               DAT__HDF5E,
+               emsRepf("dat1New_1", "Error allocating data space for %s",
+                       status, cleanname )
+               );
+
+      /* Since we are trying to be extendible we have to allow chunking.
+         HDS gives us no ability to know how to chunk so we guess that
+         chunk sizes of the initial creation size are okay */
+      CALLHDF( cparms,
+               H5Pcreate( H5P_DATASET_CREATE ),
+               DAT__HDF5E,
+               emsRepf("dat1New_1b", "Error creating parameters for data space %s",
+                       status, cleanname)
+               );
+      CALLHDFQ( H5Pset_chunk( cparms, ndim, h5dims ) );
+
+    }
 
     /* now place the dataset */
     CALLHDF( dataset_id,
              H5Dcreate2(place, cleanname, h5type, dataspace_id,
-                        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
+                        H5P_DEFAULT, cparms, H5P_DEFAULT),
              DAT__HDF5E,
-             emsRepf("dat1New_2", "Error placing the data space in the file", status )
+             emsRepf("dat1New_2", "Error placing the data space in the file for %s",
+                     status, cleanname )
              );
 
   } else {
@@ -200,6 +243,7 @@ dat1New( const HDSLoc    *locator,
   if (typcreat) H5Tclose( h5type );
   if (dataset_id) H5Dclose(dataset_id);
   if (dataspace_id) H5Sclose(dataspace_id);
+  if (cparms > 0 && cparms != H5P_DEFAULT) H5Pclose(cparms);
   if (group_id) H5Gclose(group_id);
   if (thisloc) {
     thisloc = dat1FreeLoc(thisloc, status);
