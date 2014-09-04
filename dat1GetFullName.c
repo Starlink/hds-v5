@@ -122,6 +122,7 @@ dat1GetFullName( hid_t objid, int asfile, ssize_t * namlen, int *status) {
     emsRepf("dat1GetFullName_1",
             "Error obtaining length of %s name of locator",
             status, (asfile ? "file" : "path" ) );
+    goto CLEANUP;
   }
 
   /* Allocate buffer of the right length */
@@ -130,7 +131,7 @@ dat1GetFullName( hid_t objid, int asfile, ssize_t * namlen, int *status) {
     *status = DAT__NOMEM;
     emsRep( "dat1GetFullName_2", "Malloc error. Can not proceed",
             status);
-    return NULL;
+    goto CLEANUP;
   }
 
   if (asfile) {
@@ -143,6 +144,7 @@ dat1GetFullName( hid_t objid, int asfile, ssize_t * namlen, int *status) {
     dat1H5EtoEMS( status );
     emsRepf( "dat1GetFullName_3", "Error obtaining %s name of locator",
              status, (asfile ? "file" : "path") );
+    goto CLEANUP;
   }
   if (namlen) *namlen = lenstr;
 
