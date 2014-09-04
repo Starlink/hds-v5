@@ -96,6 +96,7 @@ datMsg.c \
 datName.c \
 datNcomp.c \
 datNew.c \
+datParen.c \
 datPrec.c \
 datPrim.c \
 datPut.c \

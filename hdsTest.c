@@ -222,6 +222,10 @@ int main (void) {
   if (status == SAI__OK) {
     size_t dsize;
     datFind( loc1, "DATA_ARRAY", &loc2, &status );
+    datParen( loc2, &loc3, &status );
+    datName( loc3, namestr, &status );
+    cmpstrings( namestr, "HDS_TEST", &status );
+
     datType( loc2, typestr, &status );
     cmpstrings( typestr, "_INTEGER", &status );
 
