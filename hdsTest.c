@@ -609,6 +609,7 @@ static void cmpprec ( const HDSLoc * loc1, const char * name, int * status ) {
     size_t complen = 0;
     size_t compprec = 0;
 
+    if (*status != SAI__OK) return;
     datFind( loc1, name, &locator, status);
     datPrec( locator, &compprec, status);
     datLen( locator, &complen, status);
