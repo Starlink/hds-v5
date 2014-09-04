@@ -275,8 +275,10 @@ int main (void) {
     hdsTrace( loc2, &nlev, path_str, file_str,
               &status, sizeof(path_str),
               sizeof(file_str));
-    printf("File: '%s' Path: '%s' Level=%d\n", file_str,
-           path_str, nlev);
+    if (status == SAI__OK) {
+      printf("File: '%s' Path: '%s' Level=%d\n", file_str,
+             path_str, nlev);
+    }
     cmpstrings( path_str, "HDS_TEST.TESTI64", &status);
     cmpszints( nlev, 2, &status);
   }
