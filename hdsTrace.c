@@ -159,38 +159,7 @@ static void objid_to_name ( hid_t objid, int asfile, char * buffer, size_t bufle
 
   if (*status != SAI__OK) return;
 
-  /* Run first to get the size of the buffer we need to use */
-  lenstr = (asfile ?
-            H5Fget_name(objid, NULL, 0) :
-            H5Iget_name(objid, NULL, 0) );
-  if (lenstr < 0) {
-    *status = DAT__HDF5E;
-    dat1H5EtoEMS( status );
-    emsRepf("hdsTrace_1",
-            "hdsTrace: Error obtaining length of %s name of locator",
-            status, (asfile ? "file" : "path" ) );
-  }
-
-  /* Allocate buffer of the right length */
-  tempstr = MEM_MALLOC( lenstr + 1 );
-  if (!tempstr) {
-    *status = DAT__NOMEM;
-    emsRep( "hdsTrace_2", "hdsTrace: Malloc error. Can not proceed",
-            status);
-    return;
-  }
-
-  if (asfile) {
-    lenstr = H5Fget_name( objid, tempstr, lenstr+1);
-  } else {
-    lenstr = H5Iget_name( objid, tempstr, lenstr+1);
-  }
-  if (lenstr < 0) {
-    *status = DAT__HDF5E;
-    dat1H5EtoEMS( status );
-    emsRepf( "hdsTrace_3", "hdsTrace: Error obtaining %s name of locator",
-             status, (asfile ? "file" : "path") );
-  }
+  tempstr = dat1GetFullName( objid, asfile, NULL, status );
 
   /* and copy it into the supplied buffer.
      For paths we start at the second character as we do not

@@ -212,3 +212,6 @@ dat1ExportDims( int ndims, const hsize_t h5dims[], hdsdim hdsdims[],
 void
 dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
                 int *status );
+
+char *
+dat1GetFullName( hid_t objid, int asfile, ssize_t * namlen, int *status);

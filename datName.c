@@ -107,30 +107,8 @@ datName(const HDSLoc *locator,
   objid = dat1RetrieveIdentifier( locator, status );
   if (*status != SAI__OK) return *status;
 
-  /* Run first to get the size of the buffer we need to use */
-  lenstr = H5Iget_name( objid, NULL, 0 );
-  if (lenstr < 0) {
-    *status = DAT__HDF5E;
-    emsRep( "datName_1", "datName: Error obtaining name of locator",
-            status);
-    return *status;
-  }
-
-  /* Allocate buffer of the right length */
-  tempstr = MEM_MALLOC( lenstr + 1 );
-  if (!tempstr) {
-    *status = DAT__NOMEM;
-    emsRep( "datName_2", "datName: Malloc error. Can not proceed",
-            status);
-    return *status;
-  }
-
-  lenstr = H5Iget_name( objid, tempstr, lenstr+1);
-  if (lenstr < 0) {
-    *status = DAT__HDF5E;
-    emsRep( "datName_3", "datName: Error obtaining name of locator",
-            status);
-  }
+  /* Get the full name */
+  tempstr = dat1GetFullName( objid, 0, &lenstr, status );
 
   /* Now walk through the string backwards until we find the
      "/" character indicating the parent group */
@@ -150,7 +128,7 @@ datName(const HDSLoc *locator,
 
   }
 
-  MEM_FREE(tempstr);
+  if (tempstr) MEM_FREE(tempstr);
 
   if (*status != SAI__OK) {
     emsRep("datName_4", "datName: Error obtaining a name of a locator",
