@@ -463,6 +463,24 @@ int main (void) {
   datUnmap( loc2, &status );
   datAnnul( &loc2, &status );
 
+  /* See if we can rename something */
+  datFind( loc1, "TESTSTRUCT", &loc2, &status );
+  datRenam( loc2, "STRUCT2", &status );
+  datFind( loc2, "CHAR", &loc3, &status );
+  datRenam( loc3, "CHAR*12", &status );
+  datName( loc3, namestr, &status );
+  cmpstrings( namestr, "CHAR*12", &status );
+  datAnnul( &loc3, &status );
+
+  /* Copy the structure to a new location */
+  datCopy( loc2, loc1, "COPIEDSTRUCT", &status );
+  datFind( loc1, "COPIEDSTRUCT", &loc3, &status );
+  datName( loc3, namestr, &status );
+  cmpstrings( namestr, "COPIEDSTRUCT", &status );
+  datAnnul( &loc3, &status );
+
+  datAnnul( &loc2, &status);
+
   /* Close the file */
   datAnnul( &loc1, &status );
 

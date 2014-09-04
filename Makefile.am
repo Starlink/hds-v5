@@ -87,6 +87,7 @@ datAnnul.c \
 datCctyp.c \
 datClen.c \
 datClone.c \
+datCopy.c \
 datFind.c \
 datGet.c \
 datGet1C.c \
