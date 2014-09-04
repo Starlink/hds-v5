@@ -133,6 +133,12 @@ SG/4 says Primtive precision vs Storage precision
 `datLen` is called but in some cases seemingly as an alias
 for `datClen`.
 
+### datRenam
+
+Need to test whether `datRenam` or `datMove` break locators
+that are previously associated with the objects being moved/renamed.
+H5Lmove indicates that they should still work fine.
+
 ### Incompatibilies
 
 HDF5 does not support an array of structures. Structures must be supported

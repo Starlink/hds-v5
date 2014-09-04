@@ -1208,7 +1208,7 @@ datRefct(const HDSLoc *locator,
 /*=============================*/
 
 int
-datRenam(const HDSLoc *locator,
+datRenam(HDSLoc *locator,
          const  char *name_str,
 	 int  *status);
 

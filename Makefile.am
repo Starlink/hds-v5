@@ -93,6 +93,7 @@ datGet1C.c \
 datGetVC.c \
 datLen.c \
 datMap.c \
+datMove.c \
 datMsg.c \
 datName.c \
 datNcomp.c \
@@ -104,6 +105,7 @@ datPut.c \
 datPut1C.c \
 datPutVC.c \
 datRef.c \
+datRenam.c \
 datShape.c \
 datSize.c \
 datStruc.c \
