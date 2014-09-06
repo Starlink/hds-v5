@@ -133,6 +133,15 @@ SG/4 says Primtive precision vs Storage precision
 `datLen` is called but in some cases seemingly as an alias
 for `datClen`.
 
+### Chunking and dataset creation
+
+HDS allows primitives to be reshaped but HDF5 only allows that
+if you have specified the maximum size in advance. For now
+H5S_UNLIMITED is used as the maximum size but this requires that
+we define chunking. In the absence of any ability for the HDS API
+to provide guidance the library currently chunks based on the size
+of the array being created.
+
 ### datRenam
 
 Need to test whether `datRenam` or `datMove` break locators
