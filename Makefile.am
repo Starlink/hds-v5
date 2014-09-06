@@ -85,6 +85,7 @@ C_ROUTINES = \
 PUBLIC_C_ROUTINES = \
 datAnnul.c \
 datCctyp.c \
+datCell.c \
 datClen.c \
 datClone.c \
 datCopy.c \
