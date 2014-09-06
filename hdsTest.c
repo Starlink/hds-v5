@@ -67,6 +67,8 @@
 #include <inttypes.h>
 #include <string.h>
 
+static void traceme (const HDSLoc * loc, const char * expected, int explev,
+                     int *status);
 static void cmpstrings( const char * teststr, const char * expectedstr, int *status );
 static void cmpszints( size_t result, size_t expected, int *status );
 static void cmpprec ( const HDSLoc * loc1, const char * name, int * status );
@@ -301,20 +303,7 @@ int main (void) {
   /* Verify name */
   datName( loc2, namestr, &status );
   cmpstrings( namestr, "TESTI64", &status );
-  {
-    char path_str[1024];
-    char file_str[2048];
-    int nlev;
-    hdsTrace( loc2, &nlev, path_str, file_str,
-              &status, sizeof(path_str),
-              sizeof(file_str));
-    if (status == SAI__OK) {
-      printf("File: '%s' Path: '%s' Level=%d\n", file_str,
-             path_str, nlev);
-    }
-    cmpstrings( path_str, "HDS_TEST.TESTI64", &status);
-    cmpszints( nlev, 2, &status);
-  }
+  traceme( loc2, "HDS_TEST.TESTI64", 2, &status );
 
   if (status == SAI__OK) {
     /* Do not use MERS in test. We create an error message
@@ -618,4 +607,20 @@ static void cmpprec ( const HDSLoc * loc1, const char * name, int * status ) {
       *status = DAT__FATAL;
       printf("%s precision: %zu length: %zu\n", name, compprec, complen);
     }
+}
+
+static void traceme (const HDSLoc * loc, const char * expected, int explev,
+                     int *status) {
+  char path_str[1024];
+  char file_str[2048];
+  int nlev;
+  hdsTrace( loc, &nlev, path_str, file_str,
+            status, sizeof(path_str),
+            sizeof(file_str));
+  if (*status == SAI__OK) {
+    printf("File: '%s' Path: '%s' Level = %d\n", file_str,
+           path_str, nlev);
+  }
+  if (expected) cmpstrings( path_str, expected, &status);
+  if (explev > 0) cmpszints( nlev, 2, &status);
 }
