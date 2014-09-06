@@ -215,3 +215,7 @@ dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
 
 char *
 dat1GetFullName( hid_t objid, int asfile, ssize_t * namlen, int *status);
+
+void
+dat1Coords2CellName( int ndim, const hsize_t coords[], char * cellname,
+                     size_t cellnamelen, int * status );

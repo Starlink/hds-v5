@@ -55,6 +55,8 @@
 *        Initial version
 *     2014-09-04 (TIMJ):
 *        Unlimited dimensions.
+*     2014-09-05 (TIMJ):
+*        Add arrays of structures
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -104,12 +106,17 @@
 #include "hdf5.h"
 #include "hdf5_hl.h"
 #include "ems.h"
+#include "star/one.h"
+#include "prm_par.h"
 
 #include "hds1.h"
 #include "dat1.h"
 #include "hds.h"
 #include "dat_err.h"
 #include "sae_par.h"
+
+static void dat1index2coords ( size_t idx, int ndim, hsize_t arraydims[DAT__MXDIM],
+                               hsize_t coords[DAT__MXDIM], int *status );
 
 HDSLoc *
 dat1New( const HDSLoc    *locator,
@@ -208,23 +215,60 @@ dat1New( const HDSLoc    *locator,
 
   } else {
     /* Create a group */
-    if (ndim != 0) {
-      if (*status == SAI__OK) {
-        *status = DAT__DIMIN;
-        emsRep("dat1New_3", "Can not support arrays of structures at this time",
-               status );
+
+    CALLHDF( group_id,
+             H5Gcreate2(place, cleanname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
+             DAT__HDF5E,
+             emsRepf("dat1New_4", "Error creating structure/group '%s'", status, cleanname)
+             );
+
+    /* Actual data type of the structure/group must be stored in an attribute */
+    CALLHDFQ( H5LTset_attribute_string( group_id, ".", "HDSTYPE", groupstr ) );
+
+    /* Also store the number of dimensions */
+    CALLHDFQ( H5LTset_attribute_int( group_id, ".", "HDSDIMS", &ndim, 1 ) );
+
+    if (ndim > 0) {
+      /* HDF5 can not define an array of structures so we create a collection
+         of groups below the parent group. */
+      int i;
+      size_t ngroups = 1;
+      size_t n;
+
+      /* Structures will always be accessed by their coordinates
+         (3,2) or (4) or (1,3,2) etc. It makes sense therefore to
+         simply name our structures such that these coordinates
+         are embedded directly in the name. This has some advantages:
+         - We know how to trivially map from the requested coordinate
+           to a group.
+         - When the name is requested (e.g. hdsTrace) we already
+           know that ROOT.RECORDS.HDSCELL(3,2).SOMEINT will have an
+           effective trace of ROOT.RECORDS(3,2).SOMEINT [simply remove
+           the ".HDSCELL(3,2)" from the full path.
+      */
+
+      for (i = 0; i < ndim; i++) {
+        ngroups *= h5dims[i];
       }
-      goto CLEANUP;
-    } else {
 
-      CALLHDF( group_id,
-               H5Gcreate2(place, cleanname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
-               DAT__HDF5E,
-               emsRepf("dat1New_4", "Error creating structure/group '%s'", status, cleanname)
-               );
+      for (n = 1; n <= ngroups; n++) {
+        hid_t cellgroup_id = 0;
+        char cellname[128];
+        hsize_t coords[DAT__MXDIM];
 
-      /* Actual data type of the structure/group must be stored in an attribute */
-      CALLHDFQ( H5LTset_attribute_string( group_id, ".", "HDSTYPE", groupstr ) );
+        dat1index2coords(n, ndim, h5dims, coords, status );
+        dat1Coords2CellName( ndim, coords, cellname, sizeof(cellname), status );
+
+        printf("Creating cell group %s\n", cellname );
+        CALLHDF( cellgroup_id,
+                 H5Gcreate2(group_id, cellname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
+                 DAT__HDF5E,
+                 emsRepf("dat1New_4", "Error creating structure/group '%s'", status, cleanname)
+                 );
+
+        /* Actual data type of the structure/group must be stored in an attribute */
+        CALLHDFQ( H5LTset_attribute_string( cellgroup_id, ".", "HDSTYPE", groupstr ) );
+      }
     }
   }
 
@@ -249,4 +293,56 @@ dat1New( const HDSLoc    *locator,
     thisloc = dat1FreeLoc(thisloc, status);
   }
   return NULL;
+}
+
+/*
+  Given a 1-based index, and the dimensions of the N-D array,
+  return the 1-based N-D coordinates. For example, in a 3-D
+  array of dimensions (4,3,2), index 19 is element (3,2,2)
+  and index 6 is (2,2,1).
+*/
+
+
+static void dat1index2coords ( size_t idx, int ndim, hsize_t arraydims[DAT__MXDIM],
+                               hsize_t coords[DAT__MXDIM], int *status ) {
+
+  int curdim;
+  int prevdim;
+
+  if (*status != SAI__OK) return;
+
+  /*
+    Loop over one fewer dimensions than we actually have
+    subtracting the biggest dimensions from idx as we go.
+    The final coordinate value is simply the remainder
+    when we finish looping
+  */
+
+  for (curdim = 1; curdim < ndim; curdim++) {
+    size_t intdiv;
+    size_t elems_prior = 1;
+    /* Calculate how many elements are covered by full
+       earlier dimensions */
+    for (prevdim = 1; prevdim <= (ndim-curdim); prevdim++) {
+      elems_prior *= arraydims[prevdim-1]; /* zero based lookup */
+    }
+
+    /* Calculate the coordinate for the current dim by dividing
+       by the number of elements prior using integer division. Need to
+       subtract one from the result for 1-based counting. */
+    intdiv = (idx-1) / elems_prior;
+
+    /* Store the coordinate, starting from the end. The +1 is
+       for 1-based counting. */
+    coords[ndim-curdim] = intdiv + 1;
+
+    /* And subtract all those elements from the supplied index and go
+       round again */
+    idx -= intdiv * elems_prior;
+
+  }
+
+  /* The final value for idx is the final coordinate value */
+  coords[0] = idx;
+
 }

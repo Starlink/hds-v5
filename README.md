@@ -157,19 +157,28 @@ will have to be done as
 
 ```
   /HISTORY
-    Attr:TYPE=NDF
+    Attr:TYPE=HISTORY
       /CREATED
       /CURRENT_RECORD
       /RECORDS
         Attr:TYPE=HIST_REC
         Attr:ISARRAY=1
-        1
+        HDSCELL(1)
            Attr:TYPE=HIST_REC
            /DATE
-        2
+        HDSCELL(2)
            Attr:TYPE=HIST_REC
            /DATE
 ```
+
+We name the cell with its coordinates included to make it easy for
+datCell to select the correct group simply by converting the
+coordinates to (a,b). It also means that hdsTrace can easily be
+modified to handle the presence of the group in the hierarchy.
+If the name looks like /HISTORY/RECORDS/HDSCELL(5) hdsTrace
+can easily convert that to the syntactically correct
+.HISTORY.RECORDS(5) by removing all occurrences of "/HDSCELL".
+
 
 ## TO DO
 
