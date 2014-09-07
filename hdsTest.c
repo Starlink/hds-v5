@@ -162,6 +162,34 @@ int main (void) {
 
   datAnnul( &loc2, &status );
 
+  /* Now create an array of structures */
+  /* Create structure array */
+  {
+    hdsdim histdim[] = { 5, 2 };
+    hdsdim subs[] = { 3, 2 };
+    char namestr[DAT__SZNAM+1];
+    char opstr[2048];
+    HDSLoc * loc4 = NULL;
+    datNew( loc1, "RECORDS", "HIST_REC", 2, histdim, &status );
+    datFind( loc1, "RECORDS", &loc2, &status );
+    datCell( loc2, 2, subs, &loc3, &status );
+    datNew0I( loc3, "INTINCELL", &status );
+    datFind( loc3, "INTINCELL", &loc4, &status );
+    datName( loc2, namestr, &status );
+    cmpstrings( namestr, "RECORDS", &status );
+    datName( loc3, namestr, &status );
+    cmpstrings( namestr, "RECORDS(3,2)", &status );
+    datRef( loc2, opstr, sizeof(opstr), &status);
+    if (status == SAI__OK) printf("datRef structure array: %s\n", opstr);
+    datRef( loc3, opstr, sizeof(opstr), &status);
+    if (status == SAI__OK) printf("datRef cell: %s\n", opstr);
+    traceme(loc3, "HDS_TEST.RECORDS(3,2)", 2, &status);
+    traceme(loc4, "HDS_TEST.RECORDS(3,2).INTINCELL", 3, &status);
+    datAnnul( &loc4, &status );
+    datAnnul( &loc3, &status );
+    datAnnul( &loc2, &status );
+  }
+
   /* Now check the type of the root group */
   datType( loc1, typestr, &status );
   cmpstrings( typestr, "NDF", &status );
