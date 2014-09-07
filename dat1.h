@@ -118,6 +118,8 @@ typedef enum {
 /* Internal Constants */
 #define DAT__MXCHR 0xffff        /* Max characters in a character data type */
 
+#define DAT__CELLNAME "HDSCELL"  /* Prefix to use for arrays of structures */
+
 
 /* Private definition of the HDS locator struct */
 typedef struct LOC {

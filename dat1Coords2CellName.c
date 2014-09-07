@@ -103,7 +103,7 @@ dat1Coords2CellName( int ndim, const hsize_t coords[], char * cellname,
                      size_t cellnamelen, int * status ) {
 
   int i;
-  const char nameroot[] = "HDSCELL";
+  const char nameroot[] = DAT__CELLNAME;
 
   if (*status != SAI__OK) return;
 
