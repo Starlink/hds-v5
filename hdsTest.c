@@ -622,5 +622,5 @@ static void traceme (const HDSLoc * loc, const char * expected, int explev,
            path_str, nlev);
   }
   if (expected) cmpstrings( path_str, expected, status);
-  if (explev > 0) cmpszints( nlev, 2, status);
+  if (explev > 0) cmpszints( nlev, explev, status);
 }
