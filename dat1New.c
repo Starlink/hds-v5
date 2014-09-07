@@ -259,7 +259,6 @@ dat1New( const HDSLoc    *locator,
         dat1index2coords(n, ndim, h5dims, coords, status );
         dat1Coords2CellName( ndim, coords, cellname, sizeof(cellname), status );
 
-        printf("Creating cell group %s\n", cellname );
         CALLHDF( cellgroup_id,
                  H5Gcreate2(group_id, cellname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
                  DAT__HDF5E,
