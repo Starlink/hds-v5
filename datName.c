@@ -79,6 +79,7 @@
 */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "hdf5.h"
 #include "hdf5_hl.h"
@@ -101,6 +102,7 @@ datName(const HDSLoc *locator,
   hid_t objid;
   ssize_t lenstr;
   char * tempstr = NULL;
+  char * cleanstr = NULL;
 
   if (*status != SAI__OK) return *status;
 
@@ -110,6 +112,18 @@ datName(const HDSLoc *locator,
   /* Get the full name */
   tempstr = dat1GetFullName( objid, 0, &lenstr, status );
 
+  /* Handle the presence of a HDF5 array structure path
+     that needs to be converted to HDS hierarchy */
+  cleanstr = dat1FixNameCell( tempstr, status );
+
+  if (cleanstr) {
+    /* update the string length */
+    lenstr = strlen(cleanstr);
+  } else {
+    /* just copy the pointer, will not free it later */
+    cleanstr = tempstr;
+  }
+
   /* Now walk through the string backwards until we find the
      "/" character indicating the parent group */
   if (*status == SAI__OK) {
@@ -117,17 +131,18 @@ datName(const HDSLoc *locator,
     ssize_t startpos = 0; /* whole string as default */
     for (i = 0; i <= lenstr; i++) {
       size_t iposn = lenstr - i;
-      if ( tempstr[iposn] == '/' ) {
+      if ( cleanstr[iposn] == '/' ) {
         startpos = iposn + 1; /* want the next character */
         break;
       }
     }
 
     /* Now copy what we need */
-    one_strlcpy( name_str, &(tempstr[startpos]), DAT__SZNAM+1, status );
+    one_strlcpy( name_str, &(cleanstr[startpos]), DAT__SZNAM+1, status );
 
   }
 
+  if (tempstr != cleanstr) MEM_FREE(cleanstr);
   if (tempstr) MEM_FREE(tempstr);
 
   if (*status != SAI__OK) {

@@ -154,6 +154,7 @@ int hdsTrace(const HDSLoc *locator, int  *nlev, char *path_str,
 static void objid_to_name ( hid_t objid, int asfile, char * buffer, size_t buflen,
                             int *status) {
   char *tempstr = NULL;
+  char *cleanstr = NULL;
   ssize_t lenstr = 0;
   size_t iposn = 0;
 
@@ -161,14 +162,20 @@ static void objid_to_name ( hid_t objid, int asfile, char * buffer, size_t bufle
 
   tempstr = dat1GetFullName( objid, asfile, NULL, status );
 
+  /* Handle the presence of a HDF5 array structure path
+     that needs to be converted to HDS hierarchy */
+  if (!asfile) cleanstr = dat1FixNameCell( tempstr, status );
+  if (!cleanstr) cleanstr = tempstr;
+
   /* and copy it into the supplied buffer.
      For paths we start at the second character as we do not
      want the leading "." (aka "/" root).
    */
   iposn = (asfile ? 0 : 1);
-  one_strlcpy( buffer, &(tempstr[iposn]), buflen, status );
+  one_strlcpy( buffer, &(cleanstr[iposn]), buflen, status );
 
  CLEANUP:
+  if (cleanstr != tempstr) MEM_FREE(cleanstr);
   if (tempstr) MEM_FREE(tempstr);
 
   return;
