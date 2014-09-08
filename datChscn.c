@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     
+*     datChscn
 
 *  Purpose:
-*     
+*     Check an HDS component name for standard form
 
 *  Language:
 *     Starlink ANSI C
@@ -13,21 +13,28 @@
 *     Library routine
 
 *  Invocation:
-*     (  int * status );
+*     datChscn( const char * name, int * status );
 
 *  Arguments:
+*     name = const char * (Given)
+*        The name to be checked.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-
+*     The routine checks that the name of an HDS component has a
+*     standard form and reports an error if it does not. A standard
+*     name must be no more than DAT__SZNAM characters long, must begin
+*     with an alphabetic character and continue with alphanumeric
+*     characters (including underscore) only.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
 *  Notes:
-*     
+*     - Uses status to determine whether a name is valid and this
+*       must be annulled before proceeding.
 
 *  History:
 *     2014-09-08 (TIMJ):
