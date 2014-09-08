@@ -102,13 +102,13 @@ datPutVC( const HDSLoc * locator, size_t nval, const char *values[], int * statu
   if (*status != SAI__OK) return *status;
 
   /* Vectorize */
-  //  datVec( locator, &vecloc, status );
-  vecloc = locator;
+  datVec( locator, &vecloc, status );
+
   /* Store the character data */
   datPut1C( vecloc, nval, values, status );
 
   /* Annul the vectorized locator */
-  //  datAnnul( &vecloc, status );
+  datAnnul( &vecloc, status );
 
   return *status;
 }

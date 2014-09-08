@@ -428,10 +428,9 @@ datPutVD( const HDSLoc * locator,
 	  const double values[],
 	  int *status ) {
   HDSLoc *vec = NULL;
-  //datVec( locator, &vec, status );
-  vec = locator;
+  datVec( locator, &vec, status );
   datPut1D( vec, nval, values, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }
 
@@ -445,10 +444,9 @@ datPutVI( const HDSLoc * locator,
 	  const int values[],
 	  int *status ) {
   HDSLoc *vec = NULL;
-  //datVec( locator, &vec, status );
-  vec = locator;
+  datVec( locator, &vec, status );
   datPut1I( vec, nval, values, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }
 
@@ -462,10 +460,9 @@ datPutVK( const HDSLoc * locator,
 	    const int64_t values[],
 	    int *status ) {
   HDSLoc *vec = NULL;
-  //  datVec( locator, &vec, status );
-  vec = locator;
+  datVec( locator, &vec, status );
   datPut1K( vec, nval, values, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }
 
@@ -479,10 +476,9 @@ datPutVR( const HDSLoc * locator,
 	  const float values[],
 	  int *status ) {
   HDSLoc *vec = NULL;
-  //datVec( locator, &vec, status );
-  vec = locator;
+  datVec( locator, &vec, status );
   datPut1R( vec, nval, values, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }
 
@@ -496,9 +492,8 @@ datPutVL( const HDSLoc * locator,
 	  const int values[],
 	  int *status ) {
   HDSLoc *vec = NULL;
-  //datVec( locator, &vec, status );
-  vec = locator;
+  datVec( locator, &vec, status );
   datPut1L( vec, nval, values, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }

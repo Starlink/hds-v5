@@ -363,10 +363,9 @@ datGetVD( const HDSLoc * locator,
 	  int * status ) {
   HDSLoc * vec = NULL;
   if (*status != SAI__OK) return *status;
-  //datVec(locator, &vec, status );
-  vec = locator;
+  datVec(locator, &vec, status );
   datGet1D( vec, maxval, values, actval, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }
 /*==========================================*/
@@ -381,10 +380,9 @@ datGetVI( const HDSLoc * locator,
 	  int * status ) {
   HDSLoc * vec = NULL;
   if (*status != SAI__OK) return *status;
-  //datVec(locator, &vec, status );
-  vec = locator;
+  datVec(locator, &vec, status );
   datGet1I( vec, maxval, values, actval, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }
 
@@ -400,10 +398,9 @@ datGetVK( const HDSLoc * locator,
 	    int * status ) {
   HDSLoc * vec = NULL;
   if (*status != SAI__OK) return *status;
-  //datVec(locator, &vec, status );
-  vec = locator;
+  datVec(locator, &vec, status );
   datGet1K( vec, maxval, values, actval, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }
 
@@ -419,10 +416,9 @@ datGetVR( const HDSLoc * locator,
 	  int * status ) {
   HDSLoc * vec = NULL;
   if (*status != SAI__OK) return *status;
-  //datVec(locator, &vec, status );
-  vec = locator;
+  datVec(locator, &vec, status );
   datGet1R( vec, maxval, values, actval, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }
 
@@ -438,9 +434,8 @@ datGetVL( const HDSLoc * locator,
 	  int * status ) {
   HDSLoc * vec = NULL;
   if (*status != SAI__OK) return *status;
-  //datVec(locator, &vec, status );
-  vec = locator;
+  datVec(locator, &vec, status );
   datGet1L( vec, maxval, values, actval, status );
-  //datAnnul( &vec, status );
+  datAnnul( &vec, status );
   return *status;
 }

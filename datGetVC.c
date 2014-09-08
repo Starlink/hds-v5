@@ -132,11 +132,9 @@ datGetVC( const HDSLoc * locator,  size_t maxval, size_t bufsize, char *buffer,
 
   if (*status != SAI__OK) return *status;
 
-  //datVec( locator, &vecLoc, status );
-  vecLoc = locator;
+  datVec( locator, &vecLoc, status );
   datGet1C( vecLoc, maxval, bufsize, buffer, pntrs, actval, status );
-
-  //  datAnnul( &vecLoc, status );
+  datAnnul( &vecLoc, status);
 
   return *status;
 }
