@@ -118,7 +118,10 @@ typedef enum {
 /* Internal Constants */
 #define DAT__MXCHR 0xffff        /* Max characters in a character data type */
 
-#define DAT__CELLNAME "HDSCELL"  /* Prefix to use for arrays of structures */
+ /* Prefix to use for arrays of structures. We deliberately make it longer
+    DAT__SZNAM and more verbose to make it impossible to be present by
+    chance from the user side. */
+#define DAT__CELLNAME "ARRAY_OF_STRUCTURES_CELL"
 
 
 /* Private definition of the HDS locator struct */
