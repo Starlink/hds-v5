@@ -90,10 +90,12 @@ datChscn.c \
 datClen.c \
 datClone.c \
 datCopy.c \
+datExportFloc.c \
 datFind.c \
 datGet.c \
 datGet1C.c \
 datGetVC.c \
+datImportFloc.c \
 datLen.c \
 datMap.c \
 datMapN.c \
@@ -137,6 +139,7 @@ dat1FreeLoc.c \
 dat1GetFullName.c \
 dat1H5EtoEMS.c \
 dat1ImportDims.c \
+dat1ImportFloc.c \
 dat1InitHDF5.c \
 dat1IsStructure.c \
 dat1New.c \

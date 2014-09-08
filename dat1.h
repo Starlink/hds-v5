@@ -110,9 +110,7 @@ typedef enum {
 #define DAT__NOWLD 0             /* Null wild-card search context           */
 #define DAT__ROOT  "<ROOT LOCATOR>  "/* Root locator value                  */
 #define DAT__SZGRP 15            /* Size of group name                      */
-#define DAT__SZLOC ( ( 15 > (int) sizeof( struct LOC ) ) ? \
-                     15 : (int) sizeof( struct LOC ) )
-                                 /* Size of locator string                  */
+#define DAT__SZLOC 16            /* Size of Fortran locator string          */
 #define DAT__SZMOD 15            /* Size of access mode string              */
 #define DAT__SZNAM 15            /* Size of object name                     */
 #define DAT__SZTYP 15            /* Size of type string                     */
@@ -230,6 +228,13 @@ dat1Coords2CellName( int ndim, const hsize_t coords[], char * cellname,
                      size_t cellnamelen, int * status );
 
 char * dat1FixNameCell( const char * instr, int * status );
+
+HDSLoc *
+dat1ImportFloc ( const char flocator[DAT__SZLOC], int loc_length, int * status);
+
+/* Legacy API */
+int
+dat1_import_floc( const char flocator[DAT__SZLOC], int loc_length, HDSLoc * clocator, int * status);
 
 /* DAT1_H_INCLUDED */
 #endif
