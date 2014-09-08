@@ -96,6 +96,7 @@ datGet1C.c \
 datGetVC.c \
 datLen.c \
 datMap.c \
+datMapN.c \
 datMove.c \
 datMsg.c \
 datName.c \
