@@ -118,6 +118,7 @@ datStruc.c \
 datThere.c \
 datType.c \
 datUnmap.c \
+datVec.c \
 hdsNew.c \
 hdsOpen.c \
 hdsTrace.c \
