@@ -1,3 +1,7 @@
+
+#ifndef DAT1_H_INCLUDED
+#define DAT1_H_INCLUDED
+
 /*
 *+
 *  Name:
@@ -226,3 +230,6 @@ dat1Coords2CellName( int ndim, const hsize_t coords[], char * cellname,
                      size_t cellnamelen, int * status );
 
 char * dat1FixNameCell( const char * instr, int * status );
+
+/* DAT1_H_INCLUDED */
+#endif
