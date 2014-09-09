@@ -125,7 +125,6 @@ typedef enum {
     chance from the user side. */
 #define DAT__CELLNAME "ARRAY_OF_STRUCTURES_CELL"
 
-
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
   void *pntr;       /* Pointer to memory mapped data array [datMap only] */
