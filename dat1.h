@@ -224,7 +224,7 @@ char *
 dat1GetFullName( hid_t objid, int asfile, ssize_t * namlen, int *status);
 
 void
-dat1Coords2CellName( int ndim, const hsize_t coords[], char * cellname,
+dat1Coords2CellName( int ndim, const hdsdim coords[], char * cellname,
                      size_t cellnamelen, int * status );
 
 char * dat1FixNameCell( const char * instr, int * status );
