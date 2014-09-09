@@ -156,18 +156,8 @@ dat1ImportFloc ( const char flocator[DAT__SZLOC], int loc_length, int * status) 
     }
   }
 
-  memmove( flocstr, flocator, DAT__SZLOC);
-
   /* Do the cast */
   clocator = (HDSLoc *)ptr_as_long;
   return clocator;
 }
 
-int
-dat1_import_floc( const char flocator[DAT__SZLOC], int loc_length, HDSLoc * clocator, int * status) {
-  HDSLoc * thisloc;
-
-  thisloc = dat1ImportFloc( flocator, loc_length, status );
-  if (thisloc) memmove( clocator, thisloc, sizeof(*thisloc));
-  return *status;
-}

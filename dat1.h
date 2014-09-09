@@ -231,9 +231,5 @@ char * dat1FixNameCell( const char * instr, int * status );
 HDSLoc *
 dat1ImportFloc ( const char flocator[DAT__SZLOC], int loc_length, int * status);
 
-/* Legacy API */
-int
-dat1_import_floc( const char flocator[DAT__SZLOC], int loc_length, HDSLoc * clocator, int * status);
-
 /* DAT1_H_INCLUDED */
 #endif

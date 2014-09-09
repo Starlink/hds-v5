@@ -53,8 +53,8 @@
 *    wrapping Fortran layers from C. "Export" means to export a native
 *    C locator to Fortran.
 *    - There is no Fortran eqiuvalent to this routine.
-*    - This routine differs from the HDS equivalent in that a pointer to
-*    a clone of the C locator is stored in the Fortran string buffer and not the contents
+*    - This routine differs from the HDS equivalent in that the address
+*    of the supplied pointer is stored in the Fortran string buffer and not the contents
 *    of the struct. This is done to constrain the required size of the locator
 *    in Fortran to allow this library to be used as a drop in replacement for
 *    HDS without requiring a recompile.
@@ -125,8 +125,6 @@ int hds_gl_status = 0;
 
 void datExportFloc ( HDSLoc **clocator, int free, int loc_length, char flocator[DAT__SZLOC], int * status) {
 
-  HDSLoc * clonedloc = NULL;
-
   /* Validate the locator length */
   if (*status == SAI__OK && loc_length != DAT__SZLOC ) {
     *status = DAT__LOCIN;
@@ -139,23 +137,24 @@ void datExportFloc ( HDSLoc **clocator, int free, int loc_length, char flocator[
   if ( *status == SAI__OK && *clocator != NULL ) {
 
     /* We export from C by storing the pointer of the C struct in the
-       Fortran character buffer. If we are being told to free the C version
-       we can either lie about it (just assign the input C locator to NULL)
-       or we can datClone it before we store the pointer in the Fortran
-       and annul the supplied locator. To be consistent with the way normal
-       HDS works, a datClone would be most compatible (the thing stored
-       in Fortran would then be distinct from the thing we had in C). */
-    datClone( *clocator, &clonedloc, status );
+       Fortran character buffer. We can not store a clone in the Fortran
+       locator because clones are documented to not clone mapped status
+       and DAT_MAP / DAT_UNMAP will fail for clones. We just store the
+       supplied locator and null out the C version if we are being requested
+       to free it. Note that if we free=false the caller should not then
+       annul the locator as that would mess up the Fortran side. If the current
+       scheme does not work, we could try assigning the clone to the caller and
+       the original to the fortran locator but this requires some thought. */
 
-    one_snprintf(flocator, loc_length, "%p", status, clonedloc );
+    one_snprintf(flocator, loc_length, "%p", status, *clocator );
 
   } else {
     strncpy( flocator, DAT__NOLOC, DAT__SZLOC );
   }
 
-  /* We are allowed to free the supplied locator on request
-     because the Fortran version is a clone */
-  if (free) datAnnul(clocator, status);
+  /* Null out the caller if requested. Do not annul as we have stored
+     the original pointer in the Fortran layer */
+  if (free) *clocator = NULL;
 
   return;
 }
