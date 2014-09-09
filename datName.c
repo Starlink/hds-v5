@@ -86,6 +86,7 @@
 
 #include "star/one.h"
 #include "ems.h"
+#include "star/util.h"
 
 #include "hds1.h"
 #include "dat1.h"
@@ -103,6 +104,10 @@ datName(const HDSLoc *locator,
   ssize_t lenstr;
   char * tempstr = NULL;
   char * cleanstr = NULL;
+
+  /* Store something in there as a placeholder in case
+     something goes wrong */
+  star_strlcpy( name_str, "<<ERROR>>", DAT__SZNAM+1 );
 
   if (*status != SAI__OK) return *status;
 
