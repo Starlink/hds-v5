@@ -115,8 +115,8 @@
 #include "dat_err.h"
 #include "sae_par.h"
 
-static void dat1index2coords ( size_t idx, int ndim, hsize_t arraydims[DAT__MXDIM],
-                               hsize_t coords[DAT__MXDIM], int *status );
+static void dat1index2coords ( size_t idx, int ndim, hdsdim arraydims[DAT__MXDIM],
+                               hdsdim coords[DAT__MXDIM], int *status );
 
 HDSLoc *
 dat1New( const HDSLoc    *locator,
@@ -254,9 +254,10 @@ dat1New( const HDSLoc    *locator,
       for (n = 1; n <= ngroups; n++) {
         hid_t cellgroup_id = 0;
         char cellname[128];
-        hsize_t coords[DAT__MXDIM];
+        hdsdim coords[DAT__MXDIM];
 
-        dat1index2coords(n, ndim, h5dims, coords, status );
+        /* Note we have to use the HDS dims (Fortran order) order for naming */
+        dat1index2coords(n, ndim, dims, coords, status );
         dat1Coords2CellName( ndim, coords, cellname, sizeof(cellname), status );
 
         CALLHDF( cellgroup_id,
@@ -302,8 +303,8 @@ dat1New( const HDSLoc    *locator,
 */
 
 
-static void dat1index2coords ( size_t idx, int ndim, hsize_t arraydims[DAT__MXDIM],
-                               hsize_t coords[DAT__MXDIM], int *status ) {
+static void dat1index2coords ( size_t idx, int ndim, hdsdim arraydims[DAT__MXDIM],
+                               hdsdim coords[DAT__MXDIM], int *status ) {
 
   int curdim;
   int prevdim;

@@ -13,13 +13,13 @@
 *     Library routine
 
 *  Invocation:
-*     void dat1Coords2CellName( int ndim, const hsize_t coords[], char * cellname,
+*     void dat1Coords2CellName( int ndim, const hdsdim coords[], char * cellname,
 *                               size_t cellnamelen, int * status );
 
 *  Arguments:
 *     ndim = int (Given)
 *        Number of dimensions in coords.
-*     coords = const hsize_t [] (Given)
+*     coords = const hdsdim [] (Given)
 *        Coordinates of the cell.
 *     cellname = char * (Returned)
 *        String buffer to receive the cell name
@@ -99,7 +99,7 @@
 #include "hds.h"
 
 void
-dat1Coords2CellName( int ndim, const hsize_t coords[], char * cellname,
+dat1Coords2CellName( int ndim, const hdsdim coords[], char * cellname,
                      size_t cellnamelen, int * status ) {
 
   int i;

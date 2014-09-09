@@ -137,7 +137,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
     }
 
     /* Calculate the relevant group name */
-    dat1Coords2CellName( ndim, h5subs, cellname, sizeof(cellname), status );
+    dat1Coords2CellName( ndim, subs, cellname, sizeof(cellname), status );
 
     CALLHDF(group_id,
             H5Gopen2( locator1->group_id, cellname, H5P_DEFAULT ),
