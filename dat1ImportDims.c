@@ -36,6 +36,8 @@
 
 *  Notes:
 *     - Does not assume that hdsdim and hsize_t are the same type.
+*     - Inverts the supplied dimensions as HDS uses Fortran order
+*       and HDF5 uses C order.
 
 *  History:
 *     2014-09-03 (TIMJ):
@@ -101,9 +103,10 @@ dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
   if (*status != SAI__OK) return;
   if (ndims == 0) return;
 
-  /* We may have to transpose these dimensions */
+  /* We have to transpose these dimensions */
   for (i=0; i<ndims; i++) {
-    h5dims[i] = hdsdims[i];
+    int oposn = ndims - 1 - i;
+    h5dims[oposn] = hdsdims[i];
   }
   return;
 }
