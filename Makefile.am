@@ -107,6 +107,7 @@ datNew.c \
 datParen.c \
 datPrec.c \
 datPrim.c \
+datPrmry.c \
 datPut.c \
 datPut1C.c \
 datPutVC.c \
