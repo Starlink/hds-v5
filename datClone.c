@@ -143,6 +143,8 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
              );
   }
 
+  /* Retain knowledge of vectorization */
+  clonedloc->vectorized = locator1->vectorized;
 
  CLEANUP:
   if (*status != SAI__OK) {

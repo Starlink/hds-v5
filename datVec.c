@@ -97,9 +97,26 @@
 
 int
 datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
+
+  size_t nelem;
+  *locator2 = NULL;
   if (*status != SAI__OK) return *status;
 
-  /* For now just return a clone */
+  /* Need the number of elements */
+  datSize( locator1, &nelem, status );
+
+  /* Clone to a new locator */
   datClone(locator1, locator2, status);
+
+  /* and update the vectorized flag with the number of elements */
+  (*locator2)->vectorized = nelem;
+
+  /* Technically we have to replace the dataspace with a subset
+     for primitive types. */
+
+
+  if (*status != SAI__OK) {
+    if (*locator2 != NULL) datAnnul(locator2, status);
+  }
   return *status;
 }

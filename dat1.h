@@ -129,6 +129,7 @@ typedef enum {
 typedef struct LOC {
   void *pntr;       /* Pointer to memory mapped data array [datMap only] */
   size_t bytesmapped; /* Number of bytes mapped into memory [datMap only] */
+  size_t vectorized;  /* if 0 not vectorized, else number of vectorized elements */
   hid_t file_id;    /* Set if this locator is associated with a root file */
   hid_t dataset_id; /* Set if this is a dataset "primitive type" */
   hid_t dataspace_id; /* Set if this is a primitive with dimensions */
