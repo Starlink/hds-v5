@@ -176,7 +176,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 
   isreg = cnfRegp( mapped );
   if (isreg == -1) {
-    /* Series internal error */
+    /* Serious internal error */
     *status = DAT__FILMP;
     emsRep("datMap_3", "Error registering a pointer for mapped data "
            " - internal CNF error", status );
