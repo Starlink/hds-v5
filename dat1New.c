@@ -115,7 +115,7 @@
 #include "dat_err.h"
 #include "sae_par.h"
 
-static void dat1index2coords ( size_t idx, int ndim, hdsdim arraydims[DAT__MXDIM],
+static void dat1index2coords ( size_t idx, int ndim, const hdsdim arraydims[DAT__MXDIM],
                                hdsdim coords[DAT__MXDIM], int *status );
 
 HDSLoc *
@@ -303,7 +303,7 @@ dat1New( const HDSLoc    *locator,
 */
 
 
-static void dat1index2coords ( size_t idx, int ndim, hdsdim arraydims[DAT__MXDIM],
+static void dat1index2coords ( size_t idx, int ndim, const hdsdim arraydims[DAT__MXDIM],
                                hdsdim coords[DAT__MXDIM], int *status ) {
 
   int curdim;
