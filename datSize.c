@@ -95,40 +95,22 @@ datSize(const HDSLoc *locator,
         size_t *size,
         int *status ) {
 
+  hdsdim objdims[DAT__MXDIM];
+  int ndims = 0;
+  int i = 0;
+  size_t nelem = 1;
+
   if (*status != SAI__OK) return *status;
 
-  if (! dat1IsStructure(locator, status)) {
-    int rank;
+  /* Do not duplicate code from datShape -- just call it and we know then
+     that it works for arrays of structures and for slices */
+  datShape( locator, DAT__MXDIM, objdims, &ndims, status );
 
-    /* start by looking at the rank */
-    CALLHDF( rank,
-             H5Sget_simple_extent_ndims( locator->dataspace_id ),
-             DAT__HDF5E,
-             emsRep("datSize_0", "datSize: Eror determining rank of component", status )
-             );
-
-    if (rank == 0) {
-      *size = 1;
-
-    } else {
-      hssize_t npoints;
-      CALLHDFE( hssize_t,
-                npoints,
-                H5Sget_simple_extent_npoints( locator->dataspace_id ),
-                DAT__OBJIN,
-                emsRep("datSize_1", "datSize: Error determining size of component", status)
-                );
-
-      /* we know that npoints is positive because the negative case is tracked in the macro */
-      *size = (size_t)npoints;
-
+  if (*status == SAI__OK) {
+    for (i=0; i<ndims; i++) {
+      nelem *= objdims[i];
     }
-  } else {
-    /* For now we assume that groups are always scalar */
-    *size = 1;
   }
-
-  /* Nothing to clean up but that is fine. We need this for the CALLHDF macro */
- CLEANUP:
+  *size = nelem;
   return *status;
 }
