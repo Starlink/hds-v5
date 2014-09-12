@@ -96,6 +96,7 @@ datGet.c \
 datGet1C.c \
 datGetVC.c \
 datImportFloc.c \
+datIndex.c \
 datLen.c \
 datMap.c \
 datMapN.c \
