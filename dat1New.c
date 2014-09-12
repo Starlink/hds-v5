@@ -226,7 +226,7 @@ dat1New( const HDSLoc    *locator,
     CALLHDFQ( H5LTset_attribute_string( group_id, ".", "HDSTYPE", groupstr ) );
 
     /* Also store the number of dimensions */
-    CALLHDFQ( H5LTset_attribute_int( group_id, ".", "HDSDIMS", &ndim, 1 ) );
+    CALLHDFQ( H5LTset_attribute_int( group_id, ".", "HDSNDIMS", &ndim, 1 ) );
 
     if (ndim > 0) {
       /* HDF5 can not define an array of structures so we create a collection
@@ -234,6 +234,17 @@ dat1New( const HDSLoc    *locator,
       int i;
       size_t ngroups = 1;
       size_t n;
+
+      /* Write dimensionality as an attribute */
+      if (*status == SAI__OK) {
+        long long groupdims[DAT__MXDIM];
+        for (i=0; i<ndim; i++) {
+          /* We store in HDS order */
+          groupdims[i] = dims[i];
+        }
+        CALLHDFQ( H5LTset_attribute_long_long( group_id, ".", "HDSDIMS",
+                                               groupdims, ndim ) );
+      }
 
       /* Structures will always be accessed by their coordinates
          (3,2) or (4) or (1,3,2) etc. It makes sense therefore to
