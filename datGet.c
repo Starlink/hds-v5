@@ -109,8 +109,12 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   char normtypestr[DAT__SZTYP+1];
   hsize_t h5dims[DAT__MXDIM];
   hid_t mem_dataspace_id = 0;
+  char namestr[DAT__SZNAM+1];
 
   if (*status != SAI__OK) return *status;
+
+  /* For error messages */
+  datName( locator, namestr, status);
 
   /* Convert the HDS data type to HDF5 data type */
   isprim = dau1CheckType( type_str, &h5type, normtypestr,
@@ -134,13 +138,20 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   CALLHDF( mem_dataspace_id,
            H5Screate_simple( ndim, h5dims, NULL),
            DAT__HDF5E,
-           emsRep("datGet_2", "Error allocating in-memory dataspace", status )
+           emsRepf("datGet_2", "datGet: Error allocating in-memory dataspace for object %s",
+                   status, namestr )
            );
 
-    CALLHDFQ( H5Dread( locator->dataset_id, h5type, mem_dataspace_id,
-                       locator->dataspace_id, H5P_DEFAULT, values ) );
+  CALLHDFQ( H5Dread( locator->dataset_id, h5type, mem_dataspace_id,
+                     locator->dataspace_id, H5P_DEFAULT, values ) );
 
  CLEANUP:
+
+  if (*status != SAI__OK) {
+    emsRepf("datGet_N", "datGet: Error reading data from primitive object %s",
+            status, namestr);
+  }
+
   if (h5type && typcreat) H5Tclose(h5type);
   if (mem_dataspace_id > 0) H5Sclose(mem_dataspace_id);
   return *status;
