@@ -105,34 +105,67 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
   hsize_t h5subs[DAT__MXDIM];
   HDSLoc * thisloc = NULL;
+  int isstruct = 0;
 
   if (*status != SAI__OK) return *status;
 
   /* Copy dimensions if appropriate */
   dat1ImportDims( ndim, subs, h5subs, status );
 
-  if (dat1IsStructure( locator1, status)) {
-    int groupdims = 0;
-    char cellname[128];
-    hid_t group_id = 0;
+  isstruct = dat1IsStructure( locator1, status );
 
-    /* Check the number of dimensions */
-    CALLHDFQ( H5LTget_attribute_int( locator1->group_id, ".", "HDSDIMS", &groupdims ) );
+  /* Validate dimensionality */
+  if (*status == SAI__OK) {
+    int objndims = 0;
+    hdsdim dims[DAT__MXDIM];
+    datShape( locator1, DAT__MXDIM, dims, &objndims, status );
 
-    if (groupdims != ndim) {
+    if (objndims == 0) {
+      if (*status == SAI__OK) {
+        *status = DAT__DIMIN;
+        emsRepf("datCell_41", "Can not use datCell for scalar %s "
+                "(possible programming error)", status,
+                (isstruct ? "group" : "primitive") );
+      }
+    }
+
+    if (objndims != ndim) {
       if (*status != SAI__OK) {
         *status = DAT__DIMIN;
         emsRepf("datCell_1", "datCell: Arguments have %d axes but locator refers to %d axes",
-                status, ndim, groupdims);
+                status, ndim, objndims);
       }
-      goto CLEANUP;
     }
+  }
 
-    if (groupdims == 0) {
-      if (*status == SAI__OK) {
-        *status = DAT__DIMIN;
-        emsRep("datCell_2", "Can not use datCell for scalar group "
-               "(possible programming error)", status );
+  if (*status != SAI__OK) return *status;
+
+
+  if (isstruct) {
+    char cellname[128];
+    hid_t group_id = 0;
+    int rank = 0;
+
+    if (locator1->vectorized > 0) {
+
+      /* If this locator is vectorized then the name will be incorrect
+         if we naively calculate the name. */
+      CALLHDFQ( H5LTget_attribute_int( locator1->group_id, ".", "HDSNDIMS", &rank ) );
+
+      if (rank == 0) {
+        /* So the group is really a scalar so we just need to clone the
+           input locator */
+        datClone( locator1, &thisloc, status );
+        goto CLEANUP;
+      } else if (rank > 1) {
+        /* Would need to map coordinates from vectorized index to
+           underlying dimensionality. */
+        if (*status == SAI__OK) {
+          *status = DAT__DIMIN;
+          emsRep("datCell_n", "Can not yet vectorize an N-D structure",
+                 status );
+          goto CLEANUP;
+        }
       }
     }
 
@@ -150,15 +183,11 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
     if (*status == SAI__OK) thisloc->group_id = group_id;
 
-
   } else {
-    /* Need to select a single element of the primitive */
-    /* Use datSlice when it is available */
-    if (*status == SAI__OK) {
-      *status = DAT__FATAL;
-      emsRep("datCell_1", "Can not yet use datCell to find single element in primitive",
-             status);
-    }
+
+    /* Just get a slice of one pixel */
+    datSlice( locator1, ndim, subs, subs, &thisloc, status );
+
   }
 
  CLEANUP:
