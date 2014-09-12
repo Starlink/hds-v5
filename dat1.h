@@ -236,5 +236,9 @@ void
 dat1EncodeSubscript( int ndim, const hdsdim lower[], const hdsdim upper[],
                      char *buf, size_t buflen, int *status );
 
+void
+dat1Index2Coords ( size_t idx, int ndim, const hdsdim arraydims[DAT__MXDIM],
+                   hdsdim coords[DAT__MXDIM], int *status );
+
 /* DAT1_H_INCLUDED */
 #endif

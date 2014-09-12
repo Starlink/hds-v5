@@ -115,9 +115,6 @@
 #include "dat_err.h"
 #include "sae_par.h"
 
-static void dat1index2coords ( size_t idx, int ndim, const hdsdim arraydims[DAT__MXDIM],
-                               hdsdim coords[DAT__MXDIM], int *status );
-
 HDSLoc *
 dat1New( const HDSLoc    *locator,
         const char      *name_str,
@@ -268,7 +265,7 @@ dat1New( const HDSLoc    *locator,
         hdsdim coords[DAT__MXDIM];
 
         /* Note we have to use the HDS dims (Fortran order) order for naming */
-        dat1index2coords(n, ndim, dims, coords, status );
+        dat1Index2Coords(n, ndim, dims, coords, status );
         dat1Coords2CellName( ndim, coords, cellname, sizeof(cellname), status );
 
         CALLHDF( cellgroup_id,
@@ -306,54 +303,3 @@ dat1New( const HDSLoc    *locator,
   return NULL;
 }
 
-/*
-  Given a 1-based index, and the dimensions of the N-D array,
-  return the 1-based N-D coordinates. For example, in a 3-D
-  array of dimensions (4,3,2), index 19 is element (3,2,2)
-  and index 6 is (2,2,1).
-*/
-
-
-static void dat1index2coords ( size_t idx, int ndim, const hdsdim arraydims[DAT__MXDIM],
-                               hdsdim coords[DAT__MXDIM], int *status ) {
-
-  int curdim;
-  int prevdim;
-
-  if (*status != SAI__OK) return;
-
-  /*
-    Loop over one fewer dimensions than we actually have
-    subtracting the biggest dimensions from idx as we go.
-    The final coordinate value is simply the remainder
-    when we finish looping
-  */
-
-  for (curdim = 1; curdim < ndim; curdim++) {
-    size_t intdiv;
-    size_t elems_prior = 1;
-    /* Calculate how many elements are covered by full
-       earlier dimensions */
-    for (prevdim = 1; prevdim <= (ndim-curdim); prevdim++) {
-      elems_prior *= arraydims[prevdim-1]; /* zero based lookup */
-    }
-
-    /* Calculate the coordinate for the current dim by dividing
-       by the number of elements prior using integer division. Need to
-       subtract one from the result for 1-based counting. */
-    intdiv = (idx-1) / elems_prior;
-
-    /* Store the coordinate, starting from the end. The +1 is
-       for 1-based counting. */
-    coords[ndim-curdim] = intdiv + 1;
-
-    /* And subtract all those elements from the supplied index and go
-       round again */
-    idx -= intdiv * elems_prior;
-
-  }
-
-  /* The final value for idx is the final coordinate value */
-  coords[0] = idx;
-
-}
