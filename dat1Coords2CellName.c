@@ -86,6 +86,8 @@
 *-
 */
 
+#include <string.h>
+
 #include "hdf5.h"
 #include "hdf5_hl.h"
 
@@ -104,22 +106,16 @@ dat1Coords2CellName( int ndim, const hdsdim coords[], char * cellname,
 
   int i;
   const char nameroot[] = DAT__CELLNAME;
+  size_t lenstr = 0;
 
   if (*status != SAI__OK) return;
 
   /* Now format the coordinates into the name, worrying
      about when to include the comma */
   one_strlcpy( cellname, nameroot, cellnamelen, status );
-  one_strlcat( cellname, "(", cellnamelen, status );
+  lenstr = strlen(cellname);
 
-  for (i=0; i<ndim; i++) {
-    char coordstr[VAL__SZK+1];
-    one_snprintf( coordstr, sizeof(coordstr), "%zu%s",
-                  status, (size_t)coords[i],
-                  (ndim-i==1 ? "" : ","));
-    one_strlcat( cellname, coordstr, cellnamelen, status );
-  }
-
-  one_strlcat( cellname, ")", cellnamelen, status );
+  dat1EncodeSubscript(ndim, coords, NULL, &(cellname[lenstr]),
+                      cellnamelen - lenstr, status );
 
 }
