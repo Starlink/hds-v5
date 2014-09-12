@@ -115,6 +115,7 @@ datRef.c \
 datRenam.c \
 datShape.c \
 datSize.c \
+datSlice.c \
 datStruc.c \
 datThere.c \
 datType.c \
