@@ -157,6 +157,7 @@ dau1CheckName.c \
 dau1CheckType.c
 
 F_C_ROUTINES = \
+fortran_interface.c \
 hdsDimC2F.c \
 hdsDimF2C.c
 
