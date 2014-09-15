@@ -80,7 +80,7 @@ PRIVATE_INCLUDES = \
 
 C_ROUTINES = \
 	$(PUBLIC_C_ROUTINES) \
-	$(PRIVATE_C_ROUTINES)
+	$(PRIVATE_C_ROUTINES) $(F_C_ROUTINES)
 
 PUBLIC_C_ROUTINES = \
 datAnnul.c \
@@ -155,6 +155,10 @@ dat1Type.c \
 dau1CheckFileName.c \
 dau1CheckName.c \
 dau1CheckType.c
+
+F_C_ROUTINES = \
+hdsDimC2F.c \
+hdsDimF2C.c
 
 DAT_PAR: dat_par_f$(EXEEXT)
 	./dat_par_f > DAT_PAR
