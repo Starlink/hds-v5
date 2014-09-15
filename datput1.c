@@ -173,7 +173,7 @@ int
 datPutL( const HDSLoc    *locator,
          int       ndim,
          const hdsdim dims[],
-         const int       values[],
+         const hdsbool_t values[],
          int       *status)
 {
 #undef context_name
@@ -397,7 +397,7 @@ datPut1R( const HDSLoc * locator,
 int
 datPut1L( const HDSLoc * locator,
 	  size_t nval,
-	  const int values[],
+	  const hdsbool_t values[],
 	  int * status ) {
   size_t size;
   hdsdim dim[1];
@@ -489,7 +489,7 @@ datPutVR( const HDSLoc * locator,
 int
 datPutVL( const HDSLoc * locator,
 	  size_t nval,
-	  const int values[],
+	  const hdsbool_t values[],
 	  int *status ) {
   HDSLoc *vec = NULL;
   datVec( locator, &vec, status );

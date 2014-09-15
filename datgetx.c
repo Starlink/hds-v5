@@ -155,7 +155,7 @@ int
 datGetL(const HDSLoc    *locator,
         int       ndim,
         const hdsdim dims[],
-        int       values[],
+        hdsbool_t       values[],
         int       *status)
 {
 #undef context_name
@@ -323,7 +323,7 @@ datGet1R( const HDSLoc * locator,
 int
 datGet1L( const HDSLoc * locator,
 	  size_t maxval,
-	  int values[],
+	  hdsbool_t values[],
 	  size_t *actval,
 	  int * status ) {
 
@@ -429,7 +429,7 @@ datGetVR( const HDSLoc * locator,
 int
 datGetVL( const HDSLoc * locator,
 	  size_t maxval,
-	  int values[],
+	  hdsbool_t values[],
 	  size_t *actval,
 	  int * status ) {
   HDSLoc * vec = NULL;

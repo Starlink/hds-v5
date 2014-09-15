@@ -179,7 +179,7 @@ int datPut0UW ( const HDSLoc * loc, unsigned short value, int * status ) {
   return *status;
 }
 
-int datPut0L ( const HDSLoc * loc, int value, int * status ) {
+int datPut0L ( const HDSLoc * loc, hdsbool_t value, int * status ) {
 
   int ndims = 0;
   hdsdim dim[] = { 0 };

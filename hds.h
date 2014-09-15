@@ -243,7 +243,7 @@ int
 datGetL(const HDSLoc    *locator,
         int       ndim,
         const hdsdim    dims[],
-        int       values[],
+        hdsbool_t values[],
         int       *status);
 
 /*===================================*/
@@ -311,7 +311,7 @@ datGet0UW( const HDSLoc * loc, unsigned short * value, int * status );
 /*=======================================*/
 
 int
-datGet0L( const HDSLoc * loc, int * value, int * status );
+datGet0L( const HDSLoc * loc, hdsbool_t * value, int * status );
 
 /*==================================*/
 /* DAT_GET1C - Read 1D string array */
@@ -399,7 +399,7 @@ datGet1R( const HDSLoc * locator,
 int
 datGet1L( const HDSLoc * locator,
 	  size_t maxval,
-	  int values[],
+	  hdsbool_t values[],
 	  size_t *actval,
 	  int * status );
 
@@ -468,7 +468,7 @@ datGetVR( const HDSLoc * locator,
 int
 datGetVL( const HDSLoc * locator,
 	  size_t maxval,
-	  int values[],
+	  hdsbool_t values[],
 	  size_t *actval,
 	  int * status );
 
@@ -975,7 +975,7 @@ int
 datPutL( const HDSLoc *locator,
          int       ndim,
          const hdsdim dims[],
-         const int values[],
+         const hdsbool_t values[],
          int       *status);
 
 /*==========================*/
@@ -1044,7 +1044,7 @@ datPut0UW( const HDSLoc * loc, unsigned short value, int * status );
 /*========================================*/
 
 int
-datPut0L( const HDSLoc * loc, int value, int * status );
+datPut0L( const HDSLoc * loc, hdsbool_t value, int * status );
 
 /*========================================*/
 /* datPut1C - Write 1D character array       */
@@ -1123,7 +1123,7 @@ datPut1R( const HDSLoc * loc,
 int
 datPut1L( const HDSLoc * loc,
 	  size_t nval,
-	  const int values[],
+	  const hdsbool_t values[],
 	  int * status );
 
 /*================================================*/
@@ -1173,7 +1173,7 @@ datPutVR( const HDSLoc * loc,
 int
 datPutVL( const HDSLoc * loc,
 	  size_t nval,
-	  const int values[],
+	  const hdsbool_t values[],
 	  int * status );
 
 /*================================================*/
