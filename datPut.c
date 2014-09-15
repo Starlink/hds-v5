@@ -110,6 +110,9 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   hsize_t h5dims[DAT__MXDIM];
   hid_t mem_dataspace_id = 0;
   char namestr[DAT__SZNAM+1];
+  hdstype_t intype = HDSTYPE_NONE;
+  hdstype_t outtype = HDSTYPE_NONE;
+  void * tmpvalues = NULL;
 
   if (*status != SAI__OK) return *status;
 
@@ -130,13 +133,58 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   if (!isprim) {
     if (*status == SAI__OK) {
       *status = DAT__TYPIN;
-      emsRepf("datPut_1", "datPut: Data type must be a primitive type and not '%s'",
-              status, normtypestr);
+      emsRepf("datPut_1", "datPut: Data type in %s must be a primitive type and not '%s'",
+              status, namestr, normtypestr);
     }
     goto CLEANUP;
   }
 
   if (*status != SAI__OK) goto CLEANUP;
+
+  /* Check data types and do conversion if required */
+  outtype = dat1Type( locator, status );
+  intype = dau1HdsType( h5type, status );
+
+  if ((outtype == HDSTYPE_CHAR && intype != HDSTYPE_CHAR) ||
+      (outtype != HDSTYPE_CHAR && intype == HDSTYPE_CHAR)) {
+    /* We need to do the conversion because HDF5 does not seem
+       to be able to convert numerical to string or string
+       to numerical types internally. HDS has always been able
+       to do so. */
+    size_t nbin = 0;
+    size_t nbout = 0;
+    size_t nbad = 0;
+    size_t nelem = 0;
+
+    /* Number of elements to convert */
+    datSize( locator, &nelem, status );
+
+    /* Number of bytes per element in the input type */
+    CALLHDF(nbin,
+            H5Tget_size( h5type ),
+            DAT__HDF5E,
+            emsRep("datPut_size", "datPut: Error obtaining size of input type",
+                   status)
+            );
+
+    /* Number of bytes per element in the output type */
+    datLen( locator, &nbout, status );
+
+    /* Create a buffer to receive the converted values */
+    tmpvalues = MEM_MALLOC( nelem * nbout );
+
+    dat1CvtChar( nelem, intype, nbin, outtype, nbout, values,
+                 tmpvalues, &nbad, status );
+
+    /* The type of the things we are writing has now changed
+       so we need to update that */
+    CALLHDF( h5type,
+             H5Dget_type( locator->dataset_id ),
+             DAT__HDF5E,
+             emsRep("datPut_type", "datPut: Error obtaining data type of native dataset", status)
+             );
+
+  }
 
   /* Copy dimensions if appropriate */
   dat1ImportDims( ndim, dims, h5dims, status );
@@ -149,12 +197,15 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
            );
 
   CALLHDFQ( H5Dwrite( locator->dataset_id, h5type, mem_dataspace_id,
-                      locator->dataspace_id, H5P_DEFAULT, values ) );
+                      locator->dataspace_id, H5P_DEFAULT,
+                      (tmpvalues ? tmpvalues : values )
+                      ) );
 
 
  CLEANUP:
   if (h5type && typcreat) H5Tclose(h5type);
   if (mem_dataspace_id > 0) H5Sclose(mem_dataspace_id);
+  if (tmpvalues) MEM_FREE(tmpvalues);
   if (*status != SAI__OK) {
     emsRepf("datPut_3", "datPut: Error writing data of type '%s' into primitive %s",
             status, normtypestr, namestr);

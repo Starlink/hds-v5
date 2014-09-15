@@ -120,6 +120,14 @@ typedef enum {
 /* Internal Constants */
 #define DAT__MXCHR 0xffff        /* Max characters in a character data type */
 
+/* Internal definitions of true and false */
+#define HDS_TRUE 1
+#define HDS_FALSE 0
+
+#define HDS_ISTRUE(X) ( X )
+#define HDS_ISFALSE(X) ( !( X ) )
+
+
  /* Prefix to use for arrays of structures. We deliberately make it longer
     DAT__SZNAM and more verbose to make it impossible to be present by
     chance from the user side. */
@@ -262,6 +270,11 @@ dau1HdsType( hid_t h5type, int * status );
 
 HdsTypeInfo *
 dat1TypeInfo( void );
+
+int
+dat1CvtChar( size_t nval, hdstype_t intype, size_t nbin,
+             hdstype_t outtype, size_t nbout, const void * imp, void * exp,
+             size_t *nbad, int * status );
 
 /* DAT1_H_INCLUDED */
 #endif

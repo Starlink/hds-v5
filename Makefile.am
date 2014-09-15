@@ -136,6 +136,7 @@ datput1.c
 PRIVATE_C_ROUTINES = \
 dat1AllocLoc.c \
 dat1Coords2CellName.c \
+dat1CvtChar.c \
 dat1DumpLoc.c \
 dat1EncodeSubscript.c \
 dat1ExportDims.c \
