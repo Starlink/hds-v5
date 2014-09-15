@@ -145,6 +145,7 @@ dat1GetFullName.c \
 dat1H5EtoEMS.c \
 dat1ImportDims.c \
 dat1ImportFloc.c \
+dat1Index2Coords.c \
 dat1InitHDF5.c \
 dat1IsStructure.c \
 dat1New.c \
