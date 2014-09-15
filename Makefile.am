@@ -152,9 +152,11 @@ dat1New.c \
 dat1RetrieveContainer.c \
 dat1RetrieveIdentifier.c \
 dat1Type.c \
+dat1TypeInfo.c \
 dau1CheckFileName.c \
 dau1CheckName.c \
-dau1CheckType.c
+dau1CheckType.c \
+dau1HdsType.c
 
 F_C_ROUTINES = \
 fortran_interface.c \

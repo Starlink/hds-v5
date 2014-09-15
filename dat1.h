@@ -240,5 +240,8 @@ void
 dat1Index2Coords ( size_t idx, int ndim, const hdsdim arraydims[DAT__MXDIM],
                    hdsdim coords[DAT__MXDIM], int *status );
 
+hdstype_t
+dau1HdsType( hid_t h5type, int * status );
+
 /* DAT1_H_INCLUDED */
 #endif
