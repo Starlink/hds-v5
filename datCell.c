@@ -145,6 +145,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
     char cellname[128];
     hid_t group_id = 0;
     int rank = 0;
+    hdsdim groupsub[DAT__MXDIM];
 
     if (locator1->vectorized > 0) {
 
@@ -158,20 +159,28 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
         datClone( locator1, &thisloc, status );
         goto CLEANUP;
       } else if (rank > 1) {
-        /* Would need to map coordinates from vectorized index to
-           underlying dimensionality. */
-        if (*status == SAI__OK) {
-          *status = DAT__DIMIN;
-          emsRep("datCell_n", "Can not yet vectorize an N-D structure",
-                 status );
-          goto CLEANUP;
+        /* Map vectorized index to underlying dimensionality */
+        int i;
+        long long llstructdims[DAT__MXDIM];
+        hdsdim structdims[DAT__MXDIM];
+        CALLHDFQ( H5LTget_attribute_long_long( locator1->group_id, ".", "HDSDIMS", llstructdims ) );
+        for (i=0; i<rank; i++) {
+          structdims[i] = llstructdims[i];
         }
+        dat1Index2Coords( subs[0], rank, structdims, groupsub, status );
+        ndim = rank;
+      }
+    } else {
+      int i;
+      /* Copy the subscripts to a new array so that we can deal with
+         the vectorized case above */
+      for (i=0; i<ndim; i++) {
+        groupsub[i] = subs[i];
       }
     }
 
     /* Calculate the relevant group name */
-    dat1Coords2CellName( ndim, subs, cellname, sizeof(cellname), status );
-
+    dat1Coords2CellName( ndim, groupsub, cellname, sizeof(cellname), status );
     CALLHDF(group_id,
             H5Gopen2( locator1->group_id, cellname, H5P_DEFAULT ),
             DAT__OBJIN,
