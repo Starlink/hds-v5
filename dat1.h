@@ -141,6 +141,23 @@ typedef struct LOC {
   char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */
 } HDSLoc;
 
+
+/* This structure contains information about data types.
+   Values are obtained by use dat1TypeInfo(). */
+typedef struct HdsTypeInfo {
+  double BADD;
+  int64_t BADK;
+  float BADR;
+  int BADI;
+  hdsbool_t BADL;
+  short BADW;
+  unsigned short BADUW;
+  char BADB;
+  unsigned char BADUB;
+  char BADC;
+} HdsTypeInfo;
+
+
 /* Wrapper to check HDF5 status and map to EMS.
    Also does not call the routine unless status is good.
    Assumes inherited status is available in "status" and
@@ -242,6 +259,9 @@ dat1Index2Coords ( size_t idx, int ndim, const hdsdim arraydims[DAT__MXDIM],
 
 hdstype_t
 dau1HdsType( hid_t h5type, int * status );
+
+HdsTypeInfo *
+dat1TypeInfo( void );
 
 /* DAT1_H_INCLUDED */
 #endif
