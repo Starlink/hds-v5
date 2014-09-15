@@ -148,6 +148,33 @@ Need to test whether `datRenam` or `datMove` break locators
 that are previously associated with the objects being moved/renamed.
 H5Lmove indicates that they should still work fine.
 
+### datWhere
+
+... is probably not going to work (and is only visible in the Fortran
+API).
+
+### datSlice / datCell
+
+`datSlice` and `datCell` (for primitive types) are both attempting to
+select a subset of a dataspace.
+
+The `datasapce_id` element in the `HDSLoc` must be treated as the requested
+dataspace by the user and not be confused by the dataspace associated with
+the primitive datset itself. `datVec` has a similar issue in that the
+locator from a `datVec` call is must to be rank 1 regardless of the underlying
+dataset and if queried by `datShape` it should return the vectorized dimensions.
+
+HDS only supports the concept of 'sub-setting' and does not support
+sampling or scatter-gather.
+
+### datPrmry
+
+Not sure if this is possible in HDF5. HDS has a distinction between a primary
+and secondary locator and annulling a secondary locator will not affect
+whether the file is kept open or not. If HDF5 does not support this then
+we can simply try to assert that all locators are primary locators, or else
+try to keep track of this internally in the wrapper.
+
 ### Incompatibilies
 
 HDF5 does not support an array of structures. Structures must be supported
@@ -188,6 +215,20 @@ If the name looks like /HISTORY/RECORDS/HDSCELL(5) hdsTrace
 can easily convert that to the syntactically correct
 .HISTORY.RECORDS(5) by removing all occurrences of "/HDSCELL".
 
+Note also that in the final system HDSCELL is replaced with a longer
+string that we know is longer that DAT__SZNAM (so that we can not
+end up with the name by mistake or fluke through the HDS layer).
+
+Slices of an array structure break this, as does vectorization (which
+is used by HDSTRACE a lot).
+
+### Type conversion
+
+HDS can do type conversion from/to strings for numeric and logical
+types. HDF5 can not do that in a H5Dwrite call so the type conversion
+has to happen in datPut before that. The parameter system relies on this
+as parameters are always supplied as strings but the correct values
+are stored in the HDS parameter file.
 
 ## TO DO
 
