@@ -142,6 +142,7 @@ dat1EncodeSubscript.c \
 dat1ExportDims.c \
 dat1FixNameCell.c \
 dat1FreeLoc.c \
+dat1GetBounds.c \
 dat1GetFullName.c \
 dat1H5EtoEMS.c \
 dat1ImportDims.c \

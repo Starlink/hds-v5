@@ -97,107 +97,29 @@ int
 datShape( const HDSLoc *locator, int maxdim, hdsdim dims[],
           int *actdim, int * status ) {
 
-  hsize_t h5dims[DAT__MXDIM];
+  int i = 0;
   int rank = 0;
-  hssize_t nblocks = 0;
-  hsize_t *blockbuf = NULL;
+  hdsdim upper[DAT__MXDIM];
+  hdsdim lower[DAT__MXDIM];
 
   if (*status != SAI__OK) return *status;
 
-  /* Special case -- locator overrides file -- short circuit */
-  if (locator->vectorized > 0) {
-    /* dataspace for dataset could reflect this but groups have no choice */
-    *actdim = 1;
-    dims[0] = locator->vectorized;
-    return *status;
+  dat1GetBounds( locator, lower, upper, &rank, status );
+
+  if (rank > maxdim) {
+    *status = DAT__DIMIN;
+    emsRepf("datshape_1b", "datShape: Dimensions of object exceed maximum allowed size of %d",
+            status, maxdim);
+    goto CLEANUP;
   }
 
-  if (dat1IsStructure( locator, status ) ) {
-    int i;
-    long long structdims[DAT__MXDIM];
-
-    CALLHDFQ( H5LTget_attribute_int( locator->group_id, ".", "HDSNDIMS", &rank ) );
-
-    if (rank > 0) {
-
-      CALLHDFQ( H5LTget_attribute_long_long( locator->group_id, ".", "HDSDIMS", structdims ) );
-
-      if (rank > maxdim) {
-        *status = DAT__DIMIN;
-        emsRepf("datshape_1b", "datShape: Dimensions of object exceed maximum allowed size of %d",
-                status, maxdim);
-        goto CLEANUP;
-      }
-
-      for (i=0; i<rank; i++) {
-        dims[i] = structdims[i];
-      }
-
-    }
-
-  } else {
-
-    CALLHDFE( int,
-              rank,
-              H5Sget_simple_extent_dims( locator->dataspace_id, h5dims, NULL ),
-              DAT__DIMIN,
-              emsRep("datshape_1", "datShape: Error obtaining shape of object",
-                     status)
-              );
-
-    /* If we are using datSlice then there should be one (and only one) hyperslab
-       for the dataspace and we need to handle that. Should be same dimensionality
-       as above. Negative number indicates there were no hyperslabs. */
-    nblocks = H5Sget_select_hyper_nblocks( locator->dataspace_id );
-
-    if (nblocks == 1) {
-      herr_t h5err = 0;
-      int i;
-
-      blockbuf = MEM_MALLOC( nblocks * rank * 2 * sizeof(*blockbuf) );
-
-      CALLHDF( h5err,
-               H5Sget_select_hyper_blocklist( locator->dataspace_id, 0, 1, blockbuf ),
-               DAT__DIMIN,
-               emsRep("datShape_2", "datShape: Error obtaining shape of slice", status )
-               );
-
-      /* We only go through one block. The buffer is returned in form:
-         ndim start coordinates, then ndim opposite corner coordinates
-         and repeats for each block (if we had more than one block).
-      */
-      for (i = 0; i<rank; i++) {
-        hsize_t start;
-        hsize_t opposite;
-        start = blockbuf[i];
-        opposite = blockbuf[i+rank];
-        /* So update the shape to account for the slice */
-        h5dims[i] = opposite - start + 1;
-      }
-
-    } else if (nblocks > 1) {
-      if (*status == SAI__OK) {
-        *status = DAT__WEIRD;
-        emsRepf("datShape_2", "Unexpectedly got %zd hyperblocks from locator. Expected 1."
-                " (possible programming error)", status, (ssize_t)nblocks);
-        goto CLEANUP;
-      }
-    }
-
-    if (rank > maxdim) {
-      *status = DAT__DIMIN;
-      emsRepf("datshape_1b", "datShape: Dimensions of object exceed maximum allowed size of %d",
-              status, maxdim);
-      goto CLEANUP;
-    }
-
-    dat1ExportDims( rank, h5dims, dims, status );
+  /* Convert bounds to dims */
+  for (i=0; i<rank; i++) {
+    dims[i] = upper[i] - lower[i] + 1;
   }
-
 
   *actdim = rank;
 
  CLEANUP:
-  if (blockbuf) MEM_FREE( blockbuf );
   return *status;
 }
