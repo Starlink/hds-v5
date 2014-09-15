@@ -109,14 +109,17 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   char normtypestr[DAT__SZTYP+1];
   hsize_t h5dims[DAT__MXDIM];
   hid_t mem_dataspace_id = 0;
+  char namestr[DAT__SZNAM+1];
 
   if (*status != SAI__OK) return *status;
+
+  datName(locator, namestr, status);
 
   /* Ensure that this locator is associated with a primitive type */
   if (locator->dataset_id <= 0) {
     *status = DAT__OBJIN;
-    emsRep("", "datPut: Can not put data into non-primitive location",
-           status);
+    emsRepf("", "datPut: Can not put data into non-primitive location '%s'",
+            status, namestr );
     return *status;
   }
 
@@ -152,5 +155,9 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
  CLEANUP:
   if (h5type && typcreat) H5Tclose(h5type);
   if (mem_dataspace_id > 0) H5Sclose(mem_dataspace_id);
+  if (*status != SAI__OK) {
+    emsRepf("datPut_3", "datPut: Error writing data of type '%s' into primitive %s",
+            status, normtypestr, namestr);
+  }
   return *status;
 }
