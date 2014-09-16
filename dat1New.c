@@ -263,6 +263,7 @@ dat1New( const HDSLoc    *locator,
         hid_t cellgroup_id = 0;
         char cellname[128];
         hdsdim coords[DAT__MXDIM];
+        int scalardims = 0;
 
         /* Note we have to use the HDS dims (Fortran order) order for naming */
         dat1Index2Coords(n, ndim, dims, coords, status );
@@ -276,6 +277,9 @@ dat1New( const HDSLoc    *locator,
 
         /* Actual data type of the structure/group must be stored in an attribute */
         CALLHDFQ( H5LTset_attribute_string( cellgroup_id, ".", "HDSTYPE", groupstr ) );
+
+        /* Also store the number of dimensions */
+        CALLHDFQ( H5LTset_attribute_int( cellgroup_id, ".", "HDSNDIMS", &scalardims, 1 ) );
       }
     }
   }
