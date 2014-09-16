@@ -106,8 +106,11 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
   hsize_t h5subs[DAT__MXDIM];
   HDSLoc * thisloc = NULL;
   int isstruct = 0;
+  char namestr[DAT__MXDIM+1];
 
   if (*status != SAI__OK) return *status;
+
+  datName(locator1, namestr, status );
 
   /* Copy dimensions if appropriate */
   dat1ImportDims( ndim, subs, h5subs, status );
@@ -123,17 +126,17 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
     if (objndims == 0) {
       if (*status == SAI__OK) {
         *status = DAT__DIMIN;
-        emsRepf("datCell_41", "Can not use datCell for scalar %s "
+        emsRepf("datCell_41", "Can not use datCell for scalar %s '%s' "
                 "(possible programming error)", status,
-                (isstruct ? "group" : "primitive") );
+                (isstruct ? "group" : "primitive"), namestr );
       }
     }
 
     if (objndims != ndim) {
       if (*status == SAI__OK) {
         *status = DAT__DIMIN;
-        emsRepf("datCell_1", "datCell: Arguments have %d axes but locator refers to %d axes",
-                status, ndim, objndims);
+        emsRepf("datCell_1", "datCell: Arguments have %d axes but locator to '%s' refers to %d axes",
+                status, ndim, namestr, objndims);
       }
     }
   }
