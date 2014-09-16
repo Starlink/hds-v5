@@ -258,7 +258,7 @@ HDSLoc *
 dat1ImportFloc ( const char flocator[DAT__SZLOC], int loc_length, int * status);
 
 void
-dat1EncodeSubscript( int ndim, const hdsdim lower[], const hdsdim upper[],
+dat1EncodeSubscript( int ndim, hdsbool_t canbecell, const hdsdim lower[], const hdsdim upper[],
                      char *buf, size_t buflen, int *status );
 
 void

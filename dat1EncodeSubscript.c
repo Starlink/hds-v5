@@ -13,12 +13,17 @@
 *     Library routine
 
 *  Invocation:
-*     dat1EncodeSubscript( int ndim, const hdsdim lower[], const hdsdim upper[],
+*     dat1EncodeSubscript( int ndim, hdsbool_t canbecell,
+*                          const hdsdim lower[], const hdsdim upper[],
 *                          char *buf, size_t buflen, int *status );
 
 *  Arguments:
 *     ndim = int (Given)
 *        Number of dimensions.
+*     canbecell = hdsbool_t (Given)
+*        If true, coordinates can be treated as a single cell
+*        and written as such, if lower==upper for all dimensions.
+*        Ignored if upper is NULL.
 *     lower = const hdsdim [] (Given)
 *        Lower bounds of subsection.
 *     upper = const hdsdim [] (Given)
@@ -103,25 +108,39 @@
 #include "hds.h"
 
 void
-dat1EncodeSubscript( int ndim, const hdsdim lower[], const hdsdim upper[],
+dat1EncodeSubscript( int ndim, hdsbool_t canbecell, const hdsdim lower[], const hdsdim upper[],
                      char *buf, size_t buflen, int *status ) {
   int i;
+  hdsbool_t iscell = 0;
 
   if (*status != SAI__OK) return;
 
   buf[0] = '\0';
   one_strlcpy( buf, "(", buflen, status );
 
+  if (!upper) {
+    iscell = 1;
+  } else if (canbecell) {
+    iscell = 1;
+    for (i=0; i<ndim; i++) {
+      if (lower[i] != upper[i]) {
+        iscell = 0;
+        break;
+      }
+    }
+  }
+
+
   for (i=0; i<ndim; i++) {
     char coordstr[VAL__SZK+1];
     char ucoordstr[VAL__SZK+1];
-    if (upper) {
+    if (upper && !iscell) {
       one_snprintf(ucoordstr, sizeof(ucoordstr),
                    ":%zu", status, (size_t)upper[i] );
     }
     one_snprintf(coordstr, sizeof(coordstr), "%zu%s%s",
                  status, (size_t)lower[i],
-                 (upper ? ucoordstr : ""),
+                 ((upper && !iscell) ? ucoordstr : ""),
                  (ndim-i==1 ? "" : ","));
     one_strlcat( buf, coordstr, buflen, status );
   }

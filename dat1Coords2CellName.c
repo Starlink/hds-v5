@@ -115,7 +115,7 @@ dat1Coords2CellName( int ndim, const hdsdim coords[], char * cellname,
   one_strlcpy( cellname, nameroot, cellnamelen, status );
   lenstr = strlen(cellname);
 
-  dat1EncodeSubscript(ndim, coords, NULL, &(cellname[lenstr]),
+  dat1EncodeSubscript(ndim, 1, coords, NULL, &(cellname[lenstr]),
                       cellnamelen - lenstr, status );
 
 }
