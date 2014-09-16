@@ -102,6 +102,7 @@
 
 #include "ems.h"
 #include "sae_par.h"
+#include "prm_par.h"
 
 #include "hds1.h"
 #include "dat1.h"
@@ -130,7 +131,12 @@ int hdsTrace(const HDSLoc *locator, int  *nlev, char *path_str,
 
   /* Now walk through the string replacing "/" with "." */
   if (*status == SAI__OK) {
+    hdsdim lower[DAT__MXDIM];
+    hdsdim upper[DAT__MXDIM];
+    char subscriptstr[2 + 2 * (VAL__SZK + 2 ) * DAT__MXDIM + 1]; /* "(a1:a2,b,c,d,...)" */
+    int rank;
     size_t i;
+    hdsbool_t issubset = 0;
     size_t lenstr = strlen(path_str);
     for (i = 0; i < lenstr; i++) {
       if ( path_str[i] == '/' ) {
@@ -142,6 +148,16 @@ int hdsTrace(const HDSLoc *locator, int  *nlev, char *path_str,
        (assuming that objid_to_name did not return the
        root ".") */
     (*nlev)++;
+
+    /* if this is a slice or a cell of a primitive object then
+       we need to include that information in the full path name */
+    dat1GetBounds( locator, lower, upper, &issubset, &rank, status );
+
+    if (issubset) {
+      dat1EncodeSubscript( rank, 1, lower, upper, subscriptstr, sizeof(subscriptstr), status );
+      one_strlcat( path_str, subscriptstr, path_length, status );
+    }
+
   }
 
   /* Now the file name */
