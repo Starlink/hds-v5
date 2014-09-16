@@ -130,7 +130,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
     }
 
     if (objndims != ndim) {
-      if (*status != SAI__OK) {
+      if (*status == SAI__OK) {
         *status = DAT__DIMIN;
         emsRepf("datCell_1", "datCell: Arguments have %d axes but locator refers to %d axes",
                 status, ndim, objndims);
