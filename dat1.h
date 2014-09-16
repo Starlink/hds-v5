@@ -278,7 +278,8 @@ dat1CvtChar( size_t nval, hdstype_t intype, size_t nbin,
 
 int
 dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
-               hdsdim upper[DAT__MXDIM], int *actdim, int * status );
+               hdsdim upper[DAT__MXDIM], hdsbool_t * issubset,
+               int *actdim, int * status );
 
 /* DAT1_H_INCLUDED */
 #endif

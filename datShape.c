@@ -101,10 +101,11 @@ datShape( const HDSLoc *locator, int maxdim, hdsdim dims[],
   int rank = 0;
   hdsdim upper[DAT__MXDIM];
   hdsdim lower[DAT__MXDIM];
+  hdsbool_t issubset = 0;
 
   if (*status != SAI__OK) return *status;
 
-  dat1GetBounds( locator, lower, upper, &rank, status );
+  dat1GetBounds( locator, lower, upper, &issubset, &rank, status );
 
   if (rank > maxdim) {
     *status = DAT__DIMIN;

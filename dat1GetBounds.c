@@ -14,7 +14,8 @@
 
 *  Invocation:
 *     dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
-*                    hdsdim upper[DAT__MXDIM], int *actdim, int * status );
+*                    hdsdim upper[DAT__MXDIM], hdsbool_t * issubset,
+*                    int *actdim, int * status );
 
 *  Arguments:
 *     locator = const HDSLoc * (Given)
@@ -23,6 +24,9 @@
 *        On exit, contains the lower bounds.
 *     upper = hdsdim [DAT__MXDIM] (Returned)
 *        On exit, contains the upper bounds.
+*     issubset = hdsbool_t * (Returned)
+*        True if the bounds refer to a subset of the full extent. False
+*        if they cover the full extent.
 *     actdim = int * (Returned)
 *        Number of active dimensions in object.
 *     status = int* (Given and Returned)
@@ -96,12 +100,14 @@
 
 int
 dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
-               hdsdim upper[DAT__MXDIM], int *actdim, int * status ) {
+               hdsdim upper[DAT__MXDIM], hdsbool_t * issubset,
+               int *actdim, int * status ) {
   int rank = 0;
   hssize_t nblocks = 0;
   hsize_t *blockbuf = NULL;
 
   *actdim = 0;
+  *issubset = 0;
   if (*status != SAI__OK) return *status;
 
  /* Special case -- locator overrides file -- short circuit */
@@ -158,6 +164,8 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
 
     if (nblocks == 1) {
       herr_t h5err = 0;
+
+      *issubset = 1;
 
       blockbuf = MEM_MALLOC( nblocks * rank * 2 * sizeof(*blockbuf) );
 
