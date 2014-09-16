@@ -121,6 +121,7 @@ datStruc.c \
 datThere.c \
 datType.c \
 datUnmap.c \
+datValid.c \
 datVec.c \
 hdsNew.c \
 hdsOpen.c \
