@@ -111,9 +111,9 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   /* and update the vectorized flag with the number of elements */
   (*locator2)->vectorized = nelem;
 
-  /* Technically we have to replace the dataspace with a subset
-     for primitive types. */
-
+  /* We do not need to vectorize the dataspace since the number
+     of elements match and the locator dataspace should match
+     the on-disk dimensionality */
 
   if (*status != SAI__OK) {
     if (*locator2 != NULL) datAnnul(locator2, status);
