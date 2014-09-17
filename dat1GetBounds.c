@@ -110,12 +110,20 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
   *issubset = 0;
   if (*status != SAI__OK) return *status;
 
- /* Special case -- locator overrides file -- short circuit */
+  /* Special case -- locator overrides file -- short circuit */
   if (locator->vectorized > 0) {
-    /* dataspace for dataset could reflect this but groups have no choice */
+    /* Vectorized dataspace is a collection of points so not amenable
+       to simply querying of hyperslab */
     *actdim = 1;
-    lower[0] = 1;
-    upper[0] = locator->vectorized;
+
+    if (locator->isslice) {
+      lower[0] = (locator->slicelower)[0];
+      upper[0] = (locator->sliceupper)[0];
+      *issubset = 1;
+    } else {
+      lower[0] = 1;
+      upper[0] = locator->vectorized;
+    }
     return *status;
   }
 

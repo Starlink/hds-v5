@@ -181,7 +181,14 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
 
     CALLHDFQ( H5Sselect_hyperslab( sliceloc->dataspace_id, H5S_SELECT_SET, h5lower,
                                    NULL, h5count, NULL) );
+  }
 
+  /* Store knowledge of slice in locator -- we have to do this for vectorized
+     dataspaces as they result in many different blocks */
+  sliceloc->isslice = HDS_TRUE;
+  for (i=0; i<ndim; i++) {
+    (sliceloc->slicelower)[i] = lower[i];
+    (sliceloc->sliceupper)[i] = upper[i];
   }
 
  CLEANUP:

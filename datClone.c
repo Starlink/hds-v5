@@ -86,6 +86,8 @@
 *-
 */
 
+#include <string.h>
+
 #include "hdf5.h"
 #include "hdf5_hl.h"
 
@@ -145,6 +147,13 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
 
   /* Retain knowledge of vectorization */
   clonedloc->vectorized = locator1->vectorized;
+
+  /* ...and slicing */
+  clonedloc->isslice = locator1->isslice;
+  if (clonedloc->isslice) {
+    memcpy( &(clonedloc->slicelower), &(locator1->slicelower), sizeof(clonedloc->slicelower));
+    memcpy( &(clonedloc->sliceupper), &(locator1->sliceupper), sizeof(clonedloc->sliceupper));
+  }
 
  CLEANUP:
   if (*status != SAI__OK) {

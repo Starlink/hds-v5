@@ -146,6 +146,9 @@ typedef struct LOC {
   hdsmode_t accmode; /* Access mode for memory mapped data [datMap only] */
   int ndims;         /* Number of dimensions in mapdims [datMap only] */
   hdsdim mapdims[DAT__MXDIM]; /* Dimensionality of mapped dims [datMap only] */
+  hdsbool_t isslice;          /* Is this a slice? */
+  hdsdim slicelower[DAT__MXDIM]; /* Lower bounds of slice */
+  hdsdim sliceupper[DAT__MXDIM]; /* Upper bounds of slice */
   char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */
 } HDSLoc;
 
