@@ -190,7 +190,7 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
               emsRep("datshape_1", "datShape: Error obtaining shape of object",
                      status)
               );
-    dat1ExportDims( ndim, h5dims, loc1dims, status );
+    dat1ExportDims( rank, h5dims, loc1dims, status );
 
     /* Need to allocate some memory for the points */
     nvecelem = upper[0] - lower[0] + 1;
