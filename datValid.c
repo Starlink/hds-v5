@@ -85,7 +85,7 @@
 int
 datValid(const HDSLoc *locator, int *valid, int *status) {
   *valid = 0;
-  if (*status == SAI__OK) return *status;
+  if (*status != SAI__OK) return *status;
 
   if ( !locator ) return *status;
 
