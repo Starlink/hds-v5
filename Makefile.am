@@ -124,6 +124,7 @@ datType.c \
 datUnmap.c \
 datValid.c \
 datVec.c \
+hdsErase.c \
 hdsNew.c \
 hdsOpen.c \
 hdsTrace.c \
