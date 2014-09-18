@@ -163,9 +163,15 @@ dataspace by the user and not be confused by the dataspace associated with
 the primitive datset itself. `datVec` has a similar issue in that the
 locator from a `datVec` call is must to be rank 1 regardless of the underlying
 dataset and if queried by `datShape` it should return the vectorized dimensions.
+Currently we do not change the dataspace for datVec and datShape is short-circuited
+to understand the vectorized special case.
 
 HDS only supports the concept of 'sub-setting' and does not support
 sampling or scatter-gather.
+
+Slicing of a vectorized data structure requires extra work because a contiguous
+subset of the N-D array has to be selected. Currently this is done by selecting points
+from the dataspace.
 
 ### datPrmry
 
