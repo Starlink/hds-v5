@@ -1062,7 +1062,6 @@ F77_SUBROUTINE(dat_map)( CHARACTER(locator),
 
 /* Export the C pointer as a FORTRAN POINTER */
    *pntr = cnfFptr( cpntr );
-   printf("Exported pointer is::::::::::: %d\n", *pntr);
 }
 
 F77_SUBROUTINE(dat_mapc)( CHARACTER(locator),
