@@ -107,6 +107,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   int typcreat;
   hid_t h5type = 0;
   char normtypestr[DAT__SZTYP+1];
+  char datatypestr[DAT__SZTYP+1];
   hsize_t h5dims[DAT__MXDIM];
   hid_t mem_dataspace_id = 0;
   char namestr[DAT__SZNAM+1];
@@ -115,6 +116,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
 
   /* For error messages */
   datName( locator, namestr, status);
+  datType( locator, datatypestr, status );
 
   /* Convert the HDS data type to HDF5 data type */
   isprim = dau1CheckType( type_str, &h5type, normtypestr,
@@ -148,8 +150,9 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
  CLEANUP:
 
   if (*status != SAI__OK) {
-    emsRepf("datGet_N", "datGet: Error reading data from primitive object %s",
-            status, namestr);
+    emsRepf("datGet_N", "datGet: Error reading data from primitive object %s as type %s"
+            " (internally type is %s)",
+            status, namestr, normtypestr, datatypestr);
   }
 
   if (h5type && typcreat) H5Tclose(h5type);
