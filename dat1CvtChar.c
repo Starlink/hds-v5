@@ -287,9 +287,10 @@ dat1CvtChar( size_t nval, hdstype_t intype, size_t nbin,
       }
     }
   } else if (outtype == HDSTYPE_CHAR) {
+    *status = DAT__TYPIN;
+    emsRep("", "Conversion to _CHAR is not yet implemented", status );
     for (n = 0; n < nval; n++) {
-      emsRep("", "Not yet implemented", status );
-      *status = DAT__TYPIN;
+      break;
     }
 
   } else {
