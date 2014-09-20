@@ -106,9 +106,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <float.h>
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -287,10 +287,83 @@ dat1CvtChar( size_t nval, hdstype_t intype, size_t nbin,
       }
     }
   } else if (outtype == HDSTYPE_CHAR) {
-    *status = DAT__TYPIN;
-    emsRep("", "Conversion to _CHAR is not yet implemented", status );
+    char * outbuf = NULL;
+    size_t i;
+    /* each value is converted one element at a time.
+       We sprintf into a fixed size buffer and copy into
+       the correct place in the output */
+    buffer = MEM_MALLOC( nbout + 1 );
+    buffer[nbout] = '\0';
+    outbuf = exp;
+
     for (n = 0; n < nval; n++) {
-      break;
+      hdsbool_t inlogical;
+      size_t nchar = 0;
+
+      switch( intype ) {
+
+      case HDSTYPE_INTEGER:
+        nchar = snprintf( buffer, nbout+1, "%d", ((int *)imp)[n] );
+        break;
+      case HDSTYPE_REAL:
+        nchar = snprintf( buffer, nbout+1, "%G", ((float *)imp)[n] );
+        break;
+      case HDSTYPE_DOUBLE:
+        nchar = snprintf( buffer, nbout+1, "%.*G", DBL_DIG, ((double *)imp)[n] );
+        break;
+      case HDSTYPE_INT64:
+        nchar = snprintf( buffer, nbout+1, "%lld", ((int64_t *)imp)[n] );
+        break;
+      case HDSTYPE_LOGICAL:
+        inlogical = ((hdsbool_t *)imp)[n];
+        if ( inlogical == typeinfo->BADL ) {
+          buffer[0] = '*';
+          buffer[1] = '\0';
+          nchar = 1;
+        } else if ( HDS_ISTRUE(inlogical) ) {
+          /* HDS is happy to truncate FALSE to FAL if there isn't space */
+          nchar = snprintf( buffer, nbout+1, "%s", "TRUE" );
+        } else {
+          nchar = snprintf( buffer, nbout+1, "%s", "FALSE" );
+        }
+        break;
+      case HDSTYPE_BYTE:
+        nchar = snprintf( buffer, nbout+1, "%d", ((char *)imp)[n] );
+        break;
+      case HDSTYPE_UBYTE:
+        nchar = snprintf( buffer, nbout+1, "%u", ((unsigned char *)imp)[n] );
+        break;
+      case HDSTYPE_WORD:
+        nchar = snprintf( buffer, nbout+1, "%d", ((short *)imp)[n] );
+        break;
+      case HDSTYPE_UWORD:
+        nchar = snprintf( buffer, nbout+1, "%u", ((unsigned short *)imp)[n] );
+      case HDSTYPE_CHAR:
+        /* handled previously and we should not be here */
+        if (*status == SAI__OK) {
+          *status = DAT__WEIRD;
+          emsRep("dat1CvtChar_internal2",
+                 "Internal consistency error on string conversion", status );
+          goto CLEANUP;
+        }
+        break;
+      default:
+        if (*status == SAI__OK) {
+          *status = DAT__TYPIN;
+          emsRepf("dat1CvtChar_exp2", "dat1CvtChar: Unsupported output data type %d",
+                  status, outtype);
+          /* Never going to be resolved */
+          goto CLEANUP;
+        }
+      }
+
+      /* Copy the buffer to the output buffer -- space padding as this is really
+         a Fortran string. */
+      strncpy( outbuf, buffer, nchar );
+      for (i=nchar; i<nbout; i++) {
+        outbuf[i] = ' ';
+      }
+      outbuf += nbout;
     }
 
   } else {
