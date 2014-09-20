@@ -136,7 +136,7 @@ hdsErase(HDSLoc **locator, int *status) {
     *status = DAT__FILND;
     emsErrno( "ERRNO", errno );
     emsRepf("hdsErase_2", "Error unlinking file %s: ^ERRNO",
-           status, path_str);
+           status, file_str);
   }
 
   return *status;
