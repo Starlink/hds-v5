@@ -111,6 +111,12 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   hsize_t h5dims[DAT__MXDIM];
   hid_t mem_dataspace_id = 0;
   char namestr[DAT__SZNAM+1];
+  hdstype_t intype = HDSTYPE_NONE;
+  hdstype_t outtype = HDSTYPE_NONE;
+  void * tmpvalues = NULL;
+  size_t nbin = 0;
+  size_t nbout = 0;
+  size_t nelem = 0;
 
   if (*status != SAI__OK) return *status;
 
@@ -133,6 +139,46 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
 
   if (*status != SAI__OK) goto CLEANUP;
 
+ /* Check data types and do conversion if required */
+  intype = dat1Type( locator, status );
+  outtype = dau1HdsType( h5type, status );
+
+  if ((outtype == HDSTYPE_CHAR && intype != HDSTYPE_CHAR) ||
+      (outtype != HDSTYPE_CHAR && intype == HDSTYPE_CHAR)) {
+    /* We need to do the conversion because HDF5 does not seem
+       to be able to convert numerical to string or string
+       to numerical types internally. HDS has always been able
+       to do so. */
+    /* First we allocate temporary space, then read the data
+       from HDF5 in native form */
+
+    /* Number of elements to convert */
+    datSize( locator, &nelem, status );
+
+    /* Number of bytes per element in the input (on disk) type */
+    datLen( locator, &nbin, status );
+
+    /* Number of bytes per element in the output (in memory) type */
+    CALLHDF(nbout,
+            H5Tget_size( h5type ),
+            DAT__HDF5E,
+            emsRep("datPut_size", "datPut: Error obtaining size of input type",
+                   status)
+            );
+
+    /* Create a buffer to receive the converted values */
+    tmpvalues = MEM_MALLOC( nelem * nbin );
+
+    /* The type of the things we are reading has now changed
+       so we need to update that */
+    CALLHDF( h5type,
+             H5Dget_type( locator->dataset_id ),
+             DAT__HDF5E,
+             emsRep("datPut_type", "datGet: Error obtaining data type of native dataset", status)
+             );
+
+  }
+
   /* Copy dimensions if appropriate */
   dat1ImportDims( ndim, dims, h5dims, status );
 
@@ -145,7 +191,15 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
            );
 
   CALLHDFQ( H5Dread( locator->dataset_id, h5type, mem_dataspace_id,
-                     locator->dataspace_id, H5P_DEFAULT, values ) );
+                     locator->dataspace_id, H5P_DEFAULT,
+                     (tmpvalues ? tmpvalues : values ) ) );
+
+  if (tmpvalues) {
+    /* Now convert from what we have read to what we need */
+    size_t nbad = 0;
+    dat1CvtChar( nelem, intype, nbin, outtype, nbout, tmpvalues,
+                 values, &nbad, status );
+  }
 
  CLEANUP:
 
@@ -155,6 +209,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
             status, namestr, normtypestr, datatypestr);
   }
 
+  if (tmpvalues) MEM_FREE(tmpvalues);
   if (h5type && typcreat) H5Tclose(h5type);
   if (mem_dataspace_id > 0) H5Sclose(mem_dataspace_id);
   return *status;
