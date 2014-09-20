@@ -90,6 +90,7 @@ datChscn.c \
 datClen.c \
 datClone.c \
 datCopy.c \
+datErase.c \
 datErmsg.c \
 datExportFloc.c \
 datFind.c \
