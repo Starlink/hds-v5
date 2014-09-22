@@ -180,6 +180,10 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
 
     /* The type of the things we are reading has now changed
        so we need to update that */
+    if (h5type && typcreat) {
+      H5Tclose(h5type);
+      typcreat = 0;
+    }
     CALLHDF( h5type,
              H5Dget_type( locator->dataset_id ),
              DAT__HDF5E,
