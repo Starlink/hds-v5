@@ -113,20 +113,19 @@ In HDS (presumably Fortran) a `_LOGICAL` type seems to be
 a 4 byte int. This seems remarkably wasteful so in this
 library I am using a 1 byte bitfield type.
 
-The `datPutXL` routines are currently using int arrays but I am
-considering changing the API to be char arrays. This would require
-copying in the Fortran interface. I don't think any C code in Starlink
-uses the LOGICAL datPut/datGet routines. Alternatively, we could use 8
-byte logicals internally in the file but use the HDF5 data type
-conversion facility to read as 4 byte integers.
+I have changed the C interface to use hdsbool_t boolean type
+so as to be explicit about the types.
 
-It might also be worth defining hdsbool_t
+Currently hdsbool_t is a 32-bit integer. Internally a 1 byte type is used.
+and externally a 4 byte type is used. This means that the routines
+that query the HDF5 file for type have to do an additional check
+to see what the in memory type is meant to be.
 
 ### datLen vs datPrec??
 
 How do these routines differ?
 
-SG/4 says Primtive precision vs Storage precision
+SG/4 says Primitive precision vs Storage precision
 
 `datPrec` doesn't seem to be used in any of Starlink.
 
@@ -243,3 +242,6 @@ unlike the HDS library. This is presumably an error in `hdsTrace()`
 implementation which may have to determine the directory.  (and
 furthermore we may have to store the directory at open time in case a
 `chdir` happens).
+
+`datParen` does not currently work out when it hits the top of the
+group hierarchy.
