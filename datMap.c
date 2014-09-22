@@ -128,7 +128,6 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
   char normtypestr[DAT__SZTYP+1];
   size_t nbytes = 0;
   hid_t h5type = 0;
-  int typcreat = 0;
   int isreg = 0;
   int tries = 0;
   size_t pagesize = 0;

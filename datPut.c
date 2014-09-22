@@ -104,7 +104,6 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
         const void *values, int *status) {
 
   int isprim;
-  int typcreat;
   hid_t h5type = 0;
   char normtypestr[DAT__SZTYP+1];
   hsize_t h5dims[DAT__MXDIM];

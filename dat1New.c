@@ -133,7 +133,6 @@ dat1New( const HDSLoc    *locator,
   hid_t h5type = 0;
   hid_t place = 0;
   int isprim;
-  int typcreat = 0;
   HDSLoc * thisloc = NULL;
   hsize_t h5dims[DAT__MXDIM];
 
@@ -296,7 +295,7 @@ dat1New( const HDSLoc    *locator,
 
  CLEANUP:
   /* Everything should be freed */
-  if (typcreat) H5Tclose( h5type );
+  if (h5type) H5Tclose( h5type );
   if (dataset_id) H5Dclose(dataset_id);
   if (dataspace_id) H5Sclose(dataspace_id);
   if (cparms > 0 && cparms != H5P_DEFAULT) H5Pclose(cparms);
