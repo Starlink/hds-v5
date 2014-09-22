@@ -153,7 +153,12 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 
   /* Now we want the HDSTYPE of the requested type so that we can work out how much
      memory we will need to allocate. */
-  nbytes = H5Tget_size( h5type );
+  CALLHDF(nbytes,
+          H5Tget_size( h5type ),
+          DAT__HDF5E,
+          emsRep("datLen_size", "datMap: Error obtaining size of data type",
+                 status)
+          );
 
   {
     int i;
