@@ -111,8 +111,7 @@ datLen( const HDSLoc * locator, size_t * clen, int * status ) {
   CALLHDF( h5type,
            H5Dget_type( locator->dataset_id ),
            DAT__HDF5E,
-           emsRep("dat1Type_1", "datType: Error obtaining data type of dataset", status
-)
+           emsRep("dat1Type_1", "datType: Error obtaining data type of dataset", status)
            );
 
   /* Number of bytes representing the type */
