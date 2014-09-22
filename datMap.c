@@ -228,7 +228,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     accmode = HDSMODE_READ;
   case 'U':
   case 'u':
-    datGet( locator, type_str, ndim, dims, mapped, status );
+    datGet( locator, normtypestr, ndim, dims, mapped, status );
     if (accmode == HDSMODE_UNKNOWN) accmode = HDSMODE_UPDATE; /* Prevent bad R case */
     break;
   case 'W':
