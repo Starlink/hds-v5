@@ -337,6 +337,7 @@ dat1CvtChar( size_t nval, hdstype_t intype, size_t nbin,
         break;
       case HDSTYPE_UWORD:
         nchar = snprintf( buffer, nbout+1, "%u", ((unsigned short *)imp)[n] );
+        break;
       case HDSTYPE_CHAR:
         /* handled previously and we should not be here */
         if (*status == SAI__OK) {
