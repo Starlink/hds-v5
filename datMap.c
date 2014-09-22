@@ -109,6 +109,7 @@
 #include "hdf5_hl.h"
 
 #include "star/util.h"
+#include "star/one.h"
 #include "ems.h"
 #include "sae_par.h"
 
@@ -148,6 +149,19 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
               status, normtypestr);
     }
     goto CLEANUP;
+  }
+
+  /* There is a super-special case for datMap when called with a map
+     type of "_CHAR". In that case we need to work out the size ourselves
+     and adjust the type size */
+  if (strcmp( "_CHAR", normtypestr ) == 0 ) {
+    size_t clen = 0;
+    char tmpbuff[DAT__SZTYP+1];
+    datClen( locator, &clen, status );
+    CALLHDFQ( H5Tset_size( h5type, clen ) );
+    one_snprintf( tmpbuff, sizeof(tmpbuff), "*%zu",
+                  status, clen );
+    one_strlcat( normtypestr, tmpbuff, DAT__SZTYP+1, status );
   }
 
   /* Now we want the HDSTYPE of the requested type so that we can work out how much
