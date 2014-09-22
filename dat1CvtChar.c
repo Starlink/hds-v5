@@ -27,7 +27,7 @@
 *     outtype = hdstype_t (Given)
 *        Required type of output data array "exp".
 *     nbout = size_t (Given)
-*        Number of bytes per output element. For strings this will be _CHAR*nbin.
+*        Number of bytes per output element. For strings this will be _CHAR*nbout.
 *     imp = void * (Given)
 *        Buffer with data to be converted. nval elements of type
 *        intype.
@@ -42,8 +42,7 @@
 *  Description:
 *     This routine 'translates' a contiguous sequence of data values from one
 *     location to another. It is only intended for conversions to and from
-*     character formats and is relatively inefficient. In particular it treats
-*     logical values in the same way as integer values.
+*     character formats and is relatively inefficient.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
