@@ -214,19 +214,15 @@ dat1CvtChar( size_t nval, hdstype_t intype, size_t nbin,
         ((int64_t *)exp)[n] = outint64;
         break;
       case HDSTYPE_LOGICAL:
-        nitem = sscanf(buffer, "%" HDS_BOOL_FORMAT, &outlogical );
-        if (nitem == 0) {
-          /* could be a string TRUE/FALSE/YES/NO */
-          if (buffer[0] == 'T' || buffer[0] == 't' ||
-              buffer[0] == 'Y' || buffer[0] == 'y' ) {
-            outlogical = HDS_TRUE;
-          } else if (buffer[0] == 'F' || buffer[0] == 'f' ||
-                     buffer[0] == 'N' || buffer[0] == 'n' ) {
-            outlogical = HDS_FALSE;
-          } else {
-            (*nbad)++;
-            outlogical = typeinfo->BADL;
-          }
+        /* could be a string TRUE/FALSE/YES/NO
+           but oddly, not 1/0. HDS assumes that anything
+           that is not true is always false and does not
+           attempt to trap for bad values. */
+        if (buffer[0] == 'T' || buffer[0] == 't' ||
+            buffer[0] == 'Y' || buffer[0] == 'y' ) {
+          outlogical = HDS_TRUE;
+        } else {
+          outlogical = HDS_FALSE;
         }
         ((hdsbool_t *)exp)[n] = outlogical;
         break;
