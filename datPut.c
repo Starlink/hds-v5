@@ -110,6 +110,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   hsize_t h5dims[DAT__MXDIM];
   hid_t mem_dataspace_id = 0;
   char namestr[DAT__SZNAM+1];
+  hdstype_t doconv = HDSTYPE_NONE;
   hdstype_t intype = HDSTYPE_NONE;
   hdstype_t outtype = HDSTYPE_NONE;
   void * tmpvalues = NULL;
@@ -147,10 +148,18 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
 
   if ((outtype == HDSTYPE_CHAR && intype != HDSTYPE_CHAR) ||
       (outtype != HDSTYPE_CHAR && intype == HDSTYPE_CHAR)) {
+    doconv = HDSTYPE_CHAR;
+  } else if ((outtype == HDSTYPE_LOGICAL && intype != HDSTYPE_LOGICAL) ||
+             (outtype != HDSTYPE_LOGICAL && intype == HDSTYPE_LOGICAL)) {
+    doconv = HDSTYPE_LOGICAL;
+  }
+
+  if ( doconv == HDSTYPE_LOGICAL || doconv == HDSTYPE_CHAR ) {
     /* We need to do the conversion because HDF5 does not seem
        to be able to convert numerical to string or string
        to numerical types internally. HDS has always been able
-       to do so. */
+       to do so. Also, the number <=> bitfield mapping does not
+       seem to be compatible with HDS so we do our own _LOGICAL handling. */
     size_t nbin = 0;
     size_t nbout = 0;
     size_t nbad = 0;
@@ -173,9 +182,13 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
     /* Create a buffer to receive the converted values */
     tmpvalues = MEM_MALLOC( nelem * nbout );
 
-    dat1CvtChar( nelem, intype, nbin, outtype, nbout, values,
-                 tmpvalues, &nbad, status );
-
+    if (doconv == HDSTYPE_CHAR) {
+      dat1CvtChar( nelem, intype, nbin, outtype, nbout, values,
+                   tmpvalues, &nbad, status );
+    } else {
+      dat1CvtLogical( nelem, intype, nbin, outtype, nbout, values,
+                      tmpvalues, &nbad, status );
+    }
     /* The type of the things we are writing has now changed
        so we need to update that */
     CALLHDF( h5type,

@@ -111,6 +111,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   hsize_t h5dims[DAT__MXDIM];
   hid_t mem_dataspace_id = 0;
   char namestr[DAT__SZNAM+1];
+  hdstype_t doconv = HDSTYPE_NONE;
   hdstype_t intype = HDSTYPE_NONE;
   hdstype_t outtype = HDSTYPE_NONE;
   void * tmpvalues = NULL;
@@ -145,10 +146,18 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
 
   if ((outtype == HDSTYPE_CHAR && intype != HDSTYPE_CHAR) ||
       (outtype != HDSTYPE_CHAR && intype == HDSTYPE_CHAR)) {
+    doconv = HDSTYPE_CHAR;
+  } else if ((outtype == HDSTYPE_LOGICAL && intype != HDSTYPE_LOGICAL) ||
+             (outtype != HDSTYPE_LOGICAL && intype == HDSTYPE_LOGICAL)) {
+    doconv = HDSTYPE_LOGICAL;
+  }
+
+  if ( doconv == HDSTYPE_LOGICAL || doconv == HDSTYPE_CHAR ) {
     /* We need to do the conversion because HDF5 does not seem
        to be able to convert numerical to string or string
        to numerical types internally. HDS has always been able
-       to do so. */
+       to do so. Also, the number <=> bitfield mapping does not
+       seem to be compatible with HDS so we do our own _LOGICAL handling. */
     /* First we allocate temporary space, then read the data
        from HDF5 in native form */
 
@@ -197,8 +206,19 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   if (tmpvalues) {
     /* Now convert from what we have read to what we need */
     size_t nbad = 0;
-    dat1CvtChar( nelem, intype, nbin, outtype, nbout, tmpvalues,
-                 values, &nbad, status );
+    if (doconv == HDSTYPE_CHAR) {
+      dat1CvtChar( nelem, intype, nbin, outtype, nbout, tmpvalues,
+                   values, &nbad, status );
+    } else if (doconv == HDSTYPE_LOGICAL) {
+      dat1CvtLogical( nelem, intype, nbin, outtype, nbout, tmpvalues,
+                      values, &nbad, status );
+    } else {
+      if (*status != SAI__OK) {
+        *status = DAT__TYPIN;
+        emsRep("datGet_weird", "datGet: Possible programming error in type conversion",
+               status );
+      }
+    }
   }
 
  CLEANUP:
