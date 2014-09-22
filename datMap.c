@@ -101,6 +101,7 @@
 *-
 */
 
+#include <unistd.h>
 #include <errno.h>
 #include <sys/mman.h>
 
@@ -128,9 +129,12 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
   size_t nbytes = 0;
   hid_t h5type = 0;
   int typcreat = 0;
-  void *mapped = NULL;
   int isreg = 0;
+  int tries = 0;
+  size_t pagesize = 0;
+  void *mapped = NULL;
   hdsmode_t accmode = HDSMODE_UNKNOWN;
+  void * where = NULL;
 
   if (*status != SAI__OK) return *status;
 
@@ -160,33 +164,53 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     }
   }
 
-  /* Get some anonymous memory - we always have to map read/write
-     because we always have to copy data into this space. */
-  mapped = mmap( NULL, nbytes, PROT_READ|PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0 );
-  if (mapped == MAP_FAILED) {
-    emsSyser( "MESSAGE", errno );
-    *status = DAT__FILMP;
-    emsRep("datMap_2", "Error mapping some memory: ^MESSAGE", status );
-    mapped = NULL;
-    goto CLEANUP;
-  }
+  /* We need to know the pagesize */
+  pagesize = sysconf( _SC_PAGESIZE );
 
-  /* Must register this with CNF */
-  if (*status != SAI__OK) goto CLEANUP;
+  while (!mapped) {
+    isreg = 0;
+    tries++;
+    if (*status != SAI__OK) goto CLEANUP;
 
-  isreg = cnfRegp( mapped );
-  if (isreg == -1) {
-    /* Serious internal error */
-    *status = DAT__FILMP;
-    emsRep("datMap_3", "Error registering a pointer for mapped data "
-           " - internal CNF error", status );
-    goto CLEANUP;
-  } else if (isreg == 0) {
-    /* HDS will tweak the offset until registration is possible */
-    *status = DAT__FILMP;
-    emsRep("datMap_5", "Unable to register mapped pointer with CNF",
-             status);
-    goto CLEANUP;
+    /* Get some anonymous memory - we always have to map read/write
+       because we always have to copy data into this space. */
+    mapped = mmap( where, nbytes, PROT_READ|PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0 );
+    if (mapped == MAP_FAILED) {
+      emsSyser( "MESSAGE", errno );
+      *status = DAT__FILMP;
+      emsRep("datMap_2", "Error mapping some memory: ^MESSAGE", status );
+      mapped = NULL;
+      goto CLEANUP;
+    }
+
+    /* Must register with CNF so the pointer can be used by Fortran */
+    isreg = cnfRegp( mapped );
+    if (isreg == -1) {
+      /* Serious internal error */
+      *status = DAT__FILMP;
+      emsRep("datMap_3", "Error registering a pointer for mapped data "
+             " - internal CNF error", status );
+      goto CLEANUP;
+    } else if (isreg == 0) {
+      /* Free the memory and try again */
+      if ( munmap( mapped, nbytes ) != 0 ) {
+        *status = DAT__FILMP;
+        emsSyser( "MESSAGE", errno );
+        emsRep("datMap_4", "Error unmapping mapped memory following"
+               " failed registration: ^MESSAGE", status);
+        goto CLEANUP;
+      }
+      mapped = NULL;
+      where += pagesize;
+    }
+
+    if (!mapped && tries > 10) {
+      *status = DAT__FILMP;
+      emsRep("datMap_4b", "Failed to register mapped memory with CNF"
+             " after multiple attempts", status );
+      goto CLEANUP;
+    }
+
   }
 
   if (*status != SAI__OK) goto CLEANUP;
