@@ -135,8 +135,8 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
   if (*status != SAI__OK) return *status;
 
   /* Get the HDF5 type code and confirm this is a primitive type */
-  isprim = dau1CheckType( type_str, &h5type, normtypestr,
-                          sizeof(normtypestr), &typcreat, status );
+  isprim = dau1CheckType( 1, type_str, &h5type, normtypestr,
+                          sizeof(normtypestr), status );
 
   if (!isprim) {
     if (*status == SAI__OK) {
@@ -219,7 +219,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 
  CLEANUP:
   /* Cleanups that must happen always */
-  if (h5type && typcreat) H5Tclose(h5type);
+  if (h5type) H5Tclose(h5type);
 
   /* cleanups that only happen if status is bad */
   if (*status != SAI__OK) {

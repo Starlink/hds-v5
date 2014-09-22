@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     datLen
+*     dau1Native2MemType
 
 *  Purpose:
-*     Enquire primitive length
+*     Map on-disk type to in-memory type
 
 *  Language:
 *     Starlink ANSI C
@@ -13,27 +13,34 @@
 *     Library routine
 
 *  Invocation:
-*     datLen( const HDSLoc * locator, size_t *len, int * status );
+*     memtype = dau1Native2MemType( hid_t nativetype, int * status );
 
 *  Arguments:
-*     locator = const HDSLoc * (Given)
-*        Primitive locator.
-*     len = size_t * (Returned)
-*        Number of bytes per element
+*     nativetype = hid_t (Given)
+*        Type representing the on disk format for a primitive type.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
+*  Returned Value:
+*    memtype = hid_t
+*        In-memory data type. Should be freed with H5Tclose.
+
 *  Description:
-*    Enquire the length of a primitive. In the case of a character object,
-*    this is the number of characters per element. For other primitive types
-*    it is the number of bytes per element.
+*    For some HDS data types the on-disk data type is not the same
+*    as the in-memory data type. This routine is given the on-disk
+*    data type and will return the corresponding data type.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
+*  Notes:
+*     - _LOGICAL data types are stored on disk in 8-bit bitfields
+*       but in memory are 32-bit integers. HDS inherits this from
+*       Fortran where a LOGICAL type is 32-bits.
+
 *  History:
-*     2014-08-29 (TIMJ):
+*     2014-09-22 (TIMJ):
 *        Initial version
 *     {enter_further_changes_here}
 
@@ -79,7 +86,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -90,38 +96,39 @@
 
 #include "dat_err.h"
 
-int
-datLen( const HDSLoc * locator, size_t * clen, int * status ) {
+hid_t
+dau1Native2MemType( hid_t nativetype, int * status ) {
+  hdstype_t htype = HDSTYPE_NONE;
+  hid_t rettype = 0;
+  if (*status != SAI__OK) return 0;
 
-  hid_t memtype = 0;
-  hid_t h5type = 0;
+  htype = dau1HdsType( nativetype, status );
+  if (*status != SAI__OK) return 0;
 
-  *clen = 1; /* force to one as default */
-
-  if (*status != SAI__OK) return *status;
-
-  if (locator->dataset_id <= 0) {
-    *status = DAT__OBJIN;
-    emsRep("datClen_1",
-           "Object is not primitive; the character string length is not defined "
-           "(possible programming error)", status );
-    return *status;
+  if ( htype == HDSTYPE_LOGICAL ) {
+    /* _LOGICAL is a 32bit number but we store in HDF5 in 8 bits */
+    size_t szbool = sizeof(hdsbool_t);
+    switch (szbool) {
+    case 4:
+      rettype = H5T_NATIVE_B32;
+      break;
+    case 2:
+      rettype = H5T_NATIVE_B16;
+      break;
+    case 1:
+      rettype = H5T_NATIVE_B8;
+      break;
+    default:
+      *status = DAT__TYPIN;
+      emsRep("dau1Native2MemType", "Unexpected size of _LOGICAL type"
+             " (possible programming error)", status );
+      return 0;
+    }
+  } else {
+    rettype = nativetype;
   }
 
-  CALLHDF( h5type,
-           H5Dget_type( locator->dataset_id ),
-           DAT__HDF5E,
-           emsRep("dat1Type_1", "datType: Error obtaining data type of dataset", status
-)
-           );
-
-  /* Number of bytes representing the type */
-  memtype = dau1Native2MemType( h5type, status );
-  *clen = H5Tget_size( memtype );
-
- CLEANUP:
-  if (h5type) H5Tclose(h5type);
-  if (memtype) H5Tclose(memtype);
-  return *status;
-
+  /* But we promise to copy the type so that it is clear that the
+     caller should free it */
+  return H5Tcopy(rettype);
 }

@@ -151,8 +151,8 @@ dat1New( const HDSLoc    *locator,
   place = dat1RetrieveContainer( locator, status );
 
   /* Convert the HDS data type to HDF5 data type */
-  isprim = dau1CheckType( type_str, &h5type, groupstr,
-                          sizeof(groupstr), &typcreat, status );
+  isprim = dau1CheckType( 0, type_str, &h5type, groupstr,
+                          sizeof(groupstr), status );
 
   /* The above routine has allocated resources so from here we can not
      simply return on error but have to ensure we clean up */
@@ -290,7 +290,7 @@ dat1New( const HDSLoc    *locator,
     thisloc->dataset_id = dataset_id;
     thisloc->group_id = group_id;
     thisloc->dataspace_id = dataspace_id;
-    if (typcreat) thisloc->dtype = h5type;
+    thisloc->dtype = h5type;
     return thisloc;
   }
 

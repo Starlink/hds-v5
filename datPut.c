@@ -128,8 +128,8 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   }
 
   /* Ensure that we have a primitive type supplied */
-  isprim = dau1CheckType( type_str, &h5type, normtypestr,
-                          sizeof(normtypestr), &typcreat, status );
+  isprim = dau1CheckType( 1, type_str, &h5type, normtypestr,
+                          sizeof(normtypestr), status );
 
   if (!isprim) {
     if (*status == SAI__OK) {
@@ -164,6 +164,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
     size_t nbout = 0;
     size_t nbad = 0;
     size_t nelem = 0;
+    hid_t tmptype = 0;
 
     /* Number of elements to convert */
     datSize( locator, &nelem, status );
@@ -191,16 +192,15 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
     }
     /* The type of the things we are writing has now changed
        so we need to update that */
-    if (h5type && typcreat) {
-      H5Tclose(h5type);
-      typcreat = 0;
-    }
+    if (h5type) H5Tclose(h5type);
     CALLHDF( h5type,
              H5Dget_type( locator->dataset_id ),
              DAT__HDF5E,
              emsRep("datPut_type", "datPut: Error obtaining data type of native dataset", status)
              );
-
+    tmptype = dau1Native2MemType( h5type, status );
+    H5Tclose(h5type);
+    h5type = tmptype;
   }
 
   /* Copy dimensions if appropriate */
@@ -220,7 +220,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
 
 
  CLEANUP:
-  if (h5type && typcreat) H5Tclose(h5type);
+  if (h5type) H5Tclose(h5type);
   if (mem_dataspace_id > 0) H5Sclose(mem_dataspace_id);
   if (tmpvalues) MEM_FREE(tmpvalues);
   if (*status != SAI__OK) {

@@ -84,7 +84,7 @@ int main (void) {
   char *retchararr[4];
   char buffer[1024];  /* plenty large enough */
   double darr[] = { 4.5, 2.5 };
-  char boolarr[] = { 1, 0, 1 };
+  const hdsbool_t boolarr[] = { 1, 0, 1 };
   double retdarr[2];
   void *mapv;    /* Mapped void* */
   double *mapd;  /* Mapped _DOUBLE */

@@ -99,7 +99,7 @@ int datPrec( const HDSLoc * loc, size_t *nbytes, int *status ) {
     { 4, "_REAL" },
     { 8, "_INT64" },
     { 4, "_INTEGER" },
-    { 1, "_LOGICAL" },
+    { 4, "_LOGICAL" },
     { 1, "_CHAR" },
     { 2, "_UWORD" },
     { 2, "_WORD" },

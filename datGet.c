@@ -104,7 +104,6 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
        const hdsdim dims[], void *values, int *status) {
 
   int isprim;
-  int typcreat;
   hid_t h5type = 0;
   char normtypestr[DAT__SZTYP+1];
   char datatypestr[DAT__SZTYP+1];
@@ -126,8 +125,8 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   datType( locator, datatypestr, status );
 
   /* Convert the HDS data type to HDF5 data type */
-  isprim = dau1CheckType( type_str, &h5type, normtypestr,
-                          sizeof(normtypestr), &typcreat, status );
+  isprim = dau1CheckType( 1, type_str, &h5type, normtypestr,
+                          sizeof(normtypestr), status );
 
   if (!isprim) {
     if (*status == SAI__OK) {
@@ -160,6 +159,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
        seem to be compatible with HDS so we do our own _LOGICAL handling. */
     /* First we allocate temporary space, then read the data
        from HDF5 in native form */
+    hid_t tmptype = 0;
 
     /* Number of elements to convert */
     datSize( locator, &nelem, status );
@@ -180,16 +180,16 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
 
     /* The type of the things we are reading has now changed
        so we need to update that */
-    if (h5type && typcreat) {
-      H5Tclose(h5type);
-      typcreat = 0;
-    }
+    if (h5type) H5Tclose(h5type);
     CALLHDF( h5type,
              H5Dget_type( locator->dataset_id ),
              DAT__HDF5E,
              emsRep("datPut_type", "datGet: Error obtaining data type of native dataset", status)
              );
 
+    tmptype = dau1Native2MemType( h5type, status );
+    H5Tclose(h5type);
+    h5type = tmptype;
   }
 
   /* Copy dimensions if appropriate */
@@ -234,7 +234,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   }
 
   if (tmpvalues) MEM_FREE(tmpvalues);
-  if (h5type && typcreat) H5Tclose(h5type);
+  if (h5type) H5Tclose(h5type);
   if (mem_dataspace_id > 0) H5Sclose(mem_dataspace_id);
   return *status;
 

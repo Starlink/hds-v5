@@ -136,7 +136,6 @@ hdsNew(const char *file_str,
   HDSLoc * thisloc = NULL;
   int isprim;
   hid_t h5type = 0;
-  int typcreat = 0;
   char *fname = NULL;
 
   /* Returns the inherited status for compatibility reasons */
@@ -156,9 +155,9 @@ hdsNew(const char *file_str,
 
   /* Convert the HDS data type to HDF5 data type as an early sanity
      check. */
-  isprim = dau1CheckType( type_str, &h5type, groupstr,
-                          sizeof(groupstr), &typcreat, status );
-  if (typcreat) H5Tclose( h5type ); /* we are not using this type for real */
+  isprim = dau1CheckType( 0, type_str, &h5type, groupstr,
+                          sizeof(groupstr), status );
+  if (h5type) H5Tclose( h5type ); /* we are not using this type for real */
 
   /* The above routine has allocated resources so from here we can not
      simply return on error but have to ensure we clean up */

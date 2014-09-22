@@ -13,17 +13,22 @@
 *     Library routine
 
 *  Invocation:
-*     int dau1CheckType( const char * type_str, hid_t *h5type,
-*                        char * norm_str, size_t normlen,
-*                        int * typcreat, int * status );
+*     int dau1CheckType( hdsbool_t asmem, const char * type_str, hid_t *h5type,
+*                        char * norm_str, size_t normlen, int * status );
 
 *  Arguments:
+*     asmem = hdsbool_t (Given)
+*        If true (1) the resulting type should be the type
+*        to be used for in-memory operations. If false (0)
+*        the type returned should be the type used in the
+*        HDF5 file.
 *     type_str = const char * (Given)
 *        HDS data type.
 *     h5type = hid_t * (Returned)
 *        Data type to use if the supplied type_str looks like a
 *        primitive type. Not modified if it seems to be
 *        referring to a structure. See notes for details.
+*        Types are always copies and should be freed with H5Tclose.
 *     norm_str = char * (Given and Returned)
 *        Normalized form of the supplied type string. Will contain
 *        the upper-cased version of the type_str with spaces
@@ -31,10 +36,6 @@
 *        supplied type specified a non-primitive type.
 *     normlen = size_t (Given)
 *        Allocated size of normstr.
-*     typcreat = int * (Returned)
-*        Was a new data type object created? Usually this means
-*        that an array type for _CHAR*n was created. We need to know
-*        this so we can clean up the type object later.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
@@ -62,8 +63,8 @@
 *     - _INT64 : H5T_NATIVE_INT64
 *     - _REAL : H5T_NATIVE_FLOAT
 *     - _DOUBLE : H5T_NATIVE_DOUBLE
-*     - _LOGICAL : H5T_NATIVE_B8
-*     - _CHAR*N : H5T_STRING
+*     - _LOGICAL : H5T_NATIVE_B8 (H5T_NATIVE_B32 in memory)
+*     - _CHAR*N : H5T_STRING (space padded)
 
 *  History:
 *     2014-08-18 (TIMJ):
@@ -120,11 +121,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-int dau1CheckType ( const char * type_str, hid_t * h5type,
-                    char * norm_str, size_t normlen,
-                    int * typcreat, int * status ) {
+int dau1CheckType ( hdsbool_t asmem, const char * type_str, hid_t * h5type,
+                    char * norm_str, size_t normlen, int * status ) {
 
-  *typcreat = 0;
+  hid_t ltype = 0;
 
   if (*status != SAI__OK) return 1;
 
@@ -146,23 +146,23 @@ int dau1CheckType ( const char * type_str, hid_t * h5type,
      We do a full match on _CHAR* so that we can be sure what we have.
    */
   if ( strncmp( norm_str, "_INTE", 5 ) == 0) {
-    *h5type = H5T_NATIVE_INT32;
+    ltype = H5T_NATIVE_INT32;
   } else if ( norm_str[1] == 'D') {
-    *h5type = H5T_NATIVE_DOUBLE;
+    ltype = H5T_NATIVE_DOUBLE;
   } else if ( norm_str[1] == 'R') {
-    *h5type = H5T_NATIVE_FLOAT;
+    ltype = H5T_NATIVE_FLOAT;
   } else if ( norm_str[1] == 'B') {
-    *h5type = H5T_NATIVE_INT8;
+    ltype = H5T_NATIVE_INT8;
   } else if ( norm_str[1] == 'W') {
-    *h5type = H5T_NATIVE_INT16;
+    ltype = H5T_NATIVE_INT16;
   } else if ( norm_str[1] == 'L') {
-    *h5type = H5T_NATIVE_B8;
+    ltype = (asmem ? H5T_NATIVE_B32 : H5T_NATIVE_B8);
   } else if ( strncmp( norm_str, "_INT6", 5 ) == 0 ) {
-    *h5type = H5T_NATIVE_INT64;
+    ltype = H5T_NATIVE_INT64;
   } else if ( strncmp( norm_str, "_UW", 3 ) == 0 ) {
-    *h5type = H5T_NATIVE_UINT16;
+    ltype = H5T_NATIVE_UINT16;
   } else if ( strncmp( norm_str, "_UB", 3 ) == 0 ) {
-    *h5type = H5T_NATIVE_UINT8;
+    ltype = H5T_NATIVE_UINT8;
   } else if ( strncmp( norm_str, "_CHAR", 5 ) == 0 ) {
     size_t clen = 1;
 
@@ -201,10 +201,10 @@ int dau1CheckType ( const char * type_str, hid_t * h5type,
     /* Try padding them Fortran style for now -- matching HDS */
     H5Tset_strpad( *h5type, H5T_STR_SPACEPAD );
 
-    /* Dynamic type */
-    *typcreat = 1;
-
   }
+
+  /* Copy the types if we haven't already done it */
+  if (ltype > 0) *h5type = H5Tcopy( ltype );
 
   return 1;
 }

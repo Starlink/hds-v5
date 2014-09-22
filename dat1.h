@@ -216,8 +216,8 @@ void dau1CheckName( const char * name, int isname, char * buf,
 
 char * dau1CheckFileName( const char * file_str, int *status );
 
-int dau1CheckType ( const char * type_str, hid_t * h5type,
-                    char * norm_str, size_t normlen, int *typcreat, int * status );
+int dau1CheckType ( hdsbool_t asmem, const char * type_str, hid_t * h5type,
+                    char * norm_str, size_t normlen, int * status );
 
 void dat1InitHDF5(void);
 
@@ -288,6 +288,9 @@ int
 dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
                hdsdim upper[DAT__MXDIM], hdsbool_t * issubset,
                int *actdim, int * status );
+
+hid_t
+dau1Native2MemType( hid_t nativetype, int * status );
 
 /* DAT1_H_INCLUDED */
 #endif

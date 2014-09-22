@@ -163,7 +163,8 @@ dat1TypeInfo.c \
 dau1CheckFileName.c \
 dau1CheckName.c \
 dau1CheckType.c \
-dau1HdsType.c
+dau1HdsType.c \
+dau1Native2MemType.c
 
 F_C_ROUTINES = \
 fortran_interface.c \
