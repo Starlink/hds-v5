@@ -96,18 +96,33 @@ datIndex(const HDSLoc *locator1, int index, HDSLoc **locator2, int *status ) {
   char namestr[2 * DAT__SZNAM + 1];
   char groupnam[DAT__SZNAM+1];
   ssize_t lenstr = 0;
+  int ncomp = 0;
+  *locator2 = NULL;
 
   if (*status != SAI__OK) return *status;
 
   datName( locator1, groupnam, status );
+  if (*status != SAI__OK) return *status;
 
-  /* HDF5 is 0-based */
-  index--;
+  /* to short circuit the HDF5 error messages we pre-emptively check
+     the index to see if it is in bounds */
+  datNcomp( locator1, &ncomp, status );
+  if ( index < 1 || index > ncomp ) {
+    if (*status == SAI__OK) {
+      *status = DAT__OBJNF;
+      emsRepf("datIndex_0", "datIndex: Error indexing into component %d within group %s"
+              " (index should be between 1 and %d)",
+              status, index, groupnam, ncomp );
+    }
+    goto CLEANUP;
+  }
+
+  /* HDF5 is 0-based - so adjust index */
   CALLHDFE( ssize_t,
             lenstr,
             H5Lget_name_by_idx( locator1->group_id, ".", H5_INDEX_NAME, H5_ITER_INC,
-                                index, namestr, sizeof(namestr), H5P_DEFAULT ),
-            DAT__HDF5E,
+                                index-1, namestr, sizeof(namestr), H5P_DEFAULT ),
+            DAT__OBJNF,
             emsRepf("datIndex_1", "datIndex: Error obtaining name of component %d from group %s",
                     status, index, groupnam )
             );
