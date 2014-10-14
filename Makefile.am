@@ -83,6 +83,7 @@ C_ROUTINES = \
 	$(PRIVATE_C_ROUTINES) $(F_C_ROUTINES)
 
 PUBLIC_C_ROUTINES = \
+datAlter.c \
 datAnnul.c \
 datCctyp.c \
 datCell.c \
