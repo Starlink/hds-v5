@@ -38,7 +38,7 @@ int
 datBasic(const HDSLoc    *locator,
          const char      *mode_c,
          unsigned char **pntr,
-         int       *len,
+         size_t    *len,
          int       *status);
 
 /*=====================================*/
