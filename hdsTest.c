@@ -390,6 +390,16 @@ int main (void) {
   datFind( loc1, "ONEDCHAR", &loc2, &status );
   datPutVC( loc2, 3, chararr, &status );
 
+  /* Copy the primitive */
+  datCcopy( loc2, loc1, "ONEDCHARCPY", &loc3, &status);
+  {
+    char type2str[DAT__SZTYP];
+    datType( loc2, typestr, &status );
+    datType( loc3, type2str, &status );
+    cmpstrings(type2str, type2str, &status );
+  }
+  datAnnul(&loc3, &status);
+
   /* Check contents */
   datGetVC(loc2, 3, 1024, buffer, retchararr, &actval, &status);
   if (status == SAI__OK) {
@@ -480,9 +490,17 @@ int main (void) {
   datUnmap( loc2, &status );
   datAnnul( &loc2, &status );
 
-  /* See if we can rename something */
+  /* See if we can rename something and copy it*/
   datFind( loc1, "TESTSTRUCT", &loc2, &status );
   datRenam( loc2, "STRUCT2", &status );
+  datCcopy( loc2, loc1, "STRUCT3", &loc3, &status);
+  {
+    char type2str[DAT__SZTYP];
+    datType( loc2, typestr, &status );
+    datType( loc3, type2str, &status );
+    cmpstrings(type2str, type2str, &status );
+  }
+  datAnnul( &loc3, &status);
   datFind( loc2, "CHAR", &loc3, &status );
   datRenam( loc3, "CHAR*12", &status );
   datName( loc3, namestr, &status );
