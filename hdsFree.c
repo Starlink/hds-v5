@@ -22,7 +22,7 @@
 *        Pointer to global status.
 
 *  Description:
-*     Release all explicit of implicit locks on a container file, thereby granting write-access
+*     Release all explicit or implicit locks on a container file, thereby granting write-access
 *     to other processes.
 
 *  Authors:
