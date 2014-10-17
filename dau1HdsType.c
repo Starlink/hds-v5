@@ -177,12 +177,12 @@ dau1HdsType( hid_t h5type, int * status ) {
       break;
 
     case H5T_BITFIELD:
-      if ( dsize == 1 ) {
+      if ( dsize == 1 || dsize == 4 ) { /* on disk and in memory version */
         thetype = HDSTYPE_LOGICAL;
       } else {
         *status = DAT__FATAL;
         emsRepf("datType_5", "Error reading size of logical data type. Got %zu bytes"
-                " but only understand 1", status, dsize);
+                " but only understand 1 or 4", status, dsize);
       }
       break;
 
