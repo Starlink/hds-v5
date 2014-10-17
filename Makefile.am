@@ -154,6 +154,8 @@ hdsStop.c \
 hdsTrace.c \
 hdsTune.c \
 hdsWild.c \
+datConv.c \
+hdsClose.c \
 datget0x.c \
 datgetx.c \
 datmapx.c \
