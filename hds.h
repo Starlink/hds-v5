@@ -1519,7 +1519,7 @@ hdsWild(const char *fspec,
 int
 datConv(const HDSLoc *locator,
         const char *type_str,
-        int *conv,
+        hdsbool_t *conv,
         int *status);
 
 /*=====================================================*/
