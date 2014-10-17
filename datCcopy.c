@@ -101,7 +101,7 @@ datCcopy(const HDSLoc *locator1, const HDSLoc *locator2, const char *name,
   if (*status != SAI__OK) return *status;
 
   if (dat1IsStructure(locator1, status)) {
-    char type_str[DAT__SZTYP];
+    char type_str[DAT__SZTYP+1];
     hdsdim hdims[DAT__MXDIM];
     int ndims;
 
