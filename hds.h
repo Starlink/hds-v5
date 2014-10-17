@@ -1267,7 +1267,7 @@ datSlice(const HDSLoc  *locator1,
 
 int
 datState(const HDSLoc *locator,
-         int *state,
+         hdsbool_t *state,
          int *status);
 
 /*=====================================*/
@@ -1364,7 +1364,7 @@ hdsErase(HDSLoc **locator,
 /*===============================================================*/
 
 int
-hdsEwild( int *iwld,
+hdsEwild( HDSWild *iwld,
           int *status);
 
 /*================================*/
@@ -1465,7 +1465,7 @@ hdsShow(const char *topic_str,
 /*===============================================*/
 
 int
-hdsState( int *state,
+hdsState( hdsbool_t *state,
           int *status);
 
 /*============================*/
@@ -1504,7 +1504,7 @@ hdsTune(const char *param_str,
 int
 hdsWild(const char *fspec,
         const char *mode,
-        int *iwld,
+        HDSWild *iwld,
         HDSLoc **loc,
         int *status);
 
