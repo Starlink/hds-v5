@@ -31,7 +31,8 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Not Yet Implemented.
+*     - Not Yet Implemented in that no tuning parameters have any effect.
+*     - HDS Classic tuning parameters are ignored.
 
 *  History:
 *     2014-09-10 (TIMJ):
@@ -79,8 +80,7 @@
 *-
 */
 
-#include "hdf5.h"
-#include "hdf5_hl.h"
+#include <string.h>
 
 #include "ems.h"
 #include "sae_par.h"
@@ -96,9 +96,47 @@ hdsTune(const char *param_str, int  value, int  *status) {
 
   if (*status != SAI__OK) return *status;
 
-  *status = DAT__FATAL;
-  emsRep("hdsTune", "hdsTune: Not yet implemented for HDF5",
-         status);
+  /* HDS supports options:
+     - MAP: Mapping mode
+     - INAL: Initial file allocation
+     - 64BIT: 64-bit mode (ie HDSv4, else HDSv3)
+     - MAXW: Working page list
+     - NBLOCKS: Size of internal transfer buffer
+     - NCOM: Optimum number of structure components
+     - SHELL: Shell used for name expansion
+     - SYSL: System wide locking flag
+     - WAIT: Wait for locked files
+
+     Of these SHELL might be relevant depending on how hdsWild is
+     implemented. MAP might be relevant if memory mapping is ever
+     enabled in HDF5.
+
+     INAL, MAXW, NBLOCKS, NCOM, SYSL and WAIT are all irrelevant.
+
+     64BIT will have no effect as we are using whatever HDF5 gives us.
+
+     Ignore the ones that are irrelevant. Warn about those that
+     might become relevant.
+
+  */
+
+  if (strncmp( param_str, "INAL", 4 ) == 0 ||
+      strncmp( param_str, "64BIT", 5 ) == 0 ||
+      strncmp( param_str, "MAXW", 4 ) == 0 ||
+      strncmp( param_str, "NBLO", 4 ) == 0 ||
+      strncmp( param_str, "NCOM", 4 ) == 0 ||
+      strncmp( param_str, "SYSL", 4 ) == 0 ||
+      strncmp( param_str, "WAIT", 4 ) == 0 ) {
+    /* Irrelevant for HDF5 */
+  } else if (strncmp( param_str, "MAP", 3) == 0 ||
+             strncmp( param_str, "SHEL", 4) == 0) {
+    /* Might become relevant. No mechanism for warning
+       via EMS. */
+  } else {
+    *status = DAT__NAMIN;
+    emsRepf("hdsTune_1", "hdsTune: Unknown tuning parameter '%s'",
+            status, param_str );
+  }
 
   return *status;
 }
