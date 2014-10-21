@@ -43,6 +43,9 @@
 *        Initial version
 *     2014-08-29 (TIMJ):
 *        datUnmap just in case.
+*     2014-10-21 (TIMJ):
+*        Try to remove locator from group if we are being asked
+*        to free a locator stored in a group.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -79,10 +82,26 @@
 int datAnnul( HDSLoc **locator, int * status ) {
   /* Attempts to run even if status is bad */
   HDSLoc * thisloc;
+  hdsbool_t ingrp = 0;
 
   /* Sanity check argument */
   if (!locator) return *status;
   if (! *locator) return *status;
+
+  /* Remove from group. If we do not do this then we risk a segv
+     if someone later calls hdsFlush. They are not meant to call datAnnul
+     if it is part of a group and maybe we should simply return without
+     doing anything if it is part of a group. For now we continue but
+     remove from the group.
+  */
+  ingrp = hds1RemoveLocator( *locator, status );
+  /* The following code can be used to indicated whether we should be worried
+     about group usage */
+  /*
+  if (ingrp) {
+    printf("ANNULING LOCATOR %p : part of group '%s'\n", *locator, (*locator)->grpname);
+  }
+  */
 
   /* Sort out any memory mapping */
   datUnmap( *locator, status );
