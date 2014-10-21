@@ -158,7 +158,6 @@ hdsLink(HDSLoc *locator, const char *group_str, int *status) {
 
   /* Now we have the entry, we need to store the locator inside.
      We do not clone the locator, the locator is now owned by the group. */
-  printf("Storing %p in group %s\n", locator, group_str);
   elt.locator = locator;
   utarray_push_back( entry->locators, &elt );
 
@@ -249,7 +248,7 @@ hdsFlush( const char *group_str, int *status) {
   HDSelement * elt = NULL;
 
   if (*status != SAI__OK) return *status;
-  printf("Flushing locator group %s\n", group_str);
+
   /* See if this entry already exists in the hash */
   HASH_FIND_STR( groups, group_str, entry );
   if (!entry) {
@@ -265,8 +264,6 @@ hdsFlush( const char *group_str, int *status) {
         elt = (HDSelement *)utarray_next(entry->locators, elt )) {
     char name_str[DAT__SZNAM+1];
     HDSLoc * loc = elt->locator;
-    printf("Annulling element: %p\n", loc );
-
     datAnnul( &loc, status );
   }
 
