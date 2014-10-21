@@ -252,6 +252,20 @@ int main (void) {
     datAnnul( &loc2, &status );
   }
 
+  /* Add a couple of locators to a group and free it */
+  {
+    char grpnam[DAT__SZGRP+1];
+    datFind( loc1, "TESTSTRUCT", &loc2, &status );
+    hdsLink( loc2, "TEST", &status );
+    datFind( loc2, "WORD", &loc3, &status );
+    hdsLink( loc3, "TEST", &status );
+    datFind( loc2, "DOUBLE", &loc3, &status );
+    hdsLink( loc3, "TEST", &status );
+    hdsGroup( loc3, grpnam, &status );
+    cmpstrings( grpnam, "TEST", &status );
+    hdsFlush( "TEST", &status );
+  }
+
   /* Check that we can not ask for the parent of the
      root locator */
   if (status == SAI__OK) {
