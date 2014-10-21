@@ -112,7 +112,7 @@ datFind( const HDSLoc   *locator1,
   if (*status != SAI__OK) return *status;
 
   /* containing locator must refer to a group */
-  if (locator1->group_id <= 0) {
+  if (!dat1IsStructure( locator1, status) ) {
     *status = DAT__OBJIN;
     emsRep("datFind_1", "Input object is not a structure",
            status);
