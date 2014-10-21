@@ -95,6 +95,7 @@
 int
 dat1IsStructure( const HDSLoc * locator, int * status ) {
   if (*status != SAI__OK) return 0;
+  if (!locator) return 0;
   if (locator->group_id > 0) return 1;
   return 0;
 }
