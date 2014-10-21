@@ -1417,7 +1417,7 @@ hdsInfoI(const HDSLoc* loc,
 /*=================================*/
 
 int
-hdsLink(const HDSLoc *locator,
+hdsLink(HDSLoc *locator,
         const char *group_str,
         int *status);
 

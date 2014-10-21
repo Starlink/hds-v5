@@ -150,6 +150,7 @@ typedef struct LOC {
   hdsdim slicelower[DAT__MXDIM]; /* Lower bounds of slice */
   hdsdim sliceupper[DAT__MXDIM]; /* Upper bounds of slice */
   char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */
+  char grpname[DAT__SZGRP+1]; /* Name of group associated with locator */
 } HDSLoc;
 
 
@@ -291,6 +292,9 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
 
 hid_t
 dau1Native2MemType( hid_t nativetype, int * status );
+
+hdsbool_t
+hds1RemoveLocator( const HDSLoc * loc, int *status );
 
 /* DAT1_H_INCLUDED */
 #endif

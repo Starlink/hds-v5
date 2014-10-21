@@ -139,12 +139,10 @@ datVec.c \
 hdsCopy.c \
 hdsErase.c \
 hdsEwild.c \
-hdsFlush.c \
 hdsFree.c \
 hdsGroup.c \
 hdsGtune.c \
 hdsInfoI.c \
-hdsLink.c \
 hdsLock.c \
 hdsNew.c \
 hdsOpen.c \
@@ -162,7 +160,8 @@ datmapx.c \
 datnew0.c \
 datnew1.c \
 datput0.c \
-datput1.c
+datput1.c \
+hdsgroups.c
 
 PRIVATE_C_ROUTINES = \
 dat1AllocLoc.c \

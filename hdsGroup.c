@@ -32,7 +32,7 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Not Yet Implemented.
+*     - See also hdsLink and hdsFlush
 
 *  History:
 *     2014-10-17 (TIMJ):
@@ -85,6 +85,7 @@
 
 #include "ems.h"
 #include "sae_par.h"
+#include "star/one.h"
 
 #include "hds1.h"
 #include "dat1.h"
@@ -96,11 +97,9 @@ int
 hdsGroup(const HDSLoc *locator, char group_str[DAT__SZGRP+1],
          int *status) {
 
+  group_str[0] = '\0';
   if (*status != SAI__OK) return *status;
 
-  *status = DAT__FATAL;
-  emsRep("hdsGroup", "hdsGroup: Not yet implemented for HDF5",
-         status);
-
+  one_strlcpy( group_str, locator->grpname, DAT__SZGRP+1, status );
   return *status;
 }
