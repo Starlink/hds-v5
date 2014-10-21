@@ -525,7 +525,7 @@ int main (void) {
 
   /* Look for the data array and map it */
   datFind( loc1, "DATA_ARRAY", &loc2, &status );
-  /*
+
   datVec( loc2, &loc3, &status );
   datSize( loc3, &nel, &status);
   if (status == SAI__OK) {
@@ -539,7 +539,6 @@ int main (void) {
   }
 
   datAnnul( &loc3, &status );
-  */
 
   datPrec( loc2, &nbytes, &status );
   if (status == SAI__OK) {
