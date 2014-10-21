@@ -30,7 +30,7 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Not Yet Implemented.
+*     - Does nothing if hdsLock has not been called previously.
 
 *  History:
 *     2014-10-17 (TIMJ):
@@ -95,9 +95,8 @@ hdsFree(const HDSLoc *locator, int *status) {
 
   if (*status != SAI__OK) return *status;
 
-  *status = DAT__FATAL;
-  emsRep("hdsFree", "hdsFree: Not yet implemented for HDF5",
-         status);
-
+  /* Documented to do nothing if hdsLock has not been called
+     so it is safe to do nothing here as we know that hdsLock
+     can not have been called */
   return *status;
 }
