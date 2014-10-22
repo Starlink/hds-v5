@@ -235,6 +235,37 @@ has to happen in datPut before that. The parameter system relies on this
 as parameters are always supplied as strings but the correct values
 are stored in the HDS parameter file.
 
+## HDS Groups
+
+`hdsLink` and `hdsFlush` are implemented above HDF5. A hash table and
+vector of locators is used to keep track of group membership. Uses
+uthash.
+
+## hdsClose
+
+`hdsClose` is documented to be obsolete but it is still called throughout
+ADAM. Currently just calls `datAnnul`.
+
+## Primary locators?
+
+Does HDF5 have the concept of a secondary locator?
+
+HDS defaults to top-level locators being "primary" and all other locators being
+"secondary". HDS is allowed to close the file if all primary locators are annulled.
+A secondary locator can be promoted to a primary locator using `datPrmry`. In
+HDF5 it seems that all locators are primary.
+
+In Starlink software only one routine in NDF every sets a primary locator
+to a secondary locator (`ndf1_htop.f`), all others are setting to primary.
+
+## hdsLock/hdsFree
+
+`hdsLock` requires access to the underlying file descriptor associated with
+the file. This is hard to obtain and no Starlink software calls the routine.
+`hdsFree` will not complain as it is only meant to do something if `hdsLock`
+has been called.
+
+
 ## TO DO
 
 `datRef` and `datMsg` currently do not report the full path to a file,
