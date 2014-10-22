@@ -30,7 +30,7 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Deprecated routine. Will not be implemented. Use datAnnul.
+*     - Deprecated routine. Use datAnnul.
 
 *  History:
 *     2014-10-17 (TIMJ):
@@ -93,10 +93,5 @@
 int
 hdsClose(HDSLoc **locator, int *status) {
   if (*status != SAI__OK) return *status;
-
-  *status = DAT__FATAL;
-  emsRep("hdsClose", "hdsClose: Obsolete routine. Do not use.",
-         status);
-
-  return *status;
+  return datAnnul( locator, status );
 }
