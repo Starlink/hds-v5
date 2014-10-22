@@ -262,7 +262,6 @@ hdsFlush( const char *group_str, int *status) {
   for ( elt = (HDSelement *)utarray_front(entry->locators);
         elt != NULL;
         elt = (HDSelement *)utarray_next(entry->locators, elt )) {
-    char name_str[DAT__SZNAM+1];
     HDSLoc * loc = elt->locator;
     datAnnul( &loc, status );
   }
