@@ -13,7 +13,7 @@
 *     Library routine
 
 *  Invocation:
-*     datThere( const HDSLoc * locator, const char * name, int *there,
+*     datThere( const HDSLoc * locator, const char * name, hdsbool_t *there,
 *               int *status );
 
 *  Arguments:
@@ -21,7 +21,7 @@
 *        Structure locator
 *     name = const char * (Given)
 *        Component name to check
-*     there = int * (Returned)
+*     there = hdsbool_t * (Returned)
 *        Boolean indicating existence: 1 if exists, 0 otherwise.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
@@ -92,7 +92,7 @@
 #include "dat_err.h"
 
 int
-datThere( const HDSLoc * locator, const char * name, int *there,
+datThere( const HDSLoc * locator, const char * name, hdsbool_t *there,
           int *status ) {
 
   htri_t exists = 0;

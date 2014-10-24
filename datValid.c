@@ -13,12 +13,12 @@
 *     Library routine
 
 *  Invocation:
-*     datValid(const HDSLoc *locator, int *valid, int *status);
+*     datValid(const HDSLoc *locator, hdsbool_t *valid, int *status);
 
 *  Arguments:
 *     locator = const HDSLoc * (Given)
 *        Object to test.
-*     valid = int * (Returned)
+*     valid = hdsbool_t * (Returned)
 *        1 if valid, otherwise 0.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
@@ -83,7 +83,7 @@
 #include "hds.h"
 
 int
-datValid(const HDSLoc *locator, int *valid, int *status) {
+datValid(const HDSLoc *locator, hdsbool_t *valid, int *status) {
   *valid = 0;
   if (*status != SAI__OK) return *status;
 

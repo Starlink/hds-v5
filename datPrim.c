@@ -13,12 +13,12 @@
 *     Library routine
 
 *  Invocation:
-*     int datPrim( const HDSLoc *locator, int * prim, int * status );
+*     int datPrim( const HDSLoc *locator, hdsbool_t * prim, int * status );
 
 *  Arguments:
 *     locator = const HDSLoc * (Given)
 *        Object locator
-*     prim = int * (Returned)
+*     prim = hdsbool_t * (Returned)
 *        Set to true if the object locator refers to a primitive.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
@@ -90,7 +90,7 @@
 #include "hds.h"
 
 int
-datPrim( const HDSLoc * locator, int *prim, int *status ) {
+datPrim( const HDSLoc * locator, hdsbool_t *prim, int *status ) {
   *prim = ( dat1IsStructure( locator, status) ? 0 : 1 );
   return *status;
 }

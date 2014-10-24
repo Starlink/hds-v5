@@ -13,12 +13,12 @@
 *     Library routine
 
 *  Invocation:
-*     int datStruc( const HDSLoc *locator, int * struc, int * status );
+*     int datStruc( const HDSLoc *locator, hdsbool_t * struc, int * status );
 
 *  Arguments:
 *     locator = const HDSLoc * (Given)
 *        Object locator
-*     struc = int * (Returned)
+*     struc = hdsbool_t * (Returned)
 *        Set to true if the object locator refers to a structure.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
@@ -90,7 +90,7 @@
 #include "hds.h"
 
 int
-datStruc( const HDSLoc * locator, int *struc, int *status ) {
+datStruc( const HDSLoc * locator, hdsbool_t *struc, int *status ) {
   *struc = dat1IsStructure( locator, status);
   return *status;
 }

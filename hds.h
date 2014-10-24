@@ -876,7 +876,7 @@ datPrec(const HDSLoc *locator,
 
 int
 datPrim(const HDSLoc *locator,
-        int *prim,
+        hdsbool_t *prim,
         int *status);
 
 /*=========================================================*/
@@ -1276,7 +1276,7 @@ datState(const HDSLoc *locator,
 
 int
 datStruc(const HDSLoc *locator,
-         int *struc,
+         hdsbool_t *struc,
          int *status);
 
 /*===================================*/
@@ -1297,7 +1297,7 @@ datTemp(const char      *type_str,
 int
 datThere(const HDSLoc *locator,
          const char *name_c,
-         int *there,
+         hdsbool_t *there,
          int *status);
 
 /*===============================*/
@@ -1323,7 +1323,7 @@ datUnmap(HDSLoc *locator,
 
 int
 datValid(const HDSLoc *locator,
-         int    *valid,
+         hdsbool_t    *valid,
          int    *status);
 
 /*===========================*/
