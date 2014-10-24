@@ -102,15 +102,55 @@
 int
 datAlter( const HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
 
+  hdsdim curdims[DAT__MXDIM];
   hsize_t h5dims[DAT__MXDIM];
+  int curndim;
+  int i;
 
   if (*status != SAI__OK) return *status;
 
   if (locator->vectorized) {
     *status = DAT__OBJIN;
-    emsRep("datAlter_1", "Can not alter the size of a vectorized primitive",
+    emsRep("datAlter_1", "Can not alter the size of a vectorized object",
            status);
     return *status;
+  }
+
+  if (locator->pntr) {
+    *status = DAT__OBJIN;
+    emsRep("datAlter_2", "Can not alter the size of a mapped primitive",
+           status);
+    return *status;
+  }
+
+  if (locator->isslice) {
+    *status = DAT__OBJIN;
+    emsRep("datAlter_3", "Can not alter the size of a slice",
+           status);
+    return *status;
+  }
+
+  /* Get the current dimensions and validate new ones */
+  datShape( locator, DAT__MXDIM, curdims, &curndim, status );
+
+  if (curndim != ndim) {
+    if (*status == SAI__OK) {
+      *status = DAT__DIMIN;
+      emsRepf("datAlter_4", "datAlter can not change the dimensionality (%d != %d)",
+              status, curndim, ndim);
+      return *status;
+    }
+  }
+
+  if (*status != SAI__OK) return *status;
+
+  for (i=0; i< (ndim-2); i++) {
+    if ( dims[i] != curdims[i] ) {
+      *status = DAT__DIMIN;
+      emsRepf("datAlter_5", "datAlter: Dimension %d (1-based) does not match (%d != %d)",
+              status, i+1, dims[i], curdims[i]);
+      return *status;
+    }
   }
 
   /* Copy dimensions and reorder */
