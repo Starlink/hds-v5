@@ -2,9 +2,9 @@
 <!DOCTYPE component SYSTEM "componentinfo.dtd">
 <!-- component.xml.  Generated from component.xml.in by configure. -->
 
-<component id="hdsonhdf5" support="S">
+<component id="hds-v5" support="S">
   <version>5.1-1</version>
-  <path>libraries/hdsonhdf5</path>
+  <path>libext/hds-v5</path>
   <description>Hierarchical Data System layered on HDF5</description>
   <abstract>
     <p>HDS is a file-based hierarchical data system designed for the
@@ -28,7 +28,7 @@
       software.</p>
   </abstract>
   <dependencies >
-    <build>sae</build><build>chr</build><build>cnf</build><build>ems</build><build>one</build><build>prm</build><build>starmem</build><link>chr</link><link>cnf</link><link>ems</link><link>one</link><link>starmem</link><test>chr</test><test>cnf</test><test>ems</test><test>prm</test><test>starmem</test><sourceset>star2html</sourceset><sourceset>messgen</sourceset>
+    <build>sae</build><build>chr</build><build>cnf</build><build>ems</build><build>one</build><build>prm</build><build>starmem</build><link>chr</link><link>cnf</link><link>ems</link><link>one</link><link>starmem</link><link>one</link><test>chr</test><test>cnf</test><test>ems</test><test>prm</test><test>starmem</test><sourceset>messgen</sourceset>
   </dependencies>
   <developers>
     <person>
@@ -36,7 +36,7 @@
       <role>owner</role>
     </person>
   </developers>
-  <documentation> sun92</documentation>
+  <documentation></documentation>
   <bugreports>starlink@jiscmail.ac.uk</bugreports>
   <!-- <notes><p></p></notes> -->
 </component>

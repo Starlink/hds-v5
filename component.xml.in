@@ -4,7 +4,7 @@
 
 <component id="@PACKAGE@" support="S">
   <version>@PACKAGE_VERSION@</version>
-  <path>libraries/hdsonhdf5</path>
+  <path>libext/hds-v5</path>
   <description>Hierarchical Data System layered on HDF5</description>
   <abstract>
     <p>HDS is a file-based hierarchical data system designed for the

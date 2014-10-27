@@ -2,7 +2,7 @@ dnl    Process this file with autoconf to produce a configure script
 AC_REVISION($Revision$)
 
 dnl    Initialisation: package name and version number
-AC_INIT([hdsonhdf5],[5.1-1],[starlink@jiscmail.ac.uk])
+AC_INIT([hds-v5],[5.1-1],[starlink@jiscmail.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 
 dnl    Require autoconf-2.50 at least
@@ -16,15 +16,6 @@ AC_CONFIG_SRCDIR([hdsTest.c])
 
 dnl    Include defaults for Starlink configurations
 STAR_DEFAULTS
-
-dnl    Define _POSIX_C_SOURCE to be used in all routines. This was
-dnl    declared in the old header file "hds1_feature.h", but we need
-dnl    to make sure all feature-level defines are included in the autoconf
-dnl    tests (this is important for large file support under Solaris, which
-dnl    does not define _LARGEFILE_SOURCE without _POSIX_C_SOURCE).
-AC_DEFINE([_POSIX_C_SOURCE], [200112L], [Specify the version of the POSIX
-standard we want to work with (should provide POSIX.1, POSIX.2 and POSIX.4,
-if available)])
 
 dnl    Find required versions of the programs we need for configuration
 AC_PROG_CC
@@ -45,8 +36,6 @@ dnl    by operating system
 AC_HEADER_STDC
 AC_CHECK_HEADERS(stddef.h)
 AC_CHECK_HEADERS(unistd.h)
-AC_CHECK_HEADERS([sys/param.h])
-AC_CHECK_HEADERS(inttypes.h)
 
 dnl    Check for largefile support (various macros and fseeko).
 dnl    Make sure we don't use the cached version for this (can
@@ -67,17 +56,13 @@ AC_CHECK_SIZEOF(size_t)
 
 dnl    Declare the build and use dependencies for this package
 STAR_DECLARE_DEPENDENCIES([build], [sae chr cnf ems one prm starmem])
-STAR_DECLARE_DEPENDENCIES([link],  [chr cnf ems one starmem])
+STAR_DECLARE_DEPENDENCIES([link],  [chr cnf ems one starmem one])
 STAR_DECLARE_DEPENDENCIES([test],  [chr cnf ems prm starmem])
-
-dnl    List the sun/ssn/... numbers which document this package and
-dnl    which are present as .tex files in this directory.
-STAR_LATEX_DOCUMENTATION(sun92)
 
 dnl    There are two .msg files in this directory, so we need to specify
 dnl    the names of them explicitly, rather than them being defaulted from
 dnl    the package name.
-STAR_MESSGEN([cmp_err.msg dat_err.msg])
+STAR_MESSGEN([dat_err.msg])
 
 AM_CONFIG_HEADER(config.h)
 

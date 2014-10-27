@@ -103,19 +103,7 @@ typedef enum {
 
 /* Global Constants:                                                        */
 /* ================                                                         */
-/* The following are "public" values. Copies are made available externally  */
-/* in the dat_par.h and dat_par(.f) files.                                  */
-#define DAT__MXDIM 7             /* Maximum number of object dimensions     */
-#define DAT__NOLOC "<NOT A LOCATOR> "/* Null (invalid) locator value        */
-#define DAT__NOWLD 0             /* Null wild-card search context           */
-#define DAT__ROOT  "<ROOT LOCATOR>  "/* Root locator value                  */
-#define DAT__SZGRP 15            /* Size of group name                      */
-#define DAT__SZLOC 16            /* Size of Fortran locator string          */
-#define DAT__SZMOD 15            /* Size of access mode string              */
-#define DAT__SZNAM 15            /* Size of object name                     */
-#define DAT__SZTYP 15            /* Size of type string                     */
-#define DAT__FLEXT ".h5sdf"      /* Default HDS file extension              */
-#define DAT__SZFLX 6             /* Length of DAT__FLEXT                    */
+#include "dat_par.h"
 
 /* Internal Constants */
 #define DAT__MXCHR 0xffff        /* Max characters in a character data type */

@@ -7,16 +7,11 @@ autom4te.cache
 aclocal.m4
 .deps
 .libs
-*_ERR
 *_err.h
-DAT_PAR
-dat_par.h
-dat_par_h
-dat_par_f
 hdsTest
 *.log
 *.trs
-hds_ctest.h5sdf
+hds_ctest.sdf
 build-aux
 configure
 config.h
@@ -28,3 +23,5 @@ starconf.status
 config.status
 libtool
 componentinfo.dtd
+fac_200_err
+hds_types.h
