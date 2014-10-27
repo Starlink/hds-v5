@@ -123,6 +123,7 @@ typedef enum {
 
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
+  int hds_version;  /* Implementation version number. Always 5 at the moment. */
   void *pntr;       /* Pointer to memory mapped data array [datMap only] */
   size_t bytesmapped; /* Number of bytes mapped into memory [datMap only] */
   size_t vectorized;  /* if 0 not vectorized, else number of vectorized elements */

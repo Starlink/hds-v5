@@ -101,5 +101,7 @@ dat1AllocLoc( int * status ) {
     emsRep("dat1AllocLoc", "Could not allocate memory for HDS locator",
            status );
   }
+  /* Force the implementation version into the struct */
+  newloc->hds_version = 5;
   return newloc;
 }
