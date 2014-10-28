@@ -1106,7 +1106,8 @@ hdsClose_v5(HDSLoc **locator, int *status);
 /*===================================================================*/
 /* hdsFind - Find an object (Fortran routine, requires hdsf library) */
 /*===================================================================*/
-void
+
+int
 hdsFind_v5(const HDSLoc *locator1, const char *name, const char *mode, HDSLoc **locator2, int *status);
 
 

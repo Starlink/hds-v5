@@ -1110,7 +1110,8 @@ hdsClose(HDSLoc **locator, int *status);
 /*===================================================================*/
 /* hdsFind - Find an object (Fortran routine, requires hdsf library) */
 /*===================================================================*/
-void
+
+int
 hdsFind(const HDSLoc *loc1, const char *name, const char *mode, HDSLoc **loc2, int *status);
 
 
