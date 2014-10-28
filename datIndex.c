@@ -19,7 +19,7 @@
 *     locator1 = const HDSLoc * (Given)
 *        Structure locator
 *     index = int (Given)
-*        List position
+*        List position (1-based)
 *     locator2 = HDSLoc ** (Returned)
 *        Component locator.
 *     status = int* (Given and Returned)
@@ -32,6 +32,9 @@
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
+
+*  Notes:
+*     - HDS uses 1-based indexing.
 
 *  History:
 *     2014-09-12 (TIMJ):
