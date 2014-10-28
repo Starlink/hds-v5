@@ -13,13 +13,13 @@
 *     Library routine
 
 *  Invocation:
-*     datType( const HDSLoc *locator, char type_str[DAT__SZNAM+1], int * status );
+*     datType( const HDSLoc *locator, char type_str[DAT__SZTYP+1], int * status );
 
 *  Arguments:
 *     locator = const HDSLoc * (Given)
 *        Object locator
 *     type_str = char * (Returned)
-*        Buffer of size DAT__SZNAM+1 to receive the object type.
+*        Buffer of size DAT__SZTYP+1 to receive the object type.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
@@ -91,7 +91,7 @@
 #include "dat_err.h"
 
 int
-datType( const HDSLoc *locator, char type_str[DAT__SZNAM+1], int * status ) {
+datType( const HDSLoc *locator, char type_str[DAT__SZTYP+1], int * status ) {
 
   hdstype_t hdstyp = HDSTYPE_NONE;
   hid_t h5type = 0;
@@ -104,31 +104,31 @@ datType( const HDSLoc *locator, char type_str[DAT__SZNAM+1], int * status ) {
 
   switch (hdstyp) {
   case HDSTYPE_INTEGER:
-    one_strlcpy( type_str, "_INTEGER", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_INTEGER", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_REAL:
-    one_strlcpy( type_str, "_REAL", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_REAL", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_DOUBLE:
-    one_strlcpy( type_str, "_DOUBLE", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_DOUBLE", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_BYTE:
-    one_strlcpy( type_str, "_BYTE", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_BYTE", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_UBYTE:
-    one_strlcpy( type_str, "_UBYTE", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_UBYTE", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_WORD:
-    one_strlcpy( type_str, "_WORD", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_WORD", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_UWORD:
-    one_strlcpy( type_str, "_UWORD", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_UWORD", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_LOGICAL:
-    one_strlcpy( type_str, "_LOGICAL", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_LOGICAL", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_INT64:
-    one_strlcpy( type_str, "_INT64", DAT__SZNAM+1, status);
+    one_strlcpy( type_str, "_INT64", DAT__SZTYP+1, status);
     break;
   case HDSTYPE_CHAR:
     /* Get the type from the dataset and request its size */
@@ -140,7 +140,7 @@ datType( const HDSLoc *locator, char type_str[DAT__SZNAM+1], int * status ) {
                emsRep("datType_1", "datType: Error obtaining data type of dataset", status)
                );
       dsize = H5Tget_size( h5type );
-      one_snprintf( type_str, DAT__SZNAM+1, "_CHAR*%zu", status, dsize );
+      one_snprintf( type_str, DAT__SZTYP+1, "_CHAR*%zu", status, dsize );
     }
     break;
   case HDSTYPE_STRUCTURE:
