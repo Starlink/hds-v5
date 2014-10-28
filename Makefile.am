@@ -44,6 +44,7 @@ PUBLIC_CINCLUDES = hds_v5.h hds_types.h
 PRIVATE_INCLUDES = \
 	hds_h dat_par.h
 	hds1_types.h \
+	hds_fortran.h \
 	dat1.h \
 	$(noinst_MESSAGES)
 
@@ -108,6 +109,8 @@ datVec.c \
 hdsCopy.c \
 hdsErase.c \
 hdsEwild.c \
+hdsDimC2F.c \
+hdsDimF2C.c \
 hdsFree.c \
 hdsGroup.c \
 hdsGtune.c \

@@ -43,6 +43,12 @@
 
 #include "f77.h"
 
+/* Publicize _v5 APIs */
+#define datExportFloc datExportFloc_v5
+#define datImportFloc datImportFloc_v5
+#define hdsDimC2F hdsDimC2F_v5
+#define hdsDimF2C hdsDimF2C_v5
+
 /* This function converts an HDSLoc to a Fortran string buffer */
 
 /* The optional freeing of memory is problematic since it stops
