@@ -44,6 +44,8 @@
 *  History:
 *     2014-09-06 (TIMJ):
 *        Initial version
+*     2014-10-28 (TIMJ):
+*        Fix case of vectorized 1-D structure.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -161,6 +163,10 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
            input locator */
         datClone( locator1, &thisloc, status );
         goto CLEANUP;
+      } else if (rank == 1) {
+        /* No special mapping required */
+        groupsub[0] = subs[0];
+
       } else if (rank > 1) {
         /* Map vectorized index to underlying dimensionality */
         int i;
@@ -172,6 +178,12 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
         }
         dat1Index2Coords( subs[0], rank, structdims, groupsub, status );
         ndim = rank;
+      } else {
+        if (*status != SAI__OK) {
+          *status = DAT__OBJIN;
+          emsRepf("datCell_X", "datCell: Rank of structure out of range: %d", status, rank);
+        }
+        goto CLEANUP;
       }
     } else {
       int i;
