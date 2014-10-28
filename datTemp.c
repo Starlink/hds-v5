@@ -148,7 +148,7 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
      This will work on unix systems. On Windows not so well. */
   one_snprintf(fname_with_suffix, sizeof(fname_with_suffix),"%s%s", status,
                fname, DAT__FLEXT);
-  retval = unlink(fname_with_suffix);
+  unlink(fname_with_suffix);
 
   return *status;
 }
