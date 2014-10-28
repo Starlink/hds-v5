@@ -33,7 +33,11 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Not Yet Implemented.
+*     - Not Yet Implemented for general case.
+*     - Note that the SHELL tuning parameter does not use public
+*       constants but declares that (-1=no shell, 0=sh, 2=csh, 3=tcsh).
+*       HDF5 implementation currently does not use a shell
+*       so always returns -1.
 *     - Tuning parameters may be abbreviated to 4 characters.
 
 *  History:
@@ -82,9 +86,7 @@
 *-
 */
 
-#include "hdf5.h"
-#include "hdf5_hl.h"
-
+#include <string.h>
 #include "ems.h"
 #include "sae_par.h"
 
@@ -99,9 +101,12 @@ hdsGtune(const char *param_str, int *value, int *status) {
 
   if (*status != SAI__OK) return *status;
 
-  *status = DAT__FATAL;
-  emsRep("hdsGtune", "hdsGtune: Not yet implemented for HDF5",
-         status);
-
+  if (strncasecmp(param_str, "SHEL", 4) == 0) {
+    *value = -1;
+  } else {
+    *status = DAT__FATAL;
+    emsRep("hdsGtune", "hdsGtune: Not yet implemented for HDF5",
+           status);
+  }
   return *status;
 }
