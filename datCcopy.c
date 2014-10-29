@@ -41,6 +41,8 @@
 *  History:
 *     2014-10-14 (TIMJ):
 *        Initial version
+*     2014-10-29 (TIMJ):
+*        Enable copying of an undefined primitive object.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -97,13 +99,13 @@
 int
 datCcopy(const HDSLoc *locator1, const HDSLoc *locator2, const char *name,
          HDSLoc **locator3, int *status ) {
+  char type_str[DAT__SZTYP+1];
+  hdsdim hdims[DAT__MXDIM];
+  int ndims;
 
   if (*status != SAI__OK) return *status;
 
   if (dat1IsStructure(locator1, status)) {
-    char type_str[DAT__SZTYP+1];
-    hdsdim hdims[DAT__MXDIM];
-    int ndims;
 
     /* need the type and dimensionality of the structure to create
        in new location */
@@ -113,9 +115,17 @@ datCcopy(const HDSLoc *locator1, const HDSLoc *locator2, const char *name,
     *locator3 = dat1New( locator2, name, type_str, ndims, hdims, status );
 
   } else {
-
-    /* Just do a copy */
-    datCopy( locator1, locator2, name, status );
+    hdsbool_t state = 0;
+    /* We only copy if the primitive object is defined */
+    datState( locator1, &state, status );
+    if ( state ) {
+      datCopy( locator1, locator2, name, status );
+    } else {
+      /* Undefined so just make something of the right shape and type */
+      datType( locator1, type_str, status );
+      datShape( locator1, DAT__MXDIM, hdims, &ndims, status );
+      datNew( locator2, name, type_str, ndims, hdims, status );
+    }
 
     /* and get a locator to the copied entity */
     datFind( locator2, name, locator3, status );
