@@ -44,6 +44,8 @@
 *  History:
 *     2014-10-14 (TIMJ):
 *        Initial version
+*     2014-10-29 (TIMJ):
+*        Now can reshape structure arrays.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -103,7 +105,6 @@ int
 datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
 
   hdsdim curdims[DAT__MXDIM];
-  hsize_t h5dims[DAT__MXDIM];
   int curndim;
   int i;
 
@@ -153,21 +154,74 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
     }
   }
 
-  /* Copy dimensions and reorder */
-  dat1ImportDims( ndim, dims, h5dims, status );
-
   if ( dat1IsStructure( locator, status) ) {
+    hdsdim curcount = 0;
+    hdsdim newcount = 0;
 
-    /* This is somewhat problematic as we have to determine
-       all the array components that we need to keep and how
-       many we need to create */
-    if (*status == SAI__OK) {
-      *status = DAT__OBJIN;
-      emsRep("datAlter_2", "Reshaping of structure arrays not yet supported",
-             status );
+    /* The restriction on final dimension being altered simplifies
+       the calculation somewhat in that we can work in vectorized
+       space. If we have 10 elements now and need to have 8 then
+       we know we just delete elements 9 and 10. If we require
+       12 we know we just add 11 and 12 at the correct coordinates. */
+    curcount = 1;
+    newcount = 1;
+    for (i=0; i<curndim; i++) {
+      curcount *= curdims[i];
+      newcount *= dims[i];
     }
 
+    if (newcount > curcount) {
+      /* Need to extend */
+      char grouptype[DAT__SZTYP+1];
+      char groupname[DAT__SZNAM+1];
+      datType( locator, grouptype, status );
+      datName( locator, groupname, status );
+
+      for (i=curcount+1; i <= newcount; i++) {
+        hid_t cellgroup_id = 0;
+        cellgroup_id = dat1CreateStructureCell( locator->group_id, i, grouptype, groupname, ndim, dims, status );
+        if (cellgroup_id > 0) H5Gclose(cellgroup_id);
+      }
+    } else if (newcount < curcount) {
+      /* Need to shrink - delete each structure and complain if
+         the structure is not empty -- use curdims */
+      for (i=newcount+1; i<=curcount; i++) {
+        hdsdim coords[DAT__MXDIM];
+        char cellname[128];
+        HDSLoc * cell = NULL;
+        int ncomp = 0;
+        dat1Index2Coords(i, ndim, curdims, coords, status );
+        dat1Coords2CellName( ndim, coords, cellname, sizeof(cellname), status );
+
+        /* Need to peak inside -- datCell would be a bit inefficient but use minimum code/
+           Should still work as I remove earlier structures as part of the loop */
+        datCell(locator, ndim, coords, &cell, status );
+        datNcomp( cell, &ncomp, status );
+        datAnnul( &cell, status );
+        if (ncomp > 0) {
+          if (*status == SAI__OK) {
+            *status = DAT__DELIN;
+            emsRep("datAlter_6", "datAlter: Can not shrink structure array as some structures"
+                   " to be deleted contain components", status );
+          }
+          goto CLEANUP;
+        }
+        /* Remove the empty element */
+        datErase( locator, cellname, status );
+      }
+    } else {
+      /* Oddly, no change requested so we are done. Should this be an error? */
+      goto CLEANUP;
+    }
+
+    /* Need to update the dimensions in the attribute */
+    dat1SetStructureDims( locator->group_id, ndim, dims, status );
+
   } else {
+    hsize_t h5dims[DAT__MXDIM];
+
+    /* Copy dimensions and reorder */
+    dat1ImportDims( ndim, dims, h5dims, status );
 
     CALLHDFQ( H5Dset_extent( locator->dataset_id, h5dims ) );
 
