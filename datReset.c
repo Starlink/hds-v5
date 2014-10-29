@@ -93,12 +93,21 @@
 
 int
 datReset(const HDSLoc *locator, int *status) {
+  int attrval = 0;
 
   if (*status != SAI__OK) return *status;
 
-  *status = DAT__FATAL;
-  emsRep("datReset", "datReset: Not yet implemented for HDF5",
-         status);
+  if (dat1IsStructure(locator, status)) {
+    *status = DAT__OBJIN;
+    emsRep("datState_1", "datReset can only be called on primitive locator",
+           status);
+    return *status;
+  }
 
+  CALLHDFQ( H5LTset_attribute_int( locator->dataset_id, ".", HDS__ATTR_DEFINED, &attrval, 1 ) );
+
+  /* Could consider wiping the content of the data array as well */
+
+ CLEANUP:
   return *status;
 }

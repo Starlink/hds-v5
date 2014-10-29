@@ -217,6 +217,11 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
                       (tmpvalues ? tmpvalues : values )
                       ) );
 
+  /* Now that we have written we know for a fact that the primitive is defined */
+  {
+    int attrval = 1;
+    CALLHDFQ( H5LTset_attribute_int( locator->dataset_id, ".", HDS__ATTR_DEFINED, &attrval, 1 ) );
+  }
 
  CLEANUP:
   if (h5type) H5Tclose(h5type);

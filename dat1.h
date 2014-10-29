@@ -121,6 +121,9 @@ typedef enum {
     chance from the user side. */
 #define DAT__CELLNAME "ARRAY_OF_STRUCTURES_CELL"
 
+/* Names of attributes */
+#define HDS__ATTR_DEFINED "HDS_DATASET_IS_DEFINED?"
+
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
   int hds_version;  /* Implementation version number. Always 5 at the moment. */

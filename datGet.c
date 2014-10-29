@@ -117,6 +117,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   size_t nbin = 0;
   size_t nbout = 0;
   size_t nelem = 0;
+  int defined = 0;
 
   if (*status != SAI__OK) return *status;
 
@@ -138,6 +139,16 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   }
 
   if (*status != SAI__OK) goto CLEANUP;
+
+
+  /* Ensure that the locator is defined */
+  datState( locator, &defined, status );
+  if (!defined) {
+    *status = DAT__UNSET;
+    emsRep("datGet_1b", "datGet: Primitive object is undefined. Nothing to get",
+           status );
+    return *status;
+  }
 
  /* Check data types and do conversion if required */
   intype = dat1Type( locator, status );

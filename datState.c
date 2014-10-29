@@ -93,13 +93,22 @@
 
 int
 datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
-  *state = 0;
+  int isundef;
+  *state = HDS_FALSE;
 
   if (*status != SAI__OK) return *status;
 
-  *status = DAT__FATAL;
-  emsRep("datState", "datState: Not yet implemented for HDF5",
-         status);
+  if (dat1IsStructure(locator, status)) {
+    *status = DAT__OBJIN;
+    emsRep("datState_1", "datState can only be called on primitive locator",
+           status);
+    return *status;
+  }
 
+  /* Need to read the attribute */
+  CALLHDFQ( H5LTget_attribute_int( locator->dataset_id, ".", HDS__ATTR_DEFINED, &isundef ) );
+  *state = (isundef ?  HDS_TRUE : HDS_FALSE );
+
+ CLEANUP:
   return *status;
 }

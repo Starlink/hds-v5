@@ -209,6 +209,13 @@ dat1New( const HDSLoc    *locator,
                      status, cleanname )
              );
 
+    /* In HDS parlance the primitive data are currently undefined at this point */
+    /* We indicate this by setting an attribute */
+    {
+      int attrval = 0;
+      CALLHDFQ( H5LTset_attribute_int( dataset_id, ".", HDS__ATTR_DEFINED, &attrval, 1 ) );
+    }
+
   } else {
     /* Create a group */
 
