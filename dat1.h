@@ -123,6 +123,9 @@ typedef enum {
 
 /* Names of attributes */
 #define HDS__ATTR_DEFINED "HDS_DATASET_IS_DEFINED?"
+#define HDS__ATTR_STRUCT_TYPE "HDSTYPE"
+#define HDS__ATTR_STRUCT_NDIMS "HDSNDIMS"
+#define HDS__ATTR_STRUCT_DIMS "HDSDIMS"
 
 /* Private definition of the HDS locator struct */
 typedef struct LOC {

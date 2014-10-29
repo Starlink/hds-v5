@@ -149,7 +149,7 @@ datType( const HDSLoc *locator, char type_str[DAT__SZTYP+1], int * status ) {
      hand or use the H5A interface directly. The attribute was created
      with NUL padding */
     memset( type_str, '\0', DAT__SZTYP+1);
-    CALLHDFQ( H5LTget_attribute_string( locator->group_id, ".", "HDSTYPE", type_str ) );
+    CALLHDFQ( H5LTget_attribute_string( locator->group_id, ".", HDS__ATTR_STRUCT_TYPE, type_str ) );
     break;
   default:
     *status = DAT__TYPIN;

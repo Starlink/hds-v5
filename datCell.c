@@ -156,7 +156,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
       /* If this locator is vectorized then the name will be incorrect
          if we naively calculate the name. */
-      CALLHDFQ( H5LTget_attribute_int( locator1->group_id, ".", "HDSNDIMS", &rank ) );
+      CALLHDFQ( H5LTget_attribute_int( locator1->group_id, ".", HDS__ATTR_STRUCT_NDIMS, &rank ) );
 
       if (rank == 0) {
         /* So the group is really a scalar so we just need to clone the
@@ -172,7 +172,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
         int i;
         long long llstructdims[DAT__MXDIM];
         hdsdim structdims[DAT__MXDIM];
-        CALLHDFQ( H5LTget_attribute_long_long( locator1->group_id, ".", "HDSDIMS", llstructdims ) );
+        CALLHDFQ( H5LTget_attribute_long_long( locator1->group_id, ".", HDS__ATTR_STRUCT_DIMS, llstructdims ) );
         for (i=0; i<rank; i++) {
           structdims[i] = llstructdims[i];
         }

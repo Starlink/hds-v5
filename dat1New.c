@@ -226,10 +226,10 @@ dat1New( const HDSLoc    *locator,
              );
 
     /* Actual data type of the structure/group must be stored in an attribute */
-    CALLHDFQ( H5LTset_attribute_string( group_id, ".", "HDSTYPE", groupstr ) );
+    CALLHDFQ( H5LTset_attribute_string( group_id, ".", HDS__ATTR_STRUCT_TYPE, groupstr ) );
 
     /* Also store the number of dimensions */
-    CALLHDFQ( H5LTset_attribute_int( group_id, ".", "HDSNDIMS", &ndim, 1 ) );
+    CALLHDFQ( H5LTset_attribute_int( group_id, ".", HDS__ATTR_STRUCT_NDIMS, &ndim, 1 ) );
 
     if (ndim > 0) {
       /* HDF5 can not define an array of structures so we create a collection
@@ -245,7 +245,7 @@ dat1New( const HDSLoc    *locator,
           /* We store in HDS order */
           groupdims[i] = dims[i];
         }
-        CALLHDFQ( H5LTset_attribute_long_long( group_id, ".", "HDSDIMS",
+        CALLHDFQ( H5LTset_attribute_long_long( group_id, ".", HDS__ATTR_STRUCT_DIMS,
                                                groupdims, ndim ) );
       }
 
@@ -282,10 +282,10 @@ dat1New( const HDSLoc    *locator,
                  );
 
         /* Actual data type of the structure/group must be stored in an attribute */
-        CALLHDFQ( H5LTset_attribute_string( cellgroup_id, ".", "HDSTYPE", groupstr ) );
+        CALLHDFQ( H5LTset_attribute_string( cellgroup_id, ".", HDS__ATTR_STRUCT_TYPE, groupstr ) );
 
         /* Also store the number of dimensions */
-        CALLHDFQ( H5LTset_attribute_int( cellgroup_id, ".", "HDSNDIMS", &scalardims, 1 ) );
+        CALLHDFQ( H5LTset_attribute_int( cellgroup_id, ".", HDS__ATTR_STRUCT_NDIMS, &scalardims, 1 ) );
       }
     }
   }

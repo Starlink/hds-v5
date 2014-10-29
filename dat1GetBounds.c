@@ -131,11 +131,11 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
     int i;
     long long structdims[DAT__MXDIM];
 
-    CALLHDFQ( H5LTget_attribute_int( locator->group_id, ".", "HDSNDIMS", &rank ) );
+    CALLHDFQ( H5LTget_attribute_int( locator->group_id, ".", HDS__ATTR_STRUCT_NDIMS, &rank ) );
 
     if (rank > 0) {
 
-      CALLHDFQ( H5LTget_attribute_long_long( locator->group_id, ".", "HDSDIMS", structdims ) );
+      CALLHDFQ( H5LTget_attribute_long_long( locator->group_id, ".", HDS__ATTR_STRUCT_DIMS, structdims ) );
 
       if (rank > DAT__MXDIM) {
         *status = DAT__DIMIN;
