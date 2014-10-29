@@ -239,15 +239,7 @@ dat1New( const HDSLoc    *locator,
       size_t n;
 
       /* Write dimensionality as an attribute */
-      if (*status == SAI__OK) {
-        long long groupdims[DAT__MXDIM];
-        for (i=0; i<ndim; i++) {
-          /* We store in HDS order */
-          groupdims[i] = dims[i];
-        }
-        CALLHDFQ( H5LTset_attribute_long_long( group_id, ".", HDS__ATTR_STRUCT_DIMS,
-                                               groupdims, ndim ) );
-      }
+      dat1SetStructureDims( group_id, ndim, dims, status );
 
       /* Structures will always be accessed by their coordinates
          (3,2) or (4) or (1,3,2) etc. It makes sense therefore to
@@ -267,25 +259,8 @@ dat1New( const HDSLoc    *locator,
 
       for (n = 1; n <= ngroups; n++) {
         hid_t cellgroup_id = 0;
-        char cellname[128];
-        hdsdim coords[DAT__MXDIM];
-        int scalardims = 0;
-
-        /* Note we have to use the HDS dims (Fortran order) order for naming */
-        dat1Index2Coords(n, ndim, dims, coords, status );
-        dat1Coords2CellName( ndim, coords, cellname, sizeof(cellname), status );
-
-        CALLHDF( cellgroup_id,
-                 H5Gcreate2(group_id, cellname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
-                 DAT__HDF5E,
-                 emsRepf("dat1New_4", "Error creating structure/group '%s'", status, cleanname)
-                 );
-
-        /* Actual data type of the structure/group must be stored in an attribute */
-        CALLHDFQ( H5LTset_attribute_string( cellgroup_id, ".", HDS__ATTR_STRUCT_TYPE, groupstr ) );
-
-        /* Also store the number of dimensions */
-        CALLHDFQ( H5LTset_attribute_int( cellgroup_id, ".", HDS__ATTR_STRUCT_NDIMS, &scalardims, 1 ) );
+        cellgroup_id = dat1CreateStructureCell( group_id, n, groupstr, cleanname, ndim, dims, status );
+        if (cellgroup_id > 0) H5Gclose(cellgroup_id);
       }
     }
   }

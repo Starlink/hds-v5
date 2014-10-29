@@ -138,6 +138,7 @@ hdsgroups.c
 PRIVATE_C_ROUTINES = \
 dat1AllocLoc.c \
 dat1Coords2CellName.c \
+dat1CreateStructureCell.c \
 dat1CvtChar.c \
 dat1CvtLogical.c \
 dat1DumpLoc.c \
@@ -156,6 +157,7 @@ dat1IsStructure.c \
 dat1New.c \
 dat1RetrieveContainer.c \
 dat1RetrieveIdentifier.c \
+dat1SetStructureDims.c \
 dat1Type.c \
 dat1TypeInfo.c \
 dau1CheckFileName.c \

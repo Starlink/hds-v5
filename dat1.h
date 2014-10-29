@@ -291,5 +291,12 @@ dau1Native2MemType( hid_t nativetype, int * status );
 hdsbool_t
 hds1RemoveLocator( const HDSLoc * loc, int *status );
 
+void
+dat1SetStructureDims( hid_t group_id, int ndim, const hdsdim dims[], int *status );
+
+hid_t
+dat1CreateStructureCell( hid_t group_id, size_t index, const char * typestr, const char * parentstr,
+                         int ndim, const hdsdim dims[], int *status );
+
 /* DAT1_H_INCLUDED */
 #endif
