@@ -17,7 +17,7 @@ building the library or using the installed version */
 /*=================================*/
 
 int
-datAlter_v5(const HDSLoc *locator, int ndim, const hdsdim dims[], int *status);
+datAlter_v5(HDSLoc *locator, int ndim, const hdsdim dims[], int *status);
 
 /*==========================*/
 /* datAnnul - Annul locator */

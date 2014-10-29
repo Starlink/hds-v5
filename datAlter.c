@@ -13,10 +13,10 @@
 *     Library routine
 
 *  Invocation:
-*     datAlter( const HDSLoc *locator, int ndim, const hdsdim dims[], int *status);
+*     datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status);
 
 *  Arguments:
-*     locator = const HDSLoc * (Given)
+*     locator = HDSLoc * (Given)
 *        Object locator to alter.
 *     ndim = int (Given)
 *        Number of dimensions specified in "dim". Must be the number of dimensions
@@ -100,7 +100,7 @@
 #include "dat_err.h"
 
 int
-datAlter( const HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
+datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
 
   hdsdim curdims[DAT__MXDIM];
   hsize_t h5dims[DAT__MXDIM];
@@ -170,6 +170,10 @@ datAlter( const HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
   } else {
 
     CALLHDFQ( H5Dset_extent( locator->dataset_id, h5dims ) );
+
+    /* We need to get a new dataspace from this modified datset. */
+    H5Sclose( locator->dataspace_id );
+    locator->dataspace_id = H5Dget_space( locator->dataset_id );
 
   }
 
