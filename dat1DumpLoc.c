@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     
+*     dat1DumpLoc
 
 *  Purpose:
-*     
+*     Dump useful information about a locator
 
 *  Language:
 *     Starlink ANSI C
@@ -13,21 +13,20 @@
 *     Library routine
 
 *  Invocation:
-*     (  int * status );
+*     dat1DumpLoc( const HDSLoc * locator, int * status );
 
 *  Arguments:
+*     locator = const HDSLoc * (Given)
+*        Locator to be summarized.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-
+*     Write to standard output information about the state of a locator.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
-
-*  Notes:
-*     
 
 *  History:
 *     2014-08-26 (TIMJ):
@@ -74,11 +73,61 @@
 #include "dat_err.h"
 #include "sae_par.h"
 
+static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *status);
+
 void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   if (*status != SAI__OK) return;
+  char * name_str = NULL;
+  ssize_t ll;
+  hid_t objid = 0;
+  hid_t dspace_id = 0;
 
-  printf("File: %d; Group %d; Dataspace: %d; Dataset: %d; Data Type: %d\n",
+  objid = dat1RetrieveIdentifier( locator, status );
+  name_str = dat1GetFullName( objid, 0, &ll, status );
+
+  printf("Dump of locator at %s\n", name_str);
+  printf("- File: %d; Group %d; Dataspace: %d; Dataset: %d; Data Type: %d\n",
          locator->file_id, locator->group_id, locator->dataspace_id,
          locator->dataset_id, locator->dtype);
+  printf("- Vectorized: %zu; Bytes mapped: %zu, Array mapped: %p\n",
+         locator->vectorized, locator->bytesmapped, locator->pntr );
+  printf("- Is sliced: %d; Group name: '%s'\n", locator->isslice, locator->grpname);
+
+  if (locator->dataspace_id > 0) {
+    dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
+    dspace_id = H5Dget_space( locator->dataset_id );
+    dump_dataspace_info( dspace_id, "Dataset associated", status );
+    H5Sclose( dspace_id );
+  }
+ CLEANUP:
+  if (name_str) MEM_FREE(name_str);
+  return;
+}
+
+static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *status) {
+
+  if (dataspace_id > 0) {
+    hsize_t h5dims[DAT__MXDIM];
+    hssize_t nblocks = 0;
+    int i;
+    int rank;
+
+    CALLHDFE( int,
+              rank,
+              H5Sget_simple_extent_dims( dataspace_id, h5dims, NULL ),
+              DAT__DIMIN,
+              emsRep("datshape_1", "datShape: Error obtaining shape of object",
+                     status)
+              );
+    nblocks = H5Sget_select_hyper_nblocks( dataspace_id );
+
+    printf("- %s dataspace has rank: %d and %d hyperslabs\n", label, rank, (int)nblocks);
+    printf("    Dataspace dimensions (HDF5 order): ");
+    for (i=0; i<rank; i++) {
+      printf(" %zu", (size_t)h5dims[i]);
+    }
+    printf("\n");
+  }
+ CLEANUP:
   return;
 }
