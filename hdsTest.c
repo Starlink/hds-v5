@@ -496,10 +496,12 @@ int main (void) {
       emsRep( "SIZE","Number of elements originally (^NORI) not the same as now (^NEL)", &status);
     }
   }
-  sumd = 0.0;
-  for (i = 1; i <= nel; i++) {
-    mapf[i-1] = (float)i;
-    sumd += (double)i;
+  if (status == SAI__OK) {
+    sumd = 0.0;
+    for (i = 1; i <= nel; i++) {
+      mapf[i-1] = (float)i;
+      sumd += (double)i;
+    }
   }
   datUnmap( loc2, &status );
   datAnnul( &loc2, &status );
