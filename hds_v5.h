@@ -356,49 +356,49 @@ datLen_v5(const HDSLoc *locator, size_t *len, int *status);
 /*===========================*/
 
 int
-datMap_v5(const HDSLoc *locator, const char *type_str, const char *mode_str, int ndim, const hdsdim dims[], void **pntr, int *status);
+datMap_v5(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim, const hdsdim dims[], void **pntr, int *status);
 
 /*==================================*/
 /* datMapC - Map _CHAR primitive(s) */
 /*==================================*/
 
 int
-datMapC_v5(const HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], unsigned char **pntr, int *status);
+datMapC_v5(HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], unsigned char **pntr, int *status);
 
 /*====================================*/
 /* datMapD - Map _DOUBLE primitive(s) */
 /*====================================*/
 
 int
-datMapD_v5(const HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], double **pntr, int *status);
+datMapD_v5(HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], double **pntr, int *status);
 
 /*=====================================*/
 /* datMapI - Map _INTEGER primitive(s) */
 /*=====================================*/
 
 int
-datMapI_v5(const HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], int **pntr, int *status);
+datMapI_v5(HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], int **pntr, int *status);
 
 /*=====================================*/
 /* datMapK - Map _INT64 primitive(s) */
 /*=====================================*/
 
 int
-datMapK_v5(const HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], int **pntr, int *status);
+datMapK_v5(HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], int **pntr, int *status);
 
 /*=====================================*/
 /* datMapL - Map _LOGICAL primitive(s) */
 /*=====================================*/
 
 int
-datMapL_v5(const HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], hdsbool_t **pntr, int *status);
+datMapL_v5(HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], hdsbool_t **pntr, int *status);
 
 /*==================================*/
 /* datMapR - Map _REAL primitive(s) */
 /*==================================*/
 
 int
-datMapR_v5(const HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], float **pntr, int *status);
+datMapR_v5(HDSLoc *locator, const char *mode_str, int ndim, const hdsdim dims[], float **pntr, int *status);
 
 
 /*========================================*/
@@ -406,14 +406,14 @@ datMapR_v5(const HDSLoc *locator, const char *mode_str, int ndim, const hdsdim d
 /*========================================*/
 
 int
-datMapN_v5(const HDSLoc *locator, const char *type_str, const char *mode_str, int ndim, void **pntr, hdsdim dims[], int *status);
+datMapN_v5(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim, void **pntr, hdsdim dims[], int *status);
 
 /*==================================*/
 /* datMapV - Map vectorized primitive(s) */
 /*==================================*/
 
 int
-datMapV_v5(const HDSLoc *locator, const char *type_str, const char *mode_str, void **pntr, size_t *actval, int *status);
+datMapV_v5(HDSLoc *locator, const char *type_str, const char *mode_str, void **pntr, size_t *actval, int *status);
 
 
 /*==================================*/
@@ -421,7 +421,7 @@ datMapV_v5(const HDSLoc *locator, const char *type_str, const char *mode_str, vo
 /*==================================*/
 
 int
-datMould_v5(const HDSLoc *locator, int ndim, const hdsdim dims[], int *status);
+datMould_v5(HDSLoc *locator, int ndim, const hdsdim dims[], int *status);
 
 /*=======================*/
 /* datMove - Move object */
@@ -859,7 +859,7 @@ datRefct_v5(const HDSLoc *locator, int *refct, int *status);
 /*=============================*/
 
 int
-datRenam_v5(const HDSLoc *locator, const char *name_str, int *status);
+datRenam_v5(HDSLoc *locator, const char *name_str, int *status);
 
 /*================================*/
 /* datReset - Reset object state */
@@ -936,7 +936,7 @@ datType_v5(const HDSLoc *locator, char type_str[DAT__SZTYP + 1], int *status);
 /*=========================*/
 
 int
-datUnmap_v5(const HDSLoc *locator, int *status);
+datUnmap_v5(HDSLoc *locator, int *status);
 
 /*==================================*/
 /* datValid - Enquire locator valid */
@@ -977,7 +977,7 @@ hdsErase_v5(HDSLoc **locator, int *status);
 /*===============================================================*/
 
 int
-hdsEwild_v5(int *iwld, int *status);
+hdsEwild_v5(HDSWild *iwld, int *status);
 
 /*================================*/
 /* hdsFlush - Flush locator group */
@@ -1019,7 +1019,7 @@ hdsInfoI_v5(const HDSLoc* locator, const char *topic_str, const char *extra, int
 /*=================================*/
 
 int
-hdsLink_v5(const HDSLoc *locator, const char *group_str, int *status);
+hdsLink_v5(HDSLoc *locator, const char *group_str, int *status);
 
 /*================================*/
 /* hdsLock - Lock container file */
@@ -1082,7 +1082,7 @@ hdsTune_v5(const char *param_str, int value, int *status);
 /*=================================================================*/
 
 int
-hdsWild_v5(const char *fspec, const char *mode, int *iwld, HDSLoc **locator, int *status);
+hdsWild_v5(const char *fspec, const char *mode, HDSWild **iwld, HDSLoc **locator, int *status);
 
 /*=================================================================*/
 /*  Deprecated routines!                                           */

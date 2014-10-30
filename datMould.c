@@ -13,10 +13,10 @@
 *     Library routine
 
 *  Invocation:
-*     datMould( const HDSLoc *locator, int ndim, const hdsdim dims[], int *status );
+*     datMould( HDSLoc *locator, int ndim, const hdsdim dims[], int *status );
 
 *  Arguments:
-*     locator = const HDSLoc * (Given)
+*     locator = HDSLoc * (Given)
 *        Object locator.
 *     ndim = int (Given)
 *        Number of dimensions in "dim".
@@ -96,7 +96,7 @@
 #include "dat_err.h"
 
 int
-datMould( const HDSLoc *locator, int ndim, const hdsdim dims[], int *status ) {
+datMould( HDSLoc *locator, int ndim, const hdsdim dims[], int *status ) {
 
   if (*status != SAI__OK) return *status;
 

@@ -13,7 +13,7 @@
 *     Library routine
 
 *  Invocation:
-*     hdsWild(const char *fspec, const char *mode, HDSWild *iwld,
+*     hdsWild(const char *fspec, const char *mode, HDSWild **iwld,
 *             HDSLoc **loc, int *status);
 
 *  Arguments:
@@ -24,7 +24,7 @@
 *     mode = const char * (Given)
 *        The mode of access required to the container files: 'READ', 'UPDATE'
 *        or 'WRITE' (case insensitive).
-*     iwld = HDSWild * (Given and Returned)
+*     iwld = HDSWild ** (Returned)
 *        Context. This part of the API is subject to change.
 *     loc = HDSLoc ** (Returned)
 *        A primary locator to the top-level object in the next container file
@@ -113,7 +113,7 @@
 #include "dat_err.h"
 
 int
-hdsWild(const char *fspec, const char *mode, HDSWild *iwld,
+hdsWild(const char *fspec, const char *mode, HDSWild **iwld,
         HDSLoc **loc, int *status) {
 
   if (*status != SAI__OK) return *status;
