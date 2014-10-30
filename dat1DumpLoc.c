@@ -95,12 +95,15 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
 
   if (locator->dataspace_id > 0) {
     if (locator->vectorized) {
-      printf("- Locator is vectorized with bounds: %zu:%zu\n",
+      printf("- Locator is vectorized with bounds (1-based): %zu:%zu\n",
              (size_t)1, (size_t)locator->vectorized );
       if (locator->isslice) {
-        printf(" - and is sliced with bounds: %zu:%zu\n",
+        hssize_t nelem;
+        nelem = H5Sget_select_npoints(locator->dataspace_id);
+        printf("    and is sliced with bounds: %zu:%zu (%zu elements)\n",
                (size_t)(locator->slicelower)[0],
-               (size_t)(locator->sliceupper)[0] );
+               (size_t)(locator->sliceupper)[0],
+               (nelem > 0 ? (size_t)nelem : 0) );
       }
     } else {
       dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
