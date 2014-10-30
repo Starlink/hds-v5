@@ -157,6 +157,9 @@ datFind( const HDSLoc   *locator1,
   /* Create the locator */
   thisloc = dat1AllocLoc( status );
 
+  /* Child locators are not primary by default */
+  if (*status == SAI__OK) thisloc->file_id = locator1->file_id;
+
   /* Use the simplification layer to see if we have a dataset of this name */
   if (!havegroup) {
     /* we are finding a dataset */

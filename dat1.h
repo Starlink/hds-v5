@@ -142,6 +142,7 @@ typedef struct LOC {
   int ndims;         /* Number of dimensions in mapdims [datMap only] */
   hdsdim mapdims[DAT__MXDIM]; /* Dimensionality of mapped dims [datMap only] */
   hdsbool_t isslice;          /* Is this a slice? */
+  hdsbool_t isprimary;        /* Is this a primary locator (and so owns its own file_id) */
   hdsdim slicelower[DAT__MXDIM]; /* Lower bounds of slice */
   hdsdim sliceupper[DAT__MXDIM]; /* Upper bounds of slice */
   char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */

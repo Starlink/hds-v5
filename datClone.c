@@ -135,14 +135,22 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
              );
   }
 
-  /* Not sure whether I should clone the file_id in a root locator */
+  /* Retain primary-ness */
+  clonedloc->isprimary = locator1->isprimary;
+
+  /* if this is a primary locator we reopen the file_id
+     but if it is a secondary locator we just copy the file_id */
   if (locator1->file_id > 0) {
-    CALLHDF( clonedloc->file_id,
-             H5Freopen( locator1->file_id ),
-             DAT__HDF5E,
-             emsRep("datClone_4", "Error re-opening file during clone",
-                    status );
-             );
+    if (locator1->isprimary) {
+      CALLHDF( clonedloc->file_id,
+               H5Freopen( locator1->file_id ),
+               DAT__HDF5E,
+               emsRep("datClone_4", "Error re-opening file during clone",
+                      status );
+               );
+    } else {
+      clonedloc->file_id = locator1->file_id;
+    }
   }
 
   /* Retain knowledge of vectorization */

@@ -169,12 +169,14 @@ hdsOpen( const char *file_str, const char *mode_str,
      we create a temporary */
   memset(&temploc, 0, sizeof(temploc));
   temploc.file_id = file_id;
+  temploc.isprimary = HDS_TRUE;
   temploc.group_id = group_id;
   datFind( &temploc, dataset_name, locator, status );
 
   /* and if that works we put the file_id in it */
   if (*status == SAI__OK) {
     (*locator)->file_id = file_id;
+    (*locator)->isprimary = HDS_TRUE;
     file_id = 0; /* so it is not cleaned up twice */
   }
 

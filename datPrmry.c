@@ -13,16 +13,16 @@
 *     Library routine
 
 *  Invocation:
-*     datPrmry(int set, HDSLoc **locator, int *prmry, int *status);
+*     datPrmry(int set, HDSLoc **locator, hdsbool_t *prmry, int *status);
 
 *  Arguments:
-*     set = int (Given)
+*     set = hdsbool_t (Given)
 *        If a true value is given for this argument, then the routine will perform a "set"
 *        operation to set the primary/secondary status of a locator. Otherwise it will perform
 *        an "enquire" operation to return the value of this status without changing it.
 *     locator = HDSLoc ** (Given and Returned)
 *        The locator whose primary/secondary status is to be set or enquired.
-*     prmry = int * (Given and Returned)
+*     prmry = hdsbool_t * (Given and Returned)
 *        If "set" is true, then this is an input argument and specifies the new value to
 *        be set (true for a primary locator, false for a secondary locator). If "set" is
 *        false, then this is an output argument and will return a value indicating whether
@@ -39,11 +39,21 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Always a primary.
+*     - Primary status is stored internally and indicates whether
+*       the file handle is primarily owned by the locator or just
+*       a copy of one from another locator. When a locator is
+*       promoted the file handle is reopened.
+*     - The locator argument is a pointer to a pointer because
+*       in theory after demoting a locator it is possible that this
+*       would result in the file closing and the locator being
+*       annulled.
 
 *  History:
 *     2014-09-09 (TIMJ):
 *        Initial version
+*     2014-10-30 (TIMJ):
+*        Now basic system implemented although it might not
+*        behave in the same way as HDSv4 behaved.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -97,16 +107,44 @@
 #include "dat1.h"
 #include "hds.h"
 
+#include "dat_err.h"
+
 int
-datPrmry(int set, HDSLoc **locator, int *prmry, int *status) {
+datPrmry(hdsbool_t set, HDSLoc **locator, hdsbool_t *prmry, int *status) {
 
   if (*status != SAI__OK) return *status;
 
   if (set) {
-    /* trigger an error? */
+    if (*prmry) {
+      /* Only act if we are not primary already */
+      if ( !(*locator)->isprimary ) {
+        /* in this case we have to reopen the file and store that */
+        hid_t new_id;
+        CALLHDF( new_id,
+                 H5Freopen( (*locator)->file_id ),
+                 DAT__HDF5E,
+                 emsRep("datPrmry_1", "Error re-opening file during change of primary status",
+                        status );
+                 );
+        (*locator)->isprimary = HDS_TRUE;
+        (*locator)->file_id = new_id;
+      }
+    } else {
+      /* check if we need to do something */
+      if ( (*locator)->isprimary ) {
+        /* We want to make this a secondary locator so
+           we have to close this file_id. The problem then is how
+           to get hold of a copied file_id if we want to use it
+           later? */
+        *status = DAT__FATAL;
+        emsRepf("datPrmry_2", "datPrmry: Do not yet know how to convert primary to secondary locator",
+                status );
+      }
+    }
 
   } else {
-    *prmry = 1;
+    *prmry = (*locator)->isprimary;
   }
+ CLEANUP:
   return *status;
 }

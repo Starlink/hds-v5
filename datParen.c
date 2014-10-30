@@ -167,6 +167,8 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
 
   if (*status == SAI__OK) {
     thisloc->group_id = parent_id;
+    thisloc->isprimary = HDS_FALSE;
+    thisloc->file_id = locator1->file_id;
   }
 
  CLEANUP:

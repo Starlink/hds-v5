@@ -46,6 +46,8 @@
 *     2014-10-21 (TIMJ):
 *        Try to remove locator from group if we are being asked
 *        to free a locator stored in a group.
+*     2014-10-30 (TIMJ):
+*        Only annul the file_id if it is a primary locator.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -112,7 +114,7 @@ int datAnnul( HDSLoc **locator, int * status ) {
   if (thisloc->dataspace_id) H5Sclose(thisloc->dataspace_id);
   if (thisloc->dataset_id) H5Dclose(thisloc->dataset_id);
   if (thisloc->group_id) H5Gclose(thisloc->group_id);
-  if (thisloc->file_id) H5Fclose(thisloc->file_id);
+  if (thisloc->isprimary && thisloc->file_id) H5Fclose(thisloc->file_id);
   *locator = dat1FreeLoc( thisloc, status );
 
   return *status;

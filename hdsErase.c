@@ -110,10 +110,9 @@ hdsErase(HDSLoc **locator, int *status) {
 
   if (*status != SAI__OK) return *status;
 
-  if ( (*locator)->file_id <= 0) {
-    dat1DumpLoc( *locator, status );
+  if ( !(*locator)->isprimary ) {
     *status = DAT__LOCIN;
-    emsRep("hdsErase_1", "Must supply a top level locator to hdsErase",
+    emsRep("hdsErase_1", "Must supply a top level primary locator to hdsErase",
            status );
     return *status;
   }

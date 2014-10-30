@@ -205,7 +205,11 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
     /* Create the locator */
     thisloc = dat1AllocLoc( status );
 
-    if (*status == SAI__OK) thisloc->group_id = group_id;
+    if (*status == SAI__OK) {
+      thisloc->group_id = group_id;
+      /* Secondary locator by definition */
+      thisloc->file_id = locator1->file_id;
+    }
 
   } else {
 

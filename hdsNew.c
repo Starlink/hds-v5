@@ -185,6 +185,7 @@ hdsNew(const char *file_str,
     /* Copy the file_id into the new locator and use that from now on */
     if (*status == SAI__OK) {
       thisloc->file_id = file_id;
+      thisloc->isprimary = HDS_TRUE;
     }
 
     /* Free the temporary locator. We do not annul it as we have not

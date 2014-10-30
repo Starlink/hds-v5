@@ -172,6 +172,13 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
 
   if (*status != SAI__OK) goto CLEANUP;
 
+  /* Locator for a slice MUST be secondary - this may test datPrmry
+     so might end up having to do the primary demotion in this code. */
+  {
+    int prmry = HDS_FALSE;
+    datPrmry( HDS_TRUE, &sliceloc, &prmry, status );
+  }
+
   /* For a vectorized slice we need to adjust the dataspace
      to reflect the elements requested in the slice. We do that
      by calculating the coordinates of the points and how they
