@@ -41,6 +41,8 @@
 *  History:
 *     2014-09-08 (TIMJ):
 *        Initial version
+*     2014-10-30 (TIMJ):
+*        Bypass slicing for vectorized locators if the full size is requested
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -187,40 +189,52 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
     size_t coordnum = 0;
     size_t nvecelem;
     int rank = 0;
+    size_t loc1size = 0;
 
-    /* Now need to get the shape of the dataspace so that we know
-       how to index within it */
-    CALLHDFE( int,
-              rank,
-              H5Sget_simple_extent_dims( locator1->dataspace_id, h5dims, NULL ),
-              DAT__DIMIN,
-              emsRep("datshape_1", "datShape: Error obtaining shape of object",
-                     status)
-              );
-    dat1ExportDims( rank, h5dims, loc1dims, status );
+    /* Sometimes people call datSlice on a vectorized locator
+       even though they are selecting the whole array (I'm looking
+       at you ARY) */
+    datSize( locator1, &loc1size, status );
 
-    /* Need to allocate some memory for the points */
+    /* Number of elements in the slice */
     nvecelem = upper[0] - lower[0] + 1;
-    points = MEM_MALLOC( rank * nvecelem * sizeof(*points) );
 
-    /* Convert index to coordinates and store coordinates in array of points */
-    for (i = lower[0]; i <= upper[0]; i++) {
-      int j;
-      hdsdim hdscoords[DAT__MXDIM];
-      hsize_t h5coords[DAT__MXDIM];
-      dat1Index2Coords( i, rank, loc1dims, hdscoords, status );
-      dat1ImportDims( rank, hdscoords, h5coords, status );
+    if ( nvecelem != loc1size ) {
+      /* Only need to mess with the dataspace if the sizes differ */
 
-      /* and insert the points into the array */
-      for (j = 0; j<rank; j++) {
-        hsize_t posn = coordnum * rank + j;
-        points[posn] = h5coords[j] - 1;  /* 0-based HDF5 */
+      /* Now need to get the shape of the dataspace so that we know
+         how to index within it */
+      CALLHDFE( int,
+                rank,
+                H5Sget_simple_extent_dims( locator1->dataspace_id, h5dims, NULL ),
+                DAT__DIMIN,
+                emsRep("datshape_1", "datShape: Error obtaining shape of object",
+                       status)
+                );
+      dat1ExportDims( rank, h5dims, loc1dims, status );
+
+      /* Need to allocate some memory for the points */
+      points = MEM_MALLOC( rank * nvecelem * sizeof(*points) );
+
+      /* Convert index to coordinates and store coordinates in array of points */
+      for (i = lower[0]; i <= upper[0]; i++) {
+        int j;
+        hdsdim hdscoords[DAT__MXDIM];
+        hsize_t h5coords[DAT__MXDIM];
+        dat1Index2Coords( i, rank, loc1dims, hdscoords, status );
+        dat1ImportDims( rank, hdscoords, h5coords, status );
+
+        /* and insert the points into the array */
+        for (j = 0; j<rank; j++) {
+          hsize_t posn = coordnum * rank + j;
+          points[posn] = h5coords[j] - 1;  /* 0-based HDF5 */
+        }
+        coordnum++; /* or use i-slicelower[0] */
       }
-      coordnum++; /* or use i-slicelower[0] */
-    }
 
-    CALLHDFQ( H5Sselect_elements( sliceloc->dataspace_id,
-                                  H5S_SELECT_SET, nvecelem, points ) );
+      CALLHDFQ( H5Sselect_elements( sliceloc->dataspace_id,
+                                    H5S_SELECT_SET, nvecelem, points ) );
+    }
 
     /* Update the slice with the correct number of vectorized elements */
     sliceloc->vectorized = nvecelem;
