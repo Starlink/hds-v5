@@ -94,7 +94,17 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   printf("- Is sliced: %d; Group name: '%s'\n", locator->isslice, locator->grpname);
 
   if (locator->dataspace_id > 0) {
-    dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
+    if (locator->vectorized) {
+      printf("- Locator is vectorized with bounds: %zu:%zu\n",
+             (size_t)1, (size_t)locator->vectorized );
+      if (locator->isslice) {
+        printf(" - and is sliced with bounds: %zu:%zu\n",
+               (size_t)(locator->slicelower)[0],
+               (size_t)(locator->sliceupper)[0] );
+      }
+    } else {
+      dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
+    }
     dspace_id = H5Dget_space( locator->dataset_id );
     dump_dataspace_info( dspace_id, "Dataset associated", status );
     H5Sclose( dspace_id );
@@ -105,12 +115,14 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
 }
 
 static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *status) {
+  hsize_t * blockbuf = NULL;
 
   if (dataspace_id > 0) {
     hsize_t h5dims[DAT__MXDIM];
     hssize_t nblocks = 0;
     int i;
     int rank;
+    hsize_t nelem = 1;
 
     CALLHDFE( int,
               rank,
@@ -120,14 +132,52 @@ static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *st
                      status)
               );
     nblocks = H5Sget_select_hyper_nblocks( dataspace_id );
+    if (nblocks < 0) nblocks = 0; /* easier to understand */
 
-    printf("- %s dataspace has rank: %d and %d hyperslabs\n", label, rank, (int)nblocks);
+    printf("- %s dataspace has rank: %d and %d hyperslab%s\n", label, rank, (int)nblocks,
+           (nblocks == 0 ? "" : "s") );
     printf("    Dataspace dimensions (HDF5 order): ");
     for (i=0; i<rank; i++) {
       printf(" %zu", (size_t)h5dims[i]);
+      nelem *= h5dims[i];
     }
-    printf("\n");
+    printf(" (%zu element%s)\n",(size_t)nelem, (nelem == 1 ? "" : "s"));
+
+    if (nblocks > 0) {
+      hssize_t n = 0;
+      herr_t h5err = 0;
+      hsize_t nelem = 1;
+
+      blockbuf = MEM_MALLOC( nblocks * rank * 2 * sizeof(*blockbuf) );
+
+      CALLHDF( h5err,
+               H5Sget_select_hyper_blocklist( dataspace_id, 0, nblocks, blockbuf ),
+               DAT__DIMIN,
+               emsRep("dat1DumpLoc_2", "dat1DumpLoc: Error obtaining shape of slice", status )
+               );
+
+      for (n=0; n<nblocks; n++) {
+        /* The buffer is returned in form:
+           ndim start coordinates, then ndim opposite corner coordinates
+           and repeats for each block
+        */
+        printf("    Hyperslab #%d (0-based):", (int)n);
+        for (i = 0; i<rank; i++) {
+          hsize_t start;
+          hsize_t opposite;
+          size_t offset = n * rank;
+          start = blockbuf[offset+i];
+          opposite = blockbuf[offset+i+rank];
+          /* So update the shape to account for the slice: HDS is 1-based */
+          printf(" %zu:%zu", (size_t)start, (size_t)opposite);
+          nelem *= (opposite-start+1);
+        }
+        printf(" (%zu element%s)\n",(size_t)nelem, (nelem == 1 ? "" : "s"));
+      }
+
+    }
   }
  CLEANUP:
+  if (blockbuf) MEM_FREE(blockbuf);
   return;
 }
