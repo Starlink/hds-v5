@@ -135,7 +135,7 @@ static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *st
     if (nblocks < 0) nblocks = 0; /* easier to understand */
 
     printf("- %s dataspace has rank: %d and %d hyperslab%s\n", label, rank, (int)nblocks,
-           (nblocks == 0 ? "" : "s") );
+           (nblocks == 1 ? "" : "s") );
     printf("    Dataspace dimensions (HDF5 order): ");
     for (i=0; i<rank; i++) {
       printf(" %zu", (size_t)h5dims[i]);
