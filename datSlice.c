@@ -222,16 +222,17 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
     /* For a normal slice that is the same shape as the underlying
        dataspace on disk we can use a hyperslab */
     hsize_t h5count[DAT__MXDIM];
+    hsize_t h5blocksize[DAT__MXDIM];
 
     /* Calculate the number of elements but also remember that
        HDF5 will be using 0-based counting */
     for (i=0; i<ndim; i++) {
-      h5count[i] = h5upper[i] - h5lower[i] + 1;
+      h5blocksize[i] = h5upper[i] - h5lower[i] + 1;
       h5lower[i]--;
+      h5count[i] = 1;
     }
-
     CALLHDFQ( H5Sselect_hyperslab( sliceloc->dataspace_id, H5S_SELECT_SET, h5lower,
-                                   NULL, h5count, NULL) );
+                                   NULL, h5count, h5blocksize ) );
   }
 
   /* Store knowledge of slice in locator -- we have to do this for vectorized
