@@ -151,6 +151,39 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     goto CLEANUP;
   }
 
+  /* First have to validate the access mode */
+  switch (mode_str[0]) {
+  case 'R':
+  case 'r':
+    accmode = HDSMODE_READ;
+    break;
+  case 'U':
+  case 'u':
+    accmode = HDSMODE_UPDATE;
+    break;
+  case 'W':
+  case 'w':
+    accmode = HDSMODE_WRITE;
+    break;
+  default:
+    *status = DAT__MODIN;
+    emsRepf("datMap_6", "Unrecognized mode string '%s' for datMap",
+            status, mode_str);
+    goto CLEANUP;
+  }
+
+  if (accmode == HDSMODE_UPDATE || accmode == HDSMODE_WRITE) {
+    /* Must check whether the file was opened for write */
+    unsigned intent = 0;
+    CALLHDFQ( H5Fget_intent( locator->file_id, &intent ));
+    if ( intent == H5F_ACC_RDONLY ) {
+      *status = DAT__ACCON;
+      emsRepf("datMap_6b", "datMap: Can not map readonly locator in mode '%s'",
+             status, mode_str);
+      goto CLEANUP;
+    }
+  }
+
   /* There is a super-special case for datMap when called with a map
      type of "_CHAR". In that case we need to work out the size ourselves
      and adjust the type size */
@@ -231,33 +264,10 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 
   }
 
-  if (*status != SAI__OK) goto CLEANUP;
-
-  /* Now we have some memory we need to decide if we are filling it
-     or note */
-
-  switch (mode_str[0]) {
-  case 'R':
-  case 'r':
-    accmode = HDSMODE_READ;
-  case 'U':
-  case 'u':
+  /* Populate the memory */
+  if (accmode == HDSMODE_READ || accmode == HDSMODE_UPDATE) {
     datGet( locator, normtypestr, ndim, dims, mapped, status );
-    if (accmode == HDSMODE_UNKNOWN) accmode = HDSMODE_UPDATE; /* Prevent bad R case */
-    break;
-  case 'W':
-  case 'w':
-    accmode = HDSMODE_WRITE;
-    break;
-  default:
-    *status = DAT__MODIN;
-    emsRepf("datMap_6", "Unrecognized mode string '%s' for datMap",
-            status, mode_str);
   }
-
-  /* Need to store the mapped information in the locator so that
-     we can unmap it later */
-  if (*status != SAI__OK) goto CLEANUP;
 
  CLEANUP:
   /* Cleanups that must happen always */
