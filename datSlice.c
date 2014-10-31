@@ -174,11 +174,14 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
 
   if (*status != SAI__OK) goto CLEANUP;
 
-  /* Locator for a slice MUST be secondary - this may test datPrmry
-     so might end up having to do the primary demotion in this code. */
-  {
-    int prmry = HDS_FALSE;
-    datPrmry( HDS_TRUE, &sliceloc, &prmry, status );
+  /* Locator for a slice MUST be secondary - work round a bug
+     in datPrmry when demoting locators */
+  if (sliceloc->isprimary) {
+    if (sliceloc->file_id > 0) {
+      H5Fclose( sliceloc->file_id );
+      sliceloc->file_id = locator1->file_id;
+    }
+    sliceloc->isprimary = 0;
   }
 
   /* For a vectorized slice we need to adjust the dataspace
