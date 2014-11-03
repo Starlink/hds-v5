@@ -288,6 +288,64 @@ datGet1K( const HDSLoc * locator,
 }
 
 /*==================================*/
+/* DAT_GET1W - Read 1D 16-bit int array */
+/*==================================*/
+
+int
+datGet1W( const HDSLoc * locator,
+	  size_t maxval,
+	  short values[],
+	  size_t *actval,
+	  int * status ) {
+
+  hdsdim dims[1];
+
+  if (*status != SAI__OK) return *status;
+
+  datSize( locator, actval, status );
+
+  if ( *status == SAI__OK && maxval < *actval ) {
+    *status = DAT__BOUND;
+    emsSeti( "IN", (int)maxval );
+    emsSeti( "SZ", (int)*actval );
+    emsRep( "DAT_GET1I_ERR", "datGetW: Bounds mismatch: ^IN < ^SZ", status);
+  } else {
+    dims[0] = *actval;
+    datGetW( locator, 1, dims, values, status );
+  }
+  return *status;
+}
+
+/*==================================*/
+/* DAT_GET1UW - Read 1D 16-bit unsigned int array */
+/*==================================*/
+
+int
+datGet1UW( const HDSLoc * locator,
+	  size_t maxval,
+	  unsigned short values[],
+	  size_t *actval,
+	  int * status ) {
+
+  hdsdim dims[1];
+
+  if (*status != SAI__OK) return *status;
+
+  datSize( locator, actval, status );
+
+  if ( *status == SAI__OK && maxval < *actval ) {
+    *status = DAT__BOUND;
+    emsSeti( "IN", (int)maxval );
+    emsSeti( "SZ", (int)*actval );
+    emsRep( "DAT_GET1I_ERR", "datGetUW: Bounds mismatch: ^IN < ^SZ", status);
+  } else {
+    dims[0] = *actval;
+    datGetUW( locator, 1, dims, values, status );
+  }
+  return *status;
+}
+
+/*==================================*/
 /* DAT_GET1R - Read 1D float array */
 /*==================================*/
 
