@@ -108,7 +108,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
   hsize_t h5subs[DAT__MXDIM];
   HDSLoc * thisloc = NULL;
   int isstruct = 0;
-  char namestr[DAT__MXDIM+1];
+  char namestr[DAT__SZNAM+1];
 
   if (*status != SAI__OK) return *status;
 
