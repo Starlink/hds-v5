@@ -103,6 +103,9 @@ hdsGtune(const char *param_str, int *value, int *status) {
 
   if (strncasecmp(param_str, "SHEL", 4) == 0) {
     *value = -1;
+  } else if (strncasecmp(param_str, "MAP", 3) == 0) {
+    /* we can not actually map */
+    *value = 0;
   } else {
     *status = DAT__FATAL;
     emsRep("hdsGtune", "hdsGtune: Not yet implemented for HDF5",
