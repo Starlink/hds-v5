@@ -78,14 +78,16 @@ static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *st
 void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   if (*status != SAI__OK) return;
   char * name_str = NULL;
+  char * file_str = NULL;
   ssize_t ll;
   hid_t objid = 0;
   hid_t dspace_id = 0;
 
   objid = dat1RetrieveIdentifier( locator, status );
   name_str = dat1GetFullName( objid, 0, &ll, status );
+  file_str = dat1GetFullName( objid, 1, &ll, status );
 
-  printf("Dump of locator at %s\n", name_str);
+  printf("Dump of locator at %s (%s)\n", name_str, file_str);
   printf("- File: %d; Group %d; Dataspace: %d; Dataset: %d; Data Type: %d\n",
          locator->file_id, locator->group_id, locator->dataspace_id,
          locator->dataset_id, locator->dtype);
@@ -113,6 +115,7 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
     H5Sclose( dspace_id );
   }
  CLEANUP:
+  if (file_str) MEM_FREE(file_str);
   if (name_str) MEM_FREE(name_str);
   return;
 }
