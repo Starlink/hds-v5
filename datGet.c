@@ -145,9 +145,9 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   datState( locator, &defined, status );
   if (!defined) {
     *status = DAT__UNSET;
-    emsRep("datGet_1b", "datGet: Primitive object is undefined. Nothing to get",
+    emsRep("datGet_1b", "datGet: Primitive object is undefined. Nothing to get.",
            status );
-    return *status;
+    goto CLEANUP;
   }
 
  /* Check data types and do conversion if required */
