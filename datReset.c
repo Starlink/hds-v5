@@ -94,13 +94,15 @@
 int
 datReset(const HDSLoc *locator, int *status) {
   int attrval = 0;
+  char name_str[DAT__SZNAM+1];
 
   if (*status != SAI__OK) return *status;
 
   if (dat1IsStructure(locator, status)) {
+    datName( locator, name_str, status );
     *status = DAT__OBJIN;
-    emsRep("datState_1", "datReset can only be called on primitive locator",
-           status);
+    emsRepf("datState_1", "datReset: '%s' is not a primitive locator",
+            status, name_str);
     return *status;
   }
 
