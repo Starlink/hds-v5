@@ -170,8 +170,9 @@ void dau1CheckName( const char * name, int isname, char * buf, size_t buflen, in
 
   }
 
-  /* Make sure we copied something */
-  if (oposn == 0) {
+  /* Make sure we copied something -- although a blank type
+     is allowed (see ary1_retyp.f) */
+  if (oposn == 0 && isname) {
     *status = errcode;
     emsRepf("DAU_CHECK_NAME_3",
             "Invalid blank %s string specified "
