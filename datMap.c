@@ -266,7 +266,16 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 
   /* Populate the memory */
   if (accmode == HDSMODE_READ || accmode == HDSMODE_UPDATE) {
-    datGet( locator, normtypestr, ndim, dims, mapped, status );
+    hdsbool_t do_get = HDS_TRUE;
+    if (accmode == HDSMODE_UPDATE) {
+    /* If this is UPDATE mode but the data array has not actually
+       been defined yet we do not actually want to call datGet */
+      hdsbool_t defined;
+      datState( locator, &defined, status );
+      if (!defined) do_get = HDS_FALSE;
+    }
+
+    if (do_get) datGet( locator, normtypestr, ndim, dims, mapped, status );
   }
 
  CLEANUP:
