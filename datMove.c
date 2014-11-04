@@ -48,6 +48,9 @@
 *  History:
 *     2014-09-04 (TIMJ):
 *        Initial version
+*     2014-11-04 (TIMJ):
+*        H5Lmove can only move items within a file so use datCopy/datErase
+*        if it seems that this is a move between files).
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -120,9 +123,21 @@ datMove( HDSLoc **locator1, const HDSLoc *locator2, const char *name_str,
      so get the name and the parent locator */
   datParen( *locator1, &parentloc, status );
   datName( *locator1, sourcename, status );
-
-  CALLHDFQ(H5Lmove( parentloc->group_id, sourcename,
-                    locator2->group_id, cleanname, H5P_DEFAULT, H5P_DEFAULT));
+  dat1DumpLoc( *locator1, status );
+  dat1DumpLoc( parentloc, status);
+  dat1DumpLoc( locator2, status);
+  /* H5Lmove can only move within a file. If we are moving
+     between files we need to do this manually with datCopy/datErase.
+     At the moment not clear how to see if the file is the same so just
+     compare file_id.
+  */
+  if ((*locator1)->file_id == locator2->file_id) {
+    CALLHDFQ(H5Lmove( parentloc->group_id, sourcename,
+                      locator2->group_id, cleanname, H5P_DEFAULT, H5P_DEFAULT));
+  } else {
+    datCopy( *locator1, locator2, name_str, status );
+    datErase( parentloc, sourcename, status );
+  }
 
  CLEANUP:
   if (parentloc) datAnnul( &parentloc, status );
