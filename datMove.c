@@ -123,9 +123,7 @@ datMove( HDSLoc **locator1, const HDSLoc *locator2, const char *name_str,
      so get the name and the parent locator */
   datParen( *locator1, &parentloc, status );
   datName( *locator1, sourcename, status );
-  dat1DumpLoc( *locator1, status );
-  dat1DumpLoc( parentloc, status);
-  dat1DumpLoc( locator2, status);
+
   /* H5Lmove can only move within a file. If we are moving
      between files we need to do this manually with datCopy/datErase.
      At the moment not clear how to see if the file is the same so just
