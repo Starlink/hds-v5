@@ -155,6 +155,7 @@ dat1Index2Coords.c \
 dat1InitHDF5.c \
 dat1IsStructure.c \
 dat1New.c \
+dat1NewPrim.c \
 dat1RetrieveContainer.c \
 dat1RetrieveIdentifier.c \
 dat1SetStructureDims.c \

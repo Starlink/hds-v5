@@ -224,6 +224,10 @@ HDSLoc *
 dat1New( const HDSLoc *locator, const char *name_str, const char *type_str,
         int ndim, const hdsdim dims[], int *status);
 
+void
+dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type,
+             const char * name_str, hid_t * dataset_id, hid_t *dataspace_id, int *status );
+
 hid_t dat1RetrieveContainer( const HDSLoc *locator, int * status );
 hid_t dat1RetrieveIdentifier( const HDSLoc * locator, int * status );
 

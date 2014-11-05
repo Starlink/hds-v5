@@ -158,64 +158,8 @@ dat1New( const HDSLoc    *locator,
 
   /* Now create the group or dataset at the top level */
   if (isprim) {
-    if (ndim == 0) {
-
-      CALLHDF( dataspace_id,
-               H5Screate( H5S_SCALAR ),
-               DAT__HDF5E,
-               emsRepf("dat1New_0", "Error allocating data space for scalar %s",
-                       status, cleanname )
-               );
-
-      cparms = H5P_DEFAULT;
-
-    } else {
-
-      /* Create a primitive -- HDS assumes you are going to adjust
-         the dimensions of any data array so you must create these primitives
-         to take that possibility into account. */
-
-      const hsize_t h5max[DAT__MXDIM] = { H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED,
-                                          H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED,
-                                          H5S_UNLIMITED };
-
-      /* Create the data space for the dataset */
-      CALLHDF( dataspace_id,
-               H5Screate_simple( ndim, h5dims, h5max ),
-               DAT__HDF5E,
-               emsRepf("dat1New_1", "Error allocating data space for %s",
-                       status, cleanname )
-               );
-
-      /* Since we are trying to be extendible we have to allow chunking.
-         HDS gives us no ability to know how to chunk so we guess that
-         chunk sizes of the initial creation size are okay */
-      CALLHDF( cparms,
-               H5Pcreate( H5P_DATASET_CREATE ),
-               DAT__HDF5E,
-               emsRepf("dat1New_1b", "Error creating parameters for data space %s",
-                       status, cleanname)
-               );
-      CALLHDFQ( H5Pset_chunk( cparms, ndim, h5dims ) );
-
-    }
-
-    /* now place the dataset */
-    CALLHDF( dataset_id,
-             H5Dcreate2(place, cleanname, h5type, dataspace_id,
-                        H5P_DEFAULT, cparms, H5P_DEFAULT),
-             DAT__HDF5E,
-             emsRepf("dat1New_2", "Error placing the data space in the file for %s",
-                     status, cleanname )
-             );
-
-    /* In HDS parlance the primitive data are currently undefined at this point */
-    /* We indicate this by setting an attribute */
-    {
-      int attrval = 0;
-      CALLHDFQ( H5LTset_attribute_int( dataset_id, ".", HDS__ATTR_DEFINED, &attrval, 1 ) );
-    }
-
+    dat1NewPrim( place, ndim, h5dims, h5type, cleanname,
+                 &dataset_id, &dataspace_id, status );
   } else {
     /* Create a group */
 
