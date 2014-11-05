@@ -93,7 +93,7 @@
 
 int
 datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
-  int isundef;
+  int isundef = 0;
   *state = HDS_FALSE;
 
   if (*status != SAI__OK) return *status;
