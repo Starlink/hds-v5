@@ -45,6 +45,9 @@
 *  History:
 *     2014-11-05 (TIMJ):
 *        Initial version. Refactored from dat1New
+*     2014-11-05 (TIMJ):
+*        Turn off the ability to resize datasets.
+*        Rely on datAlter to not attempt this.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -102,7 +105,6 @@
 
 void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type,
                   const char * name_str, hid_t * dataset_id, hid_t *dataspace_id, int *status ) {
-  hid_t cparms = 0;
   *dataset_id = 0;
   *dataspace_id = 0;
 
@@ -117,43 +119,27 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
                      status, name_str )
              );
 
-    cparms = H5P_DEFAULT;
-
   } else {
+    int i;
 
     /* Create a primitive -- HDS assumes you are going to adjust
-       the dimensions of any data array so you must create these primitives
-       to take that possibility into account. */
-
-    const hsize_t h5max[DAT__MXDIM] = { H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED,
-                                        H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED,
-                                        H5S_UNLIMITED };
+       the dimensions of any data array but this makes it impossible
+       to map them. We therefore disable dataset resizing. */
 
     /* Create the data space for the dataset */
     CALLHDF( *dataspace_id,
-             H5Screate_simple( ndim, h5dims, h5max ),
+             H5Screate_simple( ndim, h5dims, NULL ),
              DAT__HDF5E,
              emsRepf("dat1New_1", "Error allocating data space for %s",
                      status, name_str )
              );
-
-    /* Since we are trying to be extendible we have to allow chunking.
-       HDS gives us no ability to know how to chunk so we guess that
-       chunk sizes of the initial creation size are okay */
-    CALLHDF( cparms,
-             H5Pcreate( H5P_DATASET_CREATE ),
-             DAT__HDF5E,
-             emsRepf("dat1New_1b", "Error creating parameters for data space %s",
-                     status, name_str)
-             );
-    CALLHDFQ( H5Pset_chunk( cparms, ndim, h5dims ) );
 
   }
 
   /* now place the dataset */
   CALLHDF( *dataset_id,
            H5Dcreate2(group_id, name_str, h5type, *dataspace_id,
-                      H5P_DEFAULT, cparms, H5P_DEFAULT),
+                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
            DAT__HDF5E,
            emsRepf("dat1New_2", "Error placing the data space in the file for %s",
                    status, name_str )

@@ -46,6 +46,9 @@
 *        Initial version
 *     2014-10-29 (TIMJ):
 *        Now can reshape structure arrays.
+*     2014-11-05 (TIMJ):
+*        Resize by creating a new dataset and copying across
+*        and deleting the original. Required for memory mapping.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -89,11 +92,14 @@
 *-
 */
 
+#include <string.h>
+
 #include "hdf5.h"
 #include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
+#include "star/one.h"
 
 #include "hds1.h"
 #include "dat1.h"
@@ -101,12 +107,19 @@
 
 #include "dat_err.h"
 
+const hdsbool_t USE_H5RESIZE = 0;
+
 int
 datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
 
+  hid_t h5type = 0;
   hdsdim curdims[DAT__MXDIM];
   int curndim;
   int i;
+  HDSLoc * parloc = NULL;
+  HDSLoc * temploc = NULL;
+  hid_t new_dataset_id = 0;
+  hid_t new_dataspace_id = 0;
 
   if (*status != SAI__OK) return *status;
 
@@ -219,18 +232,115 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
 
   } else {
     hsize_t h5dims[DAT__MXDIM];
+    char primname[DAT__SZNAM+1];
+    char tempname[3*DAT__SZNAM+1];
+    hdsbool_t state;
 
     /* Copy dimensions and reorder */
     dat1ImportDims( ndim, dims, h5dims, status );
 
-    CALLHDFQ( H5Dset_extent( locator->dataset_id, h5dims ) );
+    if (USE_H5RESIZE) {
+      /* This assumes we have chunked storage for datasets */
+      CALLHDFQ( H5Dset_extent( locator->dataset_id, h5dims ) );
+      /* We need to get a new dataspace from this modified dataset. */
+      H5Sclose( locator->dataspace_id );
+      locator->dataspace_id = H5Dget_space( locator->dataset_id );
+    } else {
+      /* We can only use H5Dset_extent if the dataset has
+         been created with larger dimensions (usually unlimited).
+         Since HDS primitives must always be resizable but would like
+         to be mappable we instead go for the inefficient option
+         of making a new dataset with the new size and copying the
+         data in */
 
-    /* We need to get a new dataspace from this modified datset. */
-    H5Sclose( locator->dataspace_id );
-    locator->dataspace_id = H5Dget_space( locator->dataset_id );
+      /* Need enclosing group locator */
+      datParen( locator, &parloc, status );
 
+      /* HDF5 data type of the locator */
+      CALLHDF( h5type,
+               H5Dget_type( locator->dataset_id ),
+               DAT__HDF5E,
+               emsRep("dat1Type_1", "datType: Error obtaining data type of dataset", status)
+               );
+
+      /* Create a new dataset with a name related to this dataset but which
+         does not conform to the HDS rules */
+      datName( locator, primname, status );
+      one_snprintf(tempname, sizeof(tempname), "%s%s", status,
+                   "+TEMPORARY_DATASET_", primname);
+
+      dat1NewPrim( parloc->group_id, ndim, h5dims, h5type, tempname,
+                   &new_dataset_id, &new_dataspace_id, status );
+
+      /* Nothing to copy if the source locator is not defined */
+      datState( locator, &state, status );
+      if (state && *status == SAI__OK) {
+        size_t numin = 1;
+        size_t numout = 1;
+        size_t nbperel;
+        char type_str[DAT__SZTYP+1];
+        void *inpntr = NULL;
+        void *outpntr = NULL;
+        size_t nbytes = 0;
+
+        /* Type in HDS speak */
+        datType(locator, type_str, status );
+
+        /* Number of bytes per element -- should be the same in and out */
+        datLen( locator, &nbperel, status );
+
+        /* Easiest to map the the input and output and copy */
+        datMapV( locator, type_str, "READ", &inpntr, &numin, status );
+
+        /* Create temporary locator for output */
+        temploc = dat1AllocLoc( status );
+        temploc->dataset_id = new_dataset_id;
+        temploc->dataspace_id = new_dataspace_id;
+        temploc->file_id = locator->file_id;
+
+        /* And map the output */
+        datMapV( temploc, type_str, "WRITE", &outpntr, &numout, status );
+
+        /* Copy up to numin elements */
+        nbytes = nbperel * (numin > numout ? numout : numin);
+        memcpy( outpntr, inpntr, nbytes );
+
+        /* Then set the remaining elements to 0 (or bad). We could
+           get around this need by specifying the fill value on object creation */
+        if ( numout > numin) {
+          size_t nextra = nbperel * (numout - numin);
+          unsigned char * offpntr = NULL;
+          offpntr = &((unsigned char *)outpntr)[nbytes];
+          memset( offpntr, 0, nextra );
+        }
+
+        /* Unmap and free the temporary locator */
+        datUnmap( locator, status );
+        datUnmap( temploc, status );
+        temploc = dat1FreeLoc( temploc, status );
+      }
+
+      /* Delete the source dataset -- free resources in supplied locator */
+      H5Sclose( locator->dataspace_id );
+      H5Dclose( locator->dataset_id );
+      datErase( parloc, primname, status );
+
+      /* Relocate the new dataset */
+      CALLHDFQ(H5Lmove( parloc->group_id, tempname,
+                        parloc->group_id, primname, H5P_DEFAULT, H5P_DEFAULT));
+
+      /* Update the locator */
+      locator->dataspace_id = new_dataspace_id;
+      locator->dataset_id = new_dataset_id;
+
+    }
   }
 
  CLEANUP:
+  datAnnul(&parloc, status);
+  if (*status != SAI__OK) {
+    if (h5type > 0) H5Tclose( h5type );
+    if (temploc) temploc = dat1FreeLoc( temploc, status );
+  }
   return *status;
 }
