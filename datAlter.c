@@ -269,6 +269,13 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
       one_snprintf(tempname, sizeof(tempname), "%s%s", status,
                    "+TEMPORARY_DATASET_", primname);
 
+      /* If the entry already exists this *must* be due to a previous
+         error condition in datAlter so we throw up our hands and assume we
+         can delete it */
+      if (H5Lexists( parloc->group_id, tempname, H5P_DEFAULT)) {
+        H5Ldelete( parloc->group_id, tempname, H5P_DEFAULT);
+      }
+
       dat1NewPrim( parloc->group_id, ndim, h5dims, h5type, tempname,
                    &new_dataset_id, &new_dataspace_id, status );
 
