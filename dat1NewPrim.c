@@ -48,6 +48,8 @@
 *     2014-11-05 (TIMJ):
 *        Turn off the ability to resize datasets.
 *        Rely on datAlter to not attempt this.
+*     2014-11-06 (TIMJ):
+*        Chunked datasets is now a compile-time switch.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -105,6 +107,7 @@
 
 void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type,
                   const char * name_str, hid_t * dataset_id, hid_t *dataspace_id, int *status ) {
+  hid_t cparms = H5P_DEFAULT;
   *dataset_id = 0;
   *dataspace_id = 0;
 
@@ -120,15 +123,41 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
              );
 
   } else {
-    int i;
+    /* Since HDS can not tell us the largest size that the user will need for this
+       dataset, if we are to allow resizing we have to make it unlimited. */
+    const hsize_t *maxdims = NULL;
 
-    /* Create a primitive -- HDS assumes you are going to adjust
-       the dimensions of any data array but this makes it impossible
-       to map them. We therefore disable dataset resizing. */
+    /* Create a primitive -- if we create it chunked we can not memory map
+       but we can resize. If we create a fixed size then in theory we can
+       memory map but resizes (datAlter) have to be done by copy and delete. */
+#define HDS_USE_CHUNKED_DATASETS 1
+#if HDS_USE_CHUNKED_DATASETS
+    /* Create the dataspace with chunked storage that is resizable. For this
+       to happen we just need two updates:
+       - a parameter indicating that chunking is enabled.
+       - the max dimensions.
+    */
+    const hsize_t h5max[DAT__MXDIM] = { H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED,
+                                        H5S_UNLIMITED, H5S_UNLIMITED, H5S_UNLIMITED,
+                                        H5S_UNLIMITED };
+    /* Unlimited dimensions */
+    maxdims = h5max;
+
+    /* We can not find out the optimum chunk size from HDS API so we choose
+       the initial size. */
+    CALLHDF( cparms,
+             H5Pcreate( H5P_DATASET_CREATE ),
+             DAT__HDF5E,
+             emsRepf("dat1New_1b", "Error creating parameters for data space %s",
+                     status, name_str)
+             );
+    CALLHDFQ( H5Pset_chunk( cparms, ndim, h5dims ) );
+
+#endif
 
     /* Create the data space for the dataset */
     CALLHDF( *dataspace_id,
-             H5Screate_simple( ndim, h5dims, NULL ),
+             H5Screate_simple( ndim, h5dims, maxdims ),
              DAT__HDF5E,
              emsRepf("dat1New_1", "Error allocating data space for %s",
                      status, name_str )
@@ -139,7 +168,7 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
   /* now place the dataset */
   CALLHDF( *dataset_id,
            H5Dcreate2(group_id, name_str, h5type, *dataspace_id,
-                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
+                      H5P_DEFAULT, cparms, H5P_DEFAULT),
            DAT__HDF5E,
            emsRepf("dat1New_2", "Error placing the data space in the file for %s",
                    status, name_str )
