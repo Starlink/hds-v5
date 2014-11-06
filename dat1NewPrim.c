@@ -130,7 +130,7 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
     /* Create a primitive -- if we create it chunked we can not memory map
        but we can resize. If we create a fixed size then in theory we can
        memory map but resizes (datAlter) have to be done by copy and delete. */
-#define HDS_USE_CHUNKED_DATASETS 1
+
 #if HDS_USE_CHUNKED_DATASETS
     /* Create the dataspace with chunked storage that is resizable. For this
        to happen we just need two updates:
