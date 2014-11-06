@@ -39,6 +39,9 @@
 *  History:
 *     2014-08-29 (TIMJ):
 *        Initial version
+*     2014-11-06 (TIMJ):
+*        If pointer was memory mapped directly from a file close
+*        the file and do not use datPut.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -84,6 +87,7 @@
 
 #include <errno.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "hdf5.h"
 #include "hdf5_hl.h"
@@ -108,22 +112,26 @@ datUnmap( HDSLoc * locator, int * status ) {
   /* if there is no mapped pointer in this locator do nothing */
   if (!locator->pntr) return *status;
 
-  /* If these data were mapped for WRITE or UPDATE we have to copy
-     back the data. Use datPut() for that. Mark the error stack
-     before we try this.
-  */
+  /* We only copy back explicitly if we did not do a native mmap on the file */
+  if (locator->fdmap == 0) {
 
-  emsMark();
+    /* If these data were mapped for WRITE or UPDATE we have to copy
+       back the data. Use datPut() for that. Mark the error stack
+       before we try this.
+    */
 
-  if (locator->accmode == HDSMODE_WRITE ||
-      locator->accmode == HDSMODE_UPDATE) {
-    datPut( locator, locator->maptype, locator->ndims, locator->mapdims,
-            locator->pntr, &lstat);
+    emsMark();
+
+    if (locator->accmode == HDSMODE_WRITE ||
+        locator->accmode == HDSMODE_UPDATE) {
+      datPut( locator, locator->maptype, locator->ndims, locator->mapdims,
+              locator->pntr, &lstat);
+    }
+
+    /* if we have bad status from this just ignore it. Release the error stack */
+    if (lstat != SAI__OK) emsAnnul( &lstat );
+    emsRlse();
   }
-
-  /* if we have bad status from this just ignore it. Release the error stack */
-  if (lstat != SAI__OK) emsAnnul( &lstat );
-  emsRlse();
 
   /* Need to free the memory and unregister the pointer */
   cnfUregp( locator->pntr );
@@ -136,8 +144,25 @@ datUnmap( HDSLoc * locator, int * status ) {
     }
   }
 
+  /* If these data were mmap-ed directly on disk then we have to update
+     the defined attribute */
+  if (locator->fdmap != 0) {
+    if (locator->accmode == HDSMODE_WRITE ||
+        locator->accmode == HDSMODE_UPDATE) {
+      int attrval = 1;
+      CALLHDFQ( H5LTset_attribute_int( locator->dataset_id, ".", HDS__ATTR_DEFINED, &attrval, 1 ) );
+    }
+  }
+
+ CLEANUP:
   locator->pntr = NULL;
   locator->bytesmapped = 0;
+
+  /* Close the file if we opened it -- ignore the return value */
+  if (locator->fdmap > 0) {
+    close(locator->fdmap);
+    locator->fdmap = 0;
+  }
 
   return *status;
 }

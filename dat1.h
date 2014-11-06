@@ -145,6 +145,7 @@ typedef struct LOC {
   hdsbool_t isprimary;        /* Is this a primary locator (and so owns its own file_id) */
   hdsdim slicelower[DAT__MXDIM]; /* Lower bounds of slice */
   hdsdim sliceupper[DAT__MXDIM]; /* Upper bounds of slice */
+  int fdmap;  /* File descriptor for mapped data [datMap only] */
   char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */
   char grpname[DAT__SZGRP+1]; /* Name of group associated with locator */
 } HDSLoc;
