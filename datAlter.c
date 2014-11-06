@@ -49,6 +49,11 @@
 *     2014-11-05 (TIMJ):
 *        Resize by creating a new dataset and copying across
 *        and deleting the original. Required for memory mapping.
+*     2014-11-06 (TIMJ):
+*        Try the native resize first. It might actually work and
+*        it will be more efficient. It will only work if the dataset
+*        could not support memory mapping so the fact that the new
+*        one also won't is irrelevant.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -106,8 +111,6 @@
 #include "hds.h"
 
 #include "dat_err.h"
-
-const hdsbool_t USE_H5RESIZE = 0;
 
 int
 datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
@@ -235,23 +238,27 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
     char primname[DAT__SZNAM+1];
     char tempname[3*DAT__SZNAM+1];
     hdsbool_t state;
+    herr_t h5err;
 
     /* Copy dimensions and reorder */
     dat1ImportDims( ndim, dims, h5dims, status );
 
-    if (USE_H5RESIZE) {
-      /* This assumes we have chunked storage for datasets */
-      CALLHDFQ( H5Dset_extent( locator->dataset_id, h5dims ) );
-      /* We need to get a new dataspace from this modified dataset. */
+    /* First we simply try the native resize. This will only work
+       if the system is using chunked storage and the registered
+       upper limit to the bounds is acceptable. If it fails we will
+       just fall back to the long-winded inefficient version. */
+    h5err = H5Dset_extent( locator->dataset_id, h5dims );
+    if (h5err >= 0) {
+      /* Actually worked so we need to define a new dataspace */
       H5Sclose( locator->dataspace_id );
       locator->dataspace_id = H5Dget_space( locator->dataset_id );
     } else {
-      /* We can only use H5Dset_extent if the dataset has
-         been created with larger dimensions (usually unlimited).
-         Since HDS primitives must always be resizable but would like
-         to be mappable we instead go for the inefficient option
-         of making a new dataset with the new size and copying the
-         data in */
+      /* The native resize failed. This is the most likely scenario
+         for HDS when we have configured the system to attempt to
+         create datasets that can be memory mapped. We therefore
+         resize by creating a new dataset of the correct size,
+         copying in the contents from the original, deleting the
+         original, then renaming the new dataset. */
 
       /* Need enclosing group locator */
       datParen( locator, &parloc, status );
