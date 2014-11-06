@@ -45,6 +45,10 @@
 *  History:
 *     2014-08-27 (TIMJ):
 *        Initial version
+*     2014-11-06 (TIMJ):
+*        If a long name has been supplied make sure we do not care
+*        by annulling the ONE__TRUNC error. This can happen when we
+*        are working on temporary structures hidden from HDS.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -93,6 +97,7 @@
 
 #include "ems.h"
 #include "sae_par.h"
+#include "one_err.h"
 
 #include "hds1.h"
 #include "dat1.h"
@@ -117,6 +122,10 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   if (*status != SAI__OK) return *status;
 
   datName(locator, namestr, status);
+
+  /* we do not care because this must be a temporary component
+     that we are trying to hide from HDS */
+  if (*status == ONE__TRUNC) emsAnnul(status);
 
   /* Ensure that this locator is associated with a primitive type */
   if (locator->dataset_id <= 0) {
