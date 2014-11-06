@@ -463,7 +463,8 @@ int main (void) {
       for (i = 0; i < 2; i++ ) {
          if (darr[i] != mapd[i]) {
            status = DAT__DIMIN;
-           emsRep( "MAPD","Values from MapD differ", &status);
+           emsRepf( "MAPD","Values from MapD differ (e.g. element %d : %f != %f)",
+                    &status, (int)i, darr[i], mapd[i] );
            break;
          }
       }
