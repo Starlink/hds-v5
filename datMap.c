@@ -438,9 +438,10 @@ dat1Mmap( size_t nbytes, int prot, int flags, int fd, off_t offset, int *isreg, 
                " failed registration: ^MESSAGE", status);
         goto CLEANUP;
       }
+      if (!where) where = mapped;
+      where += pagesize;
       mapped = NULL;
       *pntr = NULL;
-      where += pagesize;
     }
 
     if (!mapped && tries > 10) {
