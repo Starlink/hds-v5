@@ -472,10 +472,10 @@ dat1Mmap( size_t nbytes, int prot, int flags, int fd, off_t offset, int *isreg, 
       *pntr = NULL;
     }
 
-    if (!mapped && tries > 10) {
+    if (!mapped && tries > 100) {
       *status = DAT__FILMP;
-      emsRep("datMap_4b", "Failed to register mapped memory with CNF"
-             " after multiple attempts", status );
+      emsRepf("datMap_4b", "Failed to register mapped memory with CNF"
+             " after %d attempts", status, tries );
       goto CLEANUP;
     }
 
