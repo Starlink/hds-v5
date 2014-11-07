@@ -113,7 +113,7 @@ datUnmap( HDSLoc * locator, int * status ) {
   if (!locator->pntr) return *status;
 
   /* We only copy back explicitly if we did not do a native mmap on the file */
-  if (locator->fdmap == 0) {
+  if (!locator->uses_true_mmap) {
 
     /* If these data were mapped for WRITE or UPDATE we have to copy
        back the data. Use datPut() for that. Mark the error stack
@@ -146,7 +146,7 @@ datUnmap( HDSLoc * locator, int * status ) {
 
   /* If these data were mmap-ed directly on disk then we have to update
      the defined attribute */
-  if (locator->fdmap != 0) {
+  if (locator->uses_true_mmap) {
     if (locator->accmode == HDSMODE_WRITE ||
         locator->accmode == HDSMODE_UPDATE) {
       int attrval = 1;

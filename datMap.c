@@ -276,12 +276,11 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 #endif
 
   if (try_mmap) {
-    /* We have to open the file ourselves! */
-    char * fname = NULL;
     int fd = 0;
     int flags = 0;
     int prot = 0;
-    fname = dat1GetFullName( locator->dataset_id, 1, NULL, status );
+    hdsbool_t opened_fd = 0;
+
     if ( intent == H5F_ACC_RDONLY || accmode == HDSMODE_READ ) {
       flags |= O_RDONLY;
       prot = PROT_READ;
@@ -289,8 +288,36 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
       flags |= O_RDWR;
       prot = PROT_READ | PROT_WRITE;
     }
+
     if (*status == SAI__OK) {
-      fd = open(fname, flags);
+      /* see what file driver we have */
+      hid_t fapl_id = -1;
+      hid_t fdriv_id = -1;
+      void * file_handle = NULL;
+      herr_t herr = -1;
+      fapl_id = H5Fget_access_plist(locator->file_id);
+      fdriv_id = H5Pget_driver(fapl_id);
+      if (fdriv_id == H5FD_SEC2 || fdriv_id == H5FD_STDIO) {
+        /* If this is a POSIX or STDIO driver we get the handle */
+        herr = H5Fget_vfd_handle( locator->file_id, fapl_id, (void**)&file_handle);
+        if (herr >= 0) {
+          if (fdriv_id == H5FD_SEC2) {
+            fd = *((int *)file_handle);
+          } else if (fdriv_id == H5FD_STDIO) {
+            FILE * fh = (FILE *)file_handle;
+            fd = fileno(fh);
+          }
+        }
+      }
+
+      if (fd == 0) {
+        /* We have to open the file ourselves! */
+        char * fname = NULL;
+        fname = dat1GetFullName( locator->dataset_id, 1, NULL, status );
+        fd = open(fname, flags);
+        opened_fd = 1;
+        if (fname) MEM_FREE(fname);
+      }
       if (fd > 0) {
         /* Set up for memory mapping */
         int mflags = 0;
@@ -299,17 +326,18 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
           mapped = dat1Mmap( nbytes, prot, mflags, fd, offset, &isreg, &regpntr, &actbytes, status );
           if (*status == SAI__OK) {
             /* Store the file descriptor in the locator to allow us to close */
-            if (mapped) locator->fdmap = fd;
-            printf("SUCCEED IN MMAP\n");
+            if (mapped) {
+              if (opened_fd) locator->fdmap = fd;
+              locator->uses_true_mmap = 1;
+            }
           } else {
             /* Not currently fatal -- we can try without the file */
-            close(fd);
+            if (opened_fd) close(fd);
             emsAnnul(status);
           }
         }
       }
     }
-    if (fname) MEM_FREE(fname);
   }
 
   /* If we have not been able to map anything yet, just mmap some
