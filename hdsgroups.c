@@ -199,6 +199,8 @@ hdsLink(HDSLoc *locator, const char *group_str, int *status) {
 *  History:
 *     2014-10-17 (TIMJ):
 *        Initial version
+*     2014-11-07 (TIMJ):
+*        Remove from group before calling datAnnul
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -263,6 +265,9 @@ hdsFlush( const char *group_str, int *status) {
         elt != NULL;
         elt = (HDSelement *)utarray_next(entry->locators, elt )) {
     HDSLoc * loc = elt->locator;
+    /* clear the group membership -- otherwise datAnnul will
+       call back to the group code to try to remove the locator */
+    (loc->grpname)[0] = '\0';
     datAnnul( &loc, status );
   }
 
