@@ -483,6 +483,7 @@ int main (void) {
       }
   }
   datUnmap(loc2, &status);
+  datAnnul(&loc2, &status);
 
   /* Find and map DATA_ARRAY */
   datFind( loc1, "DATA_ARRAY", &loc2, &status );
