@@ -249,6 +249,34 @@ int main (void) {
     cmpprec( loc2, "REAL", &status );
     cmpprec( loc2, "DOUBLE", &status );
     cmpprec( loc2, "CHAR", &status );
+
+    /* Fill in some info so that we know it copies correctly
+       later - use CHAR type throughout */
+    datFind( loc2, "CHAR", &loc3, &status );
+    datPut0C( loc3, "a test", &status );
+    datAnnul( &loc3, &status );
+    datFind( loc2, "DOUBLE", &loc3, &status );
+    datPut0C( loc3, "55.6", &status );
+    datAnnul( &loc3, &status );
+    datFind( loc2, "INT64", &loc3, &status );
+    datPut0C( loc3, "42", &status );
+    datAnnul( &loc3, &status );
+    datFind( loc2, "INTEGER", &loc3, &status );
+    datPut0C( loc3, "21", &status );
+    datAnnul( &loc3, &status );
+    datFind( loc2, "LOGICAL", &loc3, &status );
+    datPut0C( loc3, "T", &status );
+    datAnnul( &loc3, &status );
+    datFind( loc2, "REAL", &loc3, &status );
+    datPut0C( loc3, "3.141", &status );
+    datAnnul( &loc3, &status );
+    datFind( loc2, "UWORD", &loc3, &status );
+    datPut0C( loc3, "32", &status );
+    datAnnul( &loc3, &status );
+    datFind( loc2, "WORD", &loc3, &status );
+    datPut0C( loc3, "-32", &status );
+    datAnnul( &loc3, &status );
+
     datAnnul( &loc2, &status );
   }
 
