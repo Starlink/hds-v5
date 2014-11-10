@@ -84,10 +84,15 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   hid_t dspace_id = 0;
 
   objid = dat1RetrieveIdentifier( locator, status );
-  name_str = dat1GetFullName( objid, 0, &ll, status );
-  file_str = dat1GetFullName( objid, 1, &ll, status );
-
-  printf("Dump of locator at %s (%s)\n", name_str, file_str);
+  if (objid > 0) {
+    name_str = dat1GetFullName( objid, 0, &ll, status );
+    file_str = dat1GetFullName( objid, 1, &ll, status );
+  } else if (locator->file_id > 0) {
+    file_str = dat1GetFullName( locator->file_id, 1, &ll, status );
+  }
+  printf("Dump of locator %p at %s (%s)\n", locator,
+         (name_str ? name_str : "none"),
+         (file_str ? file_str : "no file"));
   printf("- File: %d; Group %d; Dataspace: %d; Dataset: %d; Data Type: %d\n",
          locator->file_id, locator->group_id, locator->dataspace_id,
          locator->dataset_id, locator->dtype);
