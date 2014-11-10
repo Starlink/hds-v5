@@ -33,8 +33,10 @@
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
+*  See Also:
+*     - datPrmry
+
 *  Notes:
-*     - Not Yet Implemented.
 *     - This routine may be used to determine whether annulling a primary
 *       locator will cause a container file to be closed (also see the
 *       routine datPrmry).
@@ -99,13 +101,8 @@
 
 int
 datRefct(const HDSLoc *locator, int *refct, int *status) {
-  *refct = 1;
-
+  *refct = 0;
   if (*status != SAI__OK) return *status;
-
-  *status = DAT__FATAL;
-  emsRep("datRefct", "datCoerc: Not yet implemented for HDF5",
-         status);
-
+  *refct = hds1PrimaryCount( locator->file_id, status );
   return *status;
 }

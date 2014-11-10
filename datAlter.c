@@ -306,7 +306,8 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
         /* Easiest to map the the input and output and copy */
         datMapV( locator, type_str, "READ", &inpntr, &numin, status );
 
-        /* Create temporary locator for output */
+        /* Create temporary locator for output -- do not need to register this
+           and we are not annulling it. */
         temploc = dat1AllocLoc( status );
         temploc->dataset_id = new_dataset_id;
         temploc->dataspace_id = new_dataspace_id;

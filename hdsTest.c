@@ -537,13 +537,35 @@ int main (void) {
   /* Close the file */
   datAnnul( &loc1, &status );
 
+  printf("Query file status:\n");
+  hdsShow("FILES", &status);
+  printf("Query Locator status:\n");
+  hdsShow("LOCATORS", &status);
 
   /* Re-open */
   hdsOpen( path, "UPDATE", &loc1, &status );
 
   /* Look for the data array and map it */
   datFind( loc1, "DATA_ARRAY", &loc2, &status );
+  printf("Query files after reopen:\n");
+  hdsShow("FILES", &status);
+  printf("Query locators after 2 locators created:\n");
+  hdsShow("LOCATORS", &status);
 
+  /* Count the number of primary locators */
+  {
+    int refct = 0;
+    hdsbool_t prmry = 1;
+    datRefct( loc2, &refct, &status );
+    cmpszints( refct, 1, &status );
+    datPrmry( 1, &loc2, &prmry, &status );
+    datRefct( loc2, &refct, &status );
+    cmpszints( refct, 2, &status );
+    prmry = 0;
+    datPrmry( 1, &loc2, &prmry, &status );
+    datRefct( loc2, &refct, &status );
+    cmpszints( refct, 1, &status );
+  }
   datVec( loc2, &loc3, &status );
   datSize( loc3, &nel, &status);
   if (status == SAI__OK) {

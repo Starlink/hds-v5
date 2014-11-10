@@ -116,7 +116,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   hid_t group_id = 0;
   hsize_t iposn;
   char dataset_name[DAT__SZNAM+1];
-  HDSLoc temploc;
+  HDSLoc *temploc = NULL;
 
   *locator = NULL;
   if (*status != SAI__OK) return *status;
@@ -165,24 +165,25 @@ hdsOpen( const char *file_str, const char *mode_str,
   CALLHDFQ( H5Lget_name_by_idx(group_id, ".", H5_INDEX_NAME, H5_ITER_INC,
                                iposn, dataset_name, sizeof(dataset_name), H5P_DEFAULT ) );
 
-  /* Now that we have a name we can use datFind once we have a locator
-     we create a temporary */
-  memset(&temploc, 0, sizeof(temploc));
-  temploc.file_id = file_id;
-  temploc.isprimary = HDS_TRUE;
-  temploc.group_id = group_id;
-  datFind( &temploc, dataset_name, locator, status );
+  /* Now that we have a name we can use datFind once we have a locator,
+     we create a temporary locator but must register it so that an error
+     in datFind will not close the file immediately before we close it ourselves later. */
+  temploc = dat1AllocLoc( status );
+  temploc->file_id = file_id;
+  temploc->isprimary = HDS_TRUE;
+  temploc->group_id = group_id;
+  hds1RegLocator( temploc, status );
+  if (*status == SAI__OK) file_id = 0; /* Now owned by locator */
 
-  /* and if that works we put the file_id in it */
-  if (*status == SAI__OK) {
-    (*locator)->file_id = file_id;
-    (*locator)->isprimary = HDS_TRUE;
-    file_id = 0; /* so it is not cleaned up twice */
-  }
+  datFind( temploc, dataset_name, locator, status );
+
+  /* force the locator to be primary as we get rid of the parent locator */
+  if (*status == SAI__OK) (*locator)->isprimary = HDS_TRUE;
 
  CLEANUP:
 
-  if (group_id > 0) H5Gclose( group_id );
+  /* Free the temporary which will close the parent group */
+  if (temploc) datAnnul(&temploc, status );
 
   if (*status != SAI__OK) {
     /* cleanup */

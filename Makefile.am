@@ -165,7 +165,8 @@ dau1CheckFileName.c \
 dau1CheckName.c \
 dau1CheckType.c \
 dau1HdsType.c \
-dau1Native2MemType.c
+dau1Native2MemType.c \
+hdstrack.c
 
 hds_types.h: make-hds-types$(EXEEXT)
 	./make-hds-types

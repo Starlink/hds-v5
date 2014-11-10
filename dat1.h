@@ -305,5 +305,16 @@ hid_t
 dat1CreateStructureCell( hid_t group_id, size_t index, const char * typestr, const char * parentstr,
                          int ndim, const hdsdim dims[], int *status );
 
+int
+hds1RegLocator(HDSLoc *locator, int *status);
+
+int
+hds1FlushFile( hid_t file_id, int *status);
+
+hdsbool_t
+hds1UnregLocator( HDSLoc * loc, int *status );
+
+size_t
+hds1PrimaryCount( hid_t file_id, int * status );
 /* DAT1_H_INCLUDED */
 #endif

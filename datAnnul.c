@@ -110,11 +110,32 @@ int datAnnul( HDSLoc **locator, int * status ) {
 
   thisloc = *locator;
 
-  if (thisloc->dtype) H5Tclose(thisloc->dtype);
-  if (thisloc->dataspace_id) H5Sclose(thisloc->dataspace_id);
-  if (thisloc->dataset_id) H5Dclose(thisloc->dataset_id);
-  if (thisloc->group_id) H5Gclose(thisloc->group_id);
-  if (thisloc->isprimary && thisloc->file_id) H5Fclose(thisloc->file_id);
+  /* Free HDF5 resources. We zero them out so that unregistering
+     the locator does not cause confusion */
+  if (thisloc->dtype) {
+    H5Tclose(thisloc->dtype);
+    thisloc->dtype = 0;
+  }
+  if (thisloc->dataspace_id) {
+    H5Sclose(thisloc->dataspace_id);
+    thisloc->dataspace_id = 0;
+  }
+  if (thisloc->dataset_id) {
+    H5Dclose(thisloc->dataset_id);
+    thisloc->dataset_id = 0;
+  }
+  if (thisloc->group_id) {
+    H5Gclose(thisloc->group_id);
+    thisloc->group_id = 0;
+  }
+
+  /* Unregister this -- this may result in many other
+     secondary locators being freed. It may or may not result
+     in the file handle being closed. We only unregister if
+     we have a file_id (otherwise we will not know from where
+     to unregister it. */
+  if (thisloc->file_id > 0) hds1UnregLocator( thisloc, status );
+
   *locator = dat1FreeLoc( thisloc, status );
 
   return *status;

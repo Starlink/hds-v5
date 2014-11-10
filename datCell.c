@@ -209,6 +209,8 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
       thisloc->group_id = group_id;
       /* Secondary locator by definition */
       thisloc->file_id = locator1->file_id;
+      /* Register it */
+      hds1RegLocator( thisloc, status );
     }
 
   } else {

@@ -135,23 +135,10 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
              );
   }
 
-  /* Retain primary-ness */
+  /* Retain primary-ness. Copy the file id and register */
   clonedloc->isprimary = locator1->isprimary;
-
-  /* if this is a primary locator we reopen the file_id
-     but if it is a secondary locator we just copy the file_id */
-  if (locator1->file_id > 0) {
-    if (locator1->isprimary) {
-      CALLHDF( clonedloc->file_id,
-               H5Freopen( locator1->file_id ),
-               DAT__HDF5E,
-               emsRep("datClone_4", "Error re-opening file during clone",
-                      status );
-               );
-    } else {
-      clonedloc->file_id = locator1->file_id;
-    }
-  }
+  clonedloc->file_id = locator1->file_id;
+  hds1RegLocator( clonedloc, status );
 
   /* Retain knowledge of vectorization */
   clonedloc->vectorized = locator1->vectorized;

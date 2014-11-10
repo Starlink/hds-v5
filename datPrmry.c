@@ -21,7 +21,9 @@
 *        operation to set the primary/secondary status of a locator. Otherwise it will perform
 *        an "enquire" operation to return the value of this status without changing it.
 *     locator = HDSLoc ** (Given and Returned)
-*        The locator whose primary/secondary status is to be set or enquired.
+*        The locator whose primary/secondary status is to be set or enquired. Will be
+*        set to NULL if the locator is the last primary locator and it is set to
+*        secondary status.
 *     prmry = hdsbool_t * (Given and Returned)
 *        If "set" is true, then this is an input argument and specifies the new value to
 *        be set (true for a primary locator, false for a secondary locator). If "set" is
@@ -31,22 +33,29 @@
 *        Pointer to global status.
 
 *  Description:
-*     Currently a null operation as HDF5 does not have a primary/secondary
-*     distinction.
+*     Can be used to set or query the primary or secondary status of
+*     a locator. For each open file (hdsOpen or hdsNew) the locators
+*     are tracked and if the number of primary locators associated with
+*     the file drops to zero all the locators associated with a file
+*     will be annulled.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
+*  See Also:
+*     - datRefct to determine whether changing the supplied locator
+*       to a secondary locator will cause the file to be closed.
+
 *  Notes:
-*     - Primary status is stored internally and indicates whether
-*       the file handle is primarily owned by the locator or just
-*       a copy of one from another locator. When a locator is
-*       promoted the file handle is reopened.
+*     - Primary status is stored internally in the locator and
+*       tracked in a per-file data structure.
 *     - The locator argument is a pointer to a pointer because
 *       in theory after demoting a locator it is possible that this
 *       would result in the file closing and the locator being
 *       annulled.
+*     - Locators from hdsOpen and hdsNew are always primary. Locators
+*       from datFind and datSlice are secondary locators.
 
 *  History:
 *     2014-09-09 (TIMJ):
@@ -54,6 +63,9 @@
 *     2014-10-30 (TIMJ):
 *        Now basic system implemented although it might not
 *        behave in the same way as HDSv4 behaved.
+*     2014-11-10 (TIMJ):
+*        Use central registry of locators to implement primary/secondary
+*        in a way that matched HDSv4.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -116,35 +128,29 @@ datPrmry(hdsbool_t set, HDSLoc **locator, hdsbool_t *prmry, int *status) {
 
   if (set) {
     if (*prmry) {
-      /* Only act if we are not primary already */
-      if ( !(*locator)->isprimary ) {
-        /* in this case we have to reopen the file and store that */
-        hid_t new_id;
-        CALLHDF( new_id,
-                 H5Freopen( (*locator)->file_id ),
-                 DAT__HDF5E,
-                 emsRep("datPrmry_1", "Error re-opening file during change of primary status",
-                        status );
-                 );
-        (*locator)->isprimary = HDS_TRUE;
-        (*locator)->file_id = new_id;
-      }
+      (*locator)->isprimary = HDS_TRUE;
     } else {
       /* check if we need to do something */
       if ( (*locator)->isprimary ) {
-        /* We want to make this a secondary locator so
-           we have to close this file_id. The problem then is how
-           to get hold of a copied file_id if we want to use it
-           later? */
-        *status = DAT__FATAL;
-        emsRepf("datPrmry_2", "datPrmry: Do not yet know how to convert primary to secondary locator",
-                status );
+        int refct = 0;
+        /* We are converting a primary to a secondary locator.
+           Get the reference count for this file id */
+        datRefct( *locator, &refct, status );
+
+        if (refct == 1) {
+          /* This locator is primary and there is only one
+             primary associated with this file id. That means
+             the file should be closed and locator freed. */
+          hds1FlushFile( (*locator)->file_id, status );
+          *locator = NULL;
+        } else {
+          (*locator)->isprimary = HDS_FALSE;
+        }
       }
     }
 
   } else {
     *prmry = (*locator)->isprimary;
   }
- CLEANUP:
   return *status;
 }
