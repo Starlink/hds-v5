@@ -48,6 +48,9 @@
 *        to free a locator stored in a group.
 *     2014-10-30 (TIMJ):
 *        Only annul the file_id if it is a primary locator.
+*     2014-11-11 (TIMJ):
+*        Use new error context. We need to unmap and unregister
+*        even if status is bad.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -77,6 +80,9 @@
 
 #include "hdf5.h"
 
+#include "sae_par.h"
+#include "ems.h"
+
 #include "hds1.h"
 #include "dat1.h"
 #include "hds.h"
@@ -85,10 +91,17 @@ int datAnnul( HDSLoc **locator, int * status ) {
   /* Attempts to run even if status is bad */
   HDSLoc * thisloc;
   hdsbool_t ingrp = 0;
+  int lstat = SAI__OK;
 
   /* Sanity check argument */
   if (!locator) return *status;
   if (! *locator) return *status;
+
+  /* Begin an entirely new error context as we need to run this
+     regardless of external errors */
+  lstat = *status;
+  emsBegin( &lstat );
+  emsMark();
 
   /* Remove from group. If we do not do this then we risk a segv
      if someone later calls hdsFlush. They are not meant to call datAnnul
@@ -96,7 +109,7 @@ int datAnnul( HDSLoc **locator, int * status ) {
      doing anything if it is part of a group. For now we continue but
      remove from the group.
   */
-  ingrp = hds1RemoveLocator( *locator, status );
+  ingrp = hds1RemoveLocator( *locator, &lstat );
   /* The following code can be used to indicated whether we should be worried
      about group usage */
   /*
@@ -106,7 +119,7 @@ int datAnnul( HDSLoc **locator, int * status ) {
   */
 
   /* Sort out any memory mapping */
-  datUnmap( *locator, status );
+  datUnmap( *locator, &lstat );
 
   thisloc = *locator;
 
@@ -134,9 +147,14 @@ int datAnnul( HDSLoc **locator, int * status ) {
      in the file handle being closed. We only unregister if
      we have a file_id (otherwise we will not know from where
      to unregister it. */
-  if (thisloc->file_id > 0) hds1UnregLocator( thisloc, status );
+  if (thisloc->file_id > 0) hds1UnregLocator( thisloc, &lstat );
 
-  *locator = dat1FreeLoc( thisloc, status );
+  *locator = dat1FreeLoc( thisloc, &lstat );
+
+  /* End the error context and return the final status */
+  emsRlse();
+  emsEnd( &lstat );
+  *status = lstat;
 
   return *status;
 }
