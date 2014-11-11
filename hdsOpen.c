@@ -169,12 +169,13 @@ hdsOpen( const char *file_str, const char *mode_str,
      we create a temporary locator but must register it so that an error
      in datFind will not close the file immediately before we close it ourselves later. */
   temploc = dat1AllocLoc( status );
-  temploc->file_id = file_id;
-  temploc->isprimary = HDS_TRUE;
-  temploc->group_id = group_id;
-  hds1RegLocator( temploc, status );
-  if (*status == SAI__OK) file_id = 0; /* Now owned by locator */
-
+  if (*status == SAI__OK) {
+    temploc->file_id = file_id;
+    file_id = 0; /* now owned by the locator system */
+    temploc->isprimary = HDS_TRUE;
+    temploc->group_id = group_id;
+    hds1RegLocator( temploc, status );
+  }
   datFind( temploc, dataset_name, locator, status );
 
   /* force the locator to be primary as we get rid of the parent locator */
