@@ -113,16 +113,20 @@ hdsShow(const char *topic_str, int  *status) {
     ssize_t nret = 0;
     unsigned int types = 0;
     ssize_t i;
+    hdsbool_t listfiles = 0;
+    hdsbool_t listlocs = 0;
 
     /* Decide what we are interested in */
     switch (topic_str[0]) {
     case 'F':
     case 'f':
       types = H5F_OBJ_FILE;
+      listfiles = 1;
       break;
     case 'L':
     case 'l':
       types = H5F_OBJ_DATASET | H5F_OBJ_GROUP;
+      listlocs = 1;
       break;
     default:
       *status = DAT__WEIRD;
@@ -183,7 +187,7 @@ hdsShow(const char *topic_str, int  *status) {
             intent_str = "Err";
           }
           name_str = dat1GetFullName( obj_id, 1, NULL, status );
-          printf("File: %s [%s]\n", name_str, intent_str );
+          printf("File: %s [%s] (%d)\n", name_str, intent_str, obj_id );
           if (name_str) MEM_FREE(name_str);
         } else if ( objtype == H5I_GROUP || objtype == H5I_DATASET ) {
           char * name_str = NULL;
@@ -205,6 +209,8 @@ hdsShow(const char *topic_str, int  *status) {
       printf("hdsShow: Obtained 0 relevant HDF5 objects\n");
     }
 
+    /* And internal HDS report */
+    if (listfiles || listlocs) hds1ShowFiles( listfiles, listlocs, status );
   } else {
     *status = DAT__FATAL;
     emsRepf("hdsShow", "hdsShow: Do not understand topic '%s'",
