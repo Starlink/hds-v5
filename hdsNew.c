@@ -176,18 +176,20 @@ hdsNew(const char *file_str,
   /* Create the top-level structure/primitive */
   if (*status == SAI__OK) {
     HDSLoc *tmploc = dat1AllocLoc( status );
-    tmploc->file_id = file_id;
-    tmploc->isprimary = HDS_TRUE;
-    hds1RegLocator( tmploc, status );
-    if (*status == SAI__OK) file_id = 0; /* handed file to locator */
+    if (*status == SAI__OK) {
+      tmploc->file_id = file_id;
+      tmploc->isprimary = HDS_TRUE;
+      hds1RegLocator( tmploc, status );
+      if (*status == SAI__OK) file_id = 0; /* handed file to locator */
 
-    /* We use dat1New instead of datNew so that we do not have to follow
-       up immediately with a datFind */
-    thisloc = dat1New( tmploc, name_str, type_str, ndim, dims, status );
+      /* We use dat1New instead of datNew so that we do not have to follow
+         up immediately with a datFind */
+      thisloc = dat1New( tmploc, name_str, type_str, ndim, dims, status );
 
-    /* Annul the temporary locator. The file will not close if
-     we still have a primary from the dat1New */
-    datAnnul( &tmploc, status );
+      /* Annul the temporary locator. The file will not close if
+         we still have a primary from the dat1New */
+      datAnnul( &tmploc, status );
+    }
   }
 
   /* Return the locator */
