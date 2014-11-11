@@ -133,7 +133,6 @@ dat1New( const HDSLoc    *locator,
   hid_t h5type = 0;
   hid_t place = 0;
   int isprim;
-  HDSLoc * thisloc = NULL;
   hsize_t h5dims[DAT__MXDIM];
 
   if (*status != SAI__OK) return NULL;
@@ -211,14 +210,16 @@ dat1New( const HDSLoc    *locator,
 
   /* We now have to store this in a new locator */
   if (*status == SAI__OK) {
-    HDSLoc * thisloc = dat1AllocLoc( status );
-    thisloc->dataset_id = dataset_id;
-    thisloc->group_id = group_id;
-    thisloc->dataspace_id = dataspace_id;
-    thisloc->dtype = h5type;
-    thisloc->file_id = locator->file_id;
-    thisloc->isprimary = 1;
-    hds1RegLocator( thisloc, status );
+    HDSLoc *thisloc = dat1AllocLoc( status );
+    if (*status == SAI__OK) {
+      thisloc->dataset_id = dataset_id;
+      thisloc->group_id = group_id;
+      thisloc->dataspace_id = dataspace_id;
+      thisloc->dtype = h5type;
+      thisloc->file_id = locator->file_id;
+      thisloc->isprimary = 1;
+      hds1RegLocator( thisloc, status );
+    }
     return thisloc;
   }
 
@@ -229,9 +230,6 @@ dat1New( const HDSLoc    *locator,
   if (dataspace_id) H5Sclose(dataspace_id);
   if (cparms > 0 && cparms != H5P_DEFAULT) H5Pclose(cparms);
   if (group_id) H5Gclose(group_id);
-  if (thisloc) {
-    thisloc = dat1FreeLoc(thisloc, status);
-  }
   return NULL;
 }
 
