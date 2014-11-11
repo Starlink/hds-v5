@@ -419,3 +419,76 @@ hds1PrimaryCount( hid_t file_id, int * status ) {
 
   return nprimary;
 }
+
+
+/* Version of hdsShow that uses the internal list of locators
+   rather than the HDF5 list of locators. This should duplicate
+   the HDF5 list.
+*/
+
+void
+hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status ) {
+  HDSregistry *entry;
+  unsigned int num_files;
+  if (*status != SAI__OK) return;
+
+  num_files = HASH_COUNT(all_locators);
+  printf("Internal HDS registry: %u file%s\n", num_files, (num_files == 1 ? "" : "s"));
+  for (entry = all_locators; entry != NULL; entry = entry->hh.next) {
+    unsigned intent = 0;
+    hid_t file_id = 0;
+    unsigned int len = 0;
+    char * name_str = NULL;
+    const char * intent_str = NULL;
+    file_id = entry->file_id;
+    H5Fget_intent( file_id, &intent );
+    if (intent == H5F_ACC_RDONLY) {
+      intent_str = "R";
+    } else if (intent == H5F_ACC_RDWR) {
+      intent_str = "U";
+    } else {
+      intent_str = "Err";
+    }
+    len = utarray_len( entry->locators );
+    name_str = dat1GetFullName( file_id, 1, NULL, status );
+    if (listfiles) printf("File: %s [%s] (%d) (%u locator%s)\n", name_str, intent_str, file_id,
+                          len, (len == 1 ? "" : "s"));
+    if (listlocs) hds1ShowLocators( file_id, status );
+    if (name_str) MEM_FREE(name_str);
+  }
+}
+
+void
+hds1ShowLocators( hid_t file_id, int * status ) {
+  HDSregistry * entry = NULL;
+  HDSelement * elt = NULL;
+  unsigned int len = 0;
+  unsigned int i = 0;
+  size_t nprimary = 0;
+
+  if (*status != SAI__OK) return;
+
+  /* Look for the entry associated with this name */
+  HASH_FIND_FILE_ID( all_locators, &file_id, entry );
+
+  /* Possibly should be an error */
+  if ( !entry ) return;
+
+  len = utarray_len( entry->locators );
+  /* Read all the elements from the entry, looking for the relevant one
+     but also counting how many primary locators we have. */
+  printf("File %d has %u locator%s:\n", file_id, len, (len == 1 ? "" : "s"));
+  for ( i = 0; i < len; i++) {
+    HDSLoc * thisloc;
+    char * namestr = NULL;
+    hid_t objid = 0;
+    elt = (HDSelement *)utarray_eltptr( entry->locators, i );
+    thisloc = elt->locator;
+    objid = dat1RetrieveIdentifier( thisloc, status );
+    if (objid > 0) namestr = dat1GetFullName( objid, 0, NULL, status );
+    printf("Locator %p [%s] (%s)\n", thisloc, (namestr ? namestr : "no groups/datasets"),
+           (thisloc->isprimary ? "primary" : "secondary"));
+    if (thisloc->isprimary) nprimary++;
+    MEM_FREE(namestr);
+  }
+}

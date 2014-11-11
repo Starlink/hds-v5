@@ -316,5 +316,11 @@ hds1UnregLocator( HDSLoc * loc, int *status );
 
 size_t
 hds1PrimaryCount( hid_t file_id, int * status );
+
+void
+hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status );
+
+void
+hds1ShowLocators( hid_t file_id, int * status );
 /* DAT1_H_INCLUDED */
 #endif
