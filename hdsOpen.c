@@ -93,6 +93,7 @@
 *-
 */
 
+#include <unistd.h>
 #include <string.h>
 
 #include "hdf5.h"
@@ -117,6 +118,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   hsize_t iposn;
   char dataset_name[DAT__SZNAM+1];
   HDSLoc *temploc = NULL;
+  htri_t filstat = 0;
 
   *locator = NULL;
   if (*status != SAI__OK) return *status;
@@ -143,6 +145,25 @@ hdsOpen( const char *file_str, const char *mode_str,
 
   /* work out the file name */
   fname = dau1CheckFileName( file_str, status );
+
+  /* Before we go any further, check that the file really is an HDF5
+     file. If it isn't then we return with a special error code that
+     allows the putative wrapper library to know to fall back to HDSv4
+     or whatever. */
+  if (*status != SAI__OK) return *status;
+  filstat = H5Fis_hdf5( fname );
+  if (filstat < 0) {
+    /* Probably indicates the file is not there */
+    *status = DAT__FILNF;
+    emsRepf("hdsOpen_fnf", "File '%s' does not seem to exist",
+           status, fname);
+    return *status;
+  } else if (filstat == 0) {
+    *status = DAT__FILFM;
+    emsRepf("hdsOpen_fmt", "File '%s' is not in HDSv5 format",
+            status, fname );
+    return *status;
+  }
 
   /* Open the HDF5 file */
   CALLHDF( file_id,
