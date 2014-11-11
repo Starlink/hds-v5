@@ -329,7 +329,17 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
   /* Look for the entry associated with this name */
   file_id = locator->file_id;
   HASH_FIND_FILE_ID( all_locators, &file_id, entry );
-  if ( !entry ) return removed;
+  if ( !entry ) {
+    /* if we did not find it for now trigger an error because
+       this code is meant to have a store of all locators that
+       were allocated */
+    if (*status == SAI__OK) {
+      *status = DAT__FATAL;
+      emsRepf("hds1UnregLocator_2", "Internal error with locator tracking"
+              " (Possible programming error)", status );
+    }
+    return removed;
+  }
 
   len = utarray_len( entry->locators );
   /* Read all the elements from the entry, looking for the relevant one
