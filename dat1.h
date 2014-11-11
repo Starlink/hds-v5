@@ -131,6 +131,7 @@ typedef enum {
 typedef struct LOC {
   int hds_version;  /* Implementation version number. Always 5 at the moment. */
   void *pntr;       /* Pointer to memory mapped data array [datMap only] */
+  void *regpntr;    /* Pointer that was registered with CNF */
   size_t bytesmapped; /* Number of bytes mapped into memory [datMap only] */
   size_t vectorized;  /* if 0 not vectorized, else number of vectorized elements */
   hid_t file_id;    /* Set if this locator is associated with a root file */

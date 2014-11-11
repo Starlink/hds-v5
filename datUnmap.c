@@ -134,7 +134,7 @@ datUnmap( HDSLoc * locator, int * status ) {
   }
 
   /* Need to free the memory and unregister the pointer */
-  cnfUregp( locator->pntr );
+  cnfUregp( locator->regpntr );
 
   if ( munmap( locator->pntr, locator->bytesmapped ) != 0 ) {
     if (*status == SAI__OK) {
@@ -156,6 +156,7 @@ datUnmap( HDSLoc * locator, int * status ) {
 
  CLEANUP:
   locator->pntr = NULL;
+  locator->regpntr = NULL;
   locator->bytesmapped = 0;
 
   /* Close the file if we opened it -- ignore the return value */

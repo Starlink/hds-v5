@@ -368,7 +368,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
   /* cleanups that only happen if status is bad */
   if (*status != SAI__OK) {
     if (mapped) {
-      if (isreg == 1) cnfUregp( mapped );
+      if (isreg == 1) cnfUregp( regpntr );
       if ( munmap( mapped, actbytes ) != 0 ) {
         emsSyser( "MESSAGE", errno );
         emsRep("datMap_4", "Error unmapping mapped memory: ^MESSAGE", status);
@@ -381,6 +381,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
   if (*status == SAI__OK) {
     int i;
     locator->pntr = mapped;
+    locator->regpntr = regpntr;
     locator->bytesmapped = actbytes;
     locator->accmode = accmode;
 
