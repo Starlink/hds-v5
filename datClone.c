@@ -109,6 +109,13 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
   if (*status != SAI__OK) return *status;
 
   clonedloc = dat1AllocLoc( status );
+  if (*status != SAI__OK) goto CLEANUP;
+
+  /* Retain primary-ness. Copy the file id and register so that
+     we can datAnnul on cleanup */
+  clonedloc->isprimary = locator1->isprimary;
+  clonedloc->file_id = locator1->file_id;
+  hds1RegLocator( clonedloc, status );
 
   if (locator1->dataset_id > 0) {
     CALLHDF( clonedloc->dataset_id,
@@ -134,11 +141,6 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
                     status )
              );
   }
-
-  /* Retain primary-ness. Copy the file id and register */
-  clonedloc->isprimary = locator1->isprimary;
-  clonedloc->file_id = locator1->file_id;
-  hds1RegLocator( clonedloc, status );
 
   /* Retain knowledge of vectorization */
   clonedloc->vectorized = locator1->vectorized;
