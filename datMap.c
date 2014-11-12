@@ -247,6 +247,12 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     H5Tclose(dataset_h5type);
   }
 
+  /* If this is a locator to a slice then for now we can't memory map. In theory
+     if we knew the slice was contiguous (e.g a vectorized slice, or a single
+     plane of a cube then we could mmap it anyhow. We do not want to have to
+     emulate HDF5 dataspaces here */
+  if (locator->isslice) try_mmap = 0;
+
   /* There seem to be issues doing this on files opened for update/write.
      For now only allow mmap for files opened read only */
   if (intent != H5F_ACC_RDONLY) try_mmap = 0;
