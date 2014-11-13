@@ -125,7 +125,7 @@ datUnmap( HDSLoc * locator, int * status ) {
     if (locator->accmode == HDSMODE_WRITE ||
         locator->accmode == HDSMODE_UPDATE) {
       datPut( locator, locator->maptype, locator->ndims, locator->mapdims,
-              locator->pntr, &lstat);
+              locator->regpntr, &lstat);
     }
 
     /* if we have bad status from this just ignore it. Release the error stack */
