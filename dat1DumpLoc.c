@@ -96,8 +96,9 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   printf("- File: %d; Group %d; Dataspace: %d; Dataset: %d; Data Type: %d\n",
          locator->file_id, locator->group_id, locator->dataspace_id,
          locator->dataset_id, locator->dtype);
-  printf("- Vectorized: %zu; Bytes mapped: %zu, Array mapped: %p\n",
-         locator->vectorized, locator->bytesmapped, locator->pntr );
+  printf("- Vectorized: %zu; Bytes mapped: %zu, Array mapped: %p (%s)\n",
+         locator->vectorized, locator->bytesmapped, locator->regpntr,
+         (locator->uses_true_mmap ? "file" : "memory"));
   printf("- Is sliced: %d; Group name: '%s'\n", locator->isslice, locator->grpname);
 
   if (locator->dataspace_id > 0) {
@@ -112,9 +113,8 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
                (size_t)(locator->sliceupper)[0],
                (nelem > 0 ? (size_t)nelem : 0) );
       }
-    } else {
-      dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
     }
+    dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
     dspace_id = H5Dget_space( locator->dataset_id );
     dump_dataspace_info( dspace_id, "Dataset associated", status );
     H5Sclose( dspace_id );

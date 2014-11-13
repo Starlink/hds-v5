@@ -42,6 +42,8 @@
 *  History:
 *     2014-09-08 (TIMJ):
 *        Initial version
+*     2014-11-13 (TIMJ):
+*        Create a 1D dataspace
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -111,10 +113,14 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   /* and update the vectorized flag with the number of elements */
   (*locator2)->vectorized = nelem;
 
-  /* We do not need to vectorize the dataspace since the number
-     of elements match and the locator dataspace should match
-     the on-disk dimensionality */
+  /* Create vectorized dataspace -- we do this to simplify datSlice */
+  if ( !dat1IsStructure(*locator2, status) ) {
+    hsize_t newsize[1];
+    newsize[0] = nelem;
+    CALLHDFQ(H5Sset_extent_simple( (*locator2)->dataspace_id, 1, newsize, newsize ));
+  }
 
+ CLEANUP:
   if (*status != SAI__OK) {
     if (*locator2 != NULL) datAnnul(locator2, status);
   }
