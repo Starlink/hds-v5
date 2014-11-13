@@ -72,6 +72,8 @@ static void traceme (const HDSLoc * loc, const char * expected, int explev,
 static void cmpstrings( const char * teststr, const char * expectedstr, int *status );
 static void cmpszints( size_t result, size_t expected, int *status );
 static void cmpprec ( const HDSLoc * loc1, const char * name, int * status );
+static void cmpintarr( size_t nelem, const int result[],
+                       const int expected[], int *status );
 
 int main (void) {
 
@@ -161,6 +163,53 @@ int main (void) {
   }
 
   datAnnul( &loc2, &status );
+
+  /* Create a 2-D array that we can test slice and vectored slices */
+  if (status == SAI__OK) {
+    const hdsdim vdim[] = { 5, 6 };
+    int * ipntr = NULL;
+    datNew( loc1, "VEC_TEST", "_INTEGER", 2, vdim, &status );
+    datFind( loc1, "VEC_TEST", &loc2, &status );
+    /* Fill sequentially */
+    datMapI( loc2, "WRITE", 2, vdim, &ipntr, &status );
+    if (status == SAI__OK) {
+      int i;
+      int nelem = vdim[0] * vdim[1];
+      for (i = 0; i<nelem; i++) {
+        ipntr[i] = i+1;
+      }
+      datUnmap( loc2, &status );
+    }
+    if (status == SAI__OK) {
+      /* First we get a slice */
+      const hdsdim lower[] = { 3, 3 };
+      const hdsdim upper[] = { 4, 4 };
+      const hdsdim outdims[] = { 2, 2 };
+      const int expected[] = { 13, 14, 18, 19 };
+      int outdata[4];
+      datSlice(loc2, 2, lower, upper, &loc3, &status );
+      datGetI(loc3, 2, outdims, outdata, &status);
+      cmpintarr( 4, outdata, expected, &status );
+      datAnnul( &loc3, &status );
+    }
+    if (status == SAI__OK) {
+      /* Vectorize and slice */
+      const hdsdim lower[] = { 13 };
+      const hdsdim upper[] = { 16 };
+      int outdata[4];
+      const int expected[] = { 13, 14, 15, 16 };
+      HDSLoc * loc4 = NULL;
+      size_t actvals;
+      datVec(loc2, &loc3, &status );
+      datSlice( loc3, 1, lower, upper, &loc4, &status );
+      dat1DumpLoc( loc4, &status );
+      datGet1I( loc4, 4, outdata, &actvals, &status );
+      cmpintarr( actvals, outdata, expected, &status);
+      datAnnul(&loc4, &status);
+      datAnnul(&loc3, &status);
+    }
+    datAnnul( &loc2, &status );
+  }
 
   /* Now create an array of structures */
   /* Create structure array */
@@ -694,6 +743,20 @@ static void cmpstrings( const char * teststr, const char * expectedstr, int *sta
             teststr, expectedstr );
   }
   return;
+}
+
+static void cmpintarr( size_t nelem, const int result[],
+                       const int expected[], int *status ) {
+  size_t j;
+  if (*status != SAI__OK) return;
+  for (j=0; j<nelem; j++) {
+    if (result[j] != expected[j]) {
+      *status = SAI__ERROR;
+      emsRepf("","Error in integer array (element %zu: %d != %d)\n",
+              status, j, result[j], expected[j]);
+      break;
+    }
+  }
 }
 
 static void cmpszints( size_t result, size_t expected, int *status ) {
