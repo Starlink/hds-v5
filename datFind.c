@@ -38,10 +38,14 @@
 *     loc2 will be associated with the complete array, not the first
 *     cell.  Access to its components can only be made through another
 *     locator explicitly associated with an individual cell (see datCell).
+*     If the parent locator is associated with a group, the child locator
+*     will also be associated with that group.
 
 *  History:
 *     2014-08-26 (TIMJ):
 *        Initial version
+*     2014-11-14 (TIMJ):
+*        Child locators must inherit group
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -196,6 +200,9 @@ datFind( const HDSLoc   *locator1,
             );
     if (*status == SAI__OK) thisloc->group_id = group_id;
   }
+
+  /* We have to propagate groupness to the child */
+  if ( (locator1->grpname)[0] != '\0') hdsLink(thisloc, locator1->grpname, status);
 
   if (*status != SAI__OK) goto CLEANUP;
   *locator2 = thisloc;

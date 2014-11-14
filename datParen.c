@@ -44,6 +44,8 @@
 *     although no further processing will occur. The same value will also be
 *     returned if the routine should fail for any reason. The
 *     DAT__NOLOC constant is defined in the Fortran include file DAT_PAR.
+*     - If the input locator is a member of a group the parent locator
+*     will also be a member of the group.
 
 *  Example:
 *     The parent of the object A.B.C.D is A.B.C, the parent of
@@ -53,6 +55,8 @@
 *  History:
 *     2014-09-03 (TIMJ):
 *        Initial version
+*     2014-11-14 (TIMJ):
+*        Child locators must inherit group
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -170,6 +174,7 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
     thisloc->isprimary = HDS_FALSE;
     thisloc->file_id = locator1->file_id;
     hds1RegLocator( thisloc, status );
+    if ( (locator1->grpname)[0] != '\0') hdsLink(thisloc, locator1->grpname, status);
   }
 
  CLEANUP:

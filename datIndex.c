@@ -35,6 +35,8 @@
 
 *  Notes:
 *     - HDS uses 1-based indexing.
+*     - If the parent locator is associated with a group, the child locator
+*       will also be associated with that group.
 
 *  History:
 *     2014-09-12 (TIMJ):
