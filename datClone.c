@@ -37,8 +37,6 @@
 *     characteristic (a secondary locator is always produced - see
 *     datPrmry). A call to this routine is NOT equivalent to the
 *     assignment statement "LOC2 = LOC1".
-*     - Currently there is no difference between primary and secondary
-*     locators in this implementation.
 
 *  History:
 *     2014-09-04 (TIMJ):
@@ -111,9 +109,8 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
   clonedloc = dat1AllocLoc( status );
   if (*status != SAI__OK) goto CLEANUP;
 
-  /* Retain primary-ness. Copy the file id and register so that
-     we can datAnnul on cleanup */
-  clonedloc->isprimary = locator1->isprimary;
+  /* Lose primary-ness. */
+  clonedloc->isprimary = HDS_FALSE;
   clonedloc->file_id = locator1->file_id;
   hds1RegLocator( clonedloc, status );
 
