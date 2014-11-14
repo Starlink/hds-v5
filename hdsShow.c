@@ -195,14 +195,14 @@ hdsShow(const char *topic_str, int  *status) {
           printf("%s: %s\n", (objtype == H5I_GROUP ? "Group" : "Dataset"), name_str );
           if (name_str) MEM_FREE(name_str);
         } else if ( objtype == H5I_ATTR ) {
-          printf("Unexepctedly got an open attribute\n");
+          printf("Unexpectedly got an open attribute\n");
         } else if ( objtype == H5I_DATATYPE ) {
-          printf("Unexepctedly got an open datatype\n");
+          printf("Unexpectedly got an open datatype\n");
         } else if ( objtype == H5I_DATASPACE ) {
-          printf("Unexepctedly got an open dataspace\n");
+          printf("Unexpectedly got an open dataspace\n");
         } else {
           /* Unexpected */
-          printf("Unexepctedly got a bad data type\n");
+          printf("Unexpectedly got a bad data type\n");
         }
       }
     } else {
