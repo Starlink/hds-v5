@@ -150,14 +150,14 @@ hdsOpen( const char *file_str, const char *mode_str,
      file. If it isn't then we return with a special error code that
      allows the putative wrapper library to know to fall back to HDSv4
      or whatever. */
-  if (*status != SAI__OK) return *status;
+  if (*status != SAI__OK) goto CLEANUP;
   filstat = H5Fis_hdf5( fname );
   if (filstat < 0) {
     /* Probably indicates the file is not there */
     *status = DAT__FILNF;
     emsRepf("hdsOpen_fnf", "File '%s' does not seem to exist",
            status, fname);
-    return *status;
+    goto CLEANUP;
   }
 
   /* Open the HDF5 file */
