@@ -34,6 +34,8 @@
 *  History:
 *     2014-09-20 (TIMJ):
 *        Initial version
+*     2014-11-13 (TIMJ):
+*        Must normalize the name. Also add better error checking and reporting.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -90,11 +92,31 @@
 
 int
 datErase(const HDSLoc   *locator, const char *name_str, int *status) {
+  char groupstr[DAT__SZNAM+1];
+  char cleanname[DAT__SZNAM+1];
 
   if (*status != SAI__OK) return *status;
 
-  CALLHDFQ( H5Ldelete( locator->group_id, name_str, H5P_DEFAULT ));
+  /* containing locator must refer to a group */
+  if (locator->group_id <= 0) {
+    *status = DAT__OBJIN;
+    emsRep("datErase_1", "Input object is not a structure",
+           status);
+    return *status;
+  }
+
+  /* Parent group for error reporting */
+  datName( locator, groupstr, status);
+
+  /* Ensure the name is cleaned up before we use it */
+  dau1CheckName( name_str, 1, cleanname, sizeof(cleanname), status );
+
+  CALLHDFQ( H5Ldelete( locator->group_id, cleanname, H5P_DEFAULT ));
 
  CLEANUP:
+  if (*status != SAI__OK) {
+    emsRepf("datErase_2", "Error deleting component %s in group %s",
+            status, cleanname, groupstr);
+  }
   return *status;
 }
