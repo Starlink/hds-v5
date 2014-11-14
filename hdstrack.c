@@ -440,6 +440,7 @@ hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status ) {
     unsigned int len = 0;
     char * name_str = NULL;
     const char * intent_str = NULL;
+    size_t nprim = 0;
     file_id = entry->file_id;
     H5Fget_intent( file_id, &intent );
     if (intent == H5F_ACC_RDONLY) {
@@ -450,9 +451,10 @@ hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status ) {
       intent_str = "Err";
     }
     len = utarray_len( entry->locators );
+    nprim = hds1PrimaryCount( file_id, status );
     name_str = dat1GetFullName( file_id, 1, NULL, status );
-    if (listfiles) printf("File: %s [%s] (%d) (%u locator%s)\n", name_str, intent_str, file_id,
-                          len, (len == 1 ? "" : "s"));
+    if (listfiles) printf("File: %s [%s] (%d) (%u locator%s) (refcnt=%zu)\n", name_str, intent_str, file_id,
+                          len, (len == 1 ? "" : "s"), nprim);
     if (listlocs) hds1ShowLocators( file_id, status );
     if (name_str) MEM_FREE(name_str);
   }
@@ -486,8 +488,8 @@ hds1ShowLocators( hid_t file_id, int * status ) {
     thisloc = elt->locator;
     objid = dat1RetrieveIdentifier( thisloc, status );
     if (objid > 0) namestr = dat1GetFullName( objid, 0, NULL, status );
-    printf("Locator %p [%s] (%s)\n", thisloc, (namestr ? namestr : "no groups/datasets"),
-           (thisloc->isprimary ? "primary" : "secondary"));
+    printf("Locator %p [%s] (%s) group=%s\n", thisloc, (namestr ? namestr : "no groups/datasets"),
+           (thisloc->isprimary ? "primary" : "secondary"),thisloc->grpname);
     if (thisloc->isprimary) nprimary++;
     MEM_FREE(namestr);
   }
