@@ -86,6 +86,7 @@
 
 #include "ems.h"
 #include "dat1.h"
+#include "dat_err.h"
 
 typedef struct HDSH5E_print_t {
   int * status;
@@ -124,9 +125,22 @@ custom_print_cb(unsigned int n, const H5E_error2_t *err_desc, void* client_data)
   char                min[MSG_SIZE];
   char                cls[MSG_SIZE];
   int have_desc = 1;
+  H5E_major_t maj_num = err_desc->maj_num;
+  H5E_minor_t min_num = err_desc->min_num;
 
   /* Show all information for n==0 case.
      Show description text for all other cases */
+
+  /* We can override the generic status if we have been given
+     the generic HDF5 error code. This lets us translate things
+     like, "file not found" to the proper DAT__FILNF code. */
+  if ( *(eprint->status) == DAT__HDF5E ) {
+    if (maj_num == H5E_FILE) {
+      if ( min_num == H5E_CANTOPENFILE ) {
+        *(eprint->status) = DAT__FILIN;
+      }
+    }
+  }
 
   /* Get descriptions for the major and minor error numbers */
   H5Eget_class_name(err_desc->cls_id, cls, MSG_SIZE);
