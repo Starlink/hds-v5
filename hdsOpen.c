@@ -158,17 +158,12 @@ hdsOpen( const char *file_str, const char *mode_str,
     emsRepf("hdsOpen_fnf", "File '%s' does not seem to exist",
            status, fname);
     return *status;
-  } else if (filstat == 0) {
-    *status = DAT__FILFM;
-    emsRepf("hdsOpen_fmt", "File '%s' is not in HDSv5 format",
-            status, fname );
-    return *status;
   }
 
   /* Open the HDF5 file */
   CALLHDF( file_id,
            H5Fopen( fname, flags, H5P_DEFAULT ),
-           DAT__FILIN,
+           DAT__HDF5E,
            emsRepf("hdsOpen_1", "Error opening HDS file: %s",
                    status, fname )
            );
