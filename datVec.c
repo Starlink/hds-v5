@@ -31,13 +31,7 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     In general, it is not possible to vectorise an array slice such
-*     as created by datSlice. If "locator1" is a locator for a slice, an
-*     error will be reported if the elements of the slice are
-*     dis-contiguous. If the elements of the slice are contiguous,
-*     then no error will be reported but the returned vectorised
-*     object will contain the whole array from which the slice was
-*     taken, not just the slice itself.
+*     - It is an error to vectorize a sliced locator.
 
 *  History:
 *     2014-09-08 (TIMJ):
@@ -97,12 +91,23 @@
 #include "dat1.h"
 #include "hds.h"
 
+#include "dat_err.h"
+
 int
 datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
 
   size_t nelem;
   *locator2 = NULL;
   if (*status != SAI__OK) return *status;
+
+  if (locator1->isslice) {
+    *status = DAT__OBJIN;
+    /* It can be done if the slice corresponds to a contiguous
+       chunk of memory but for now stay well away */
+    emsRep("datVec_1", "datVec: A sliced locator can not (yet) be vectorized",
+           status );
+    return *status;
+  }
 
   /* Need the number of elements */
   datSize( locator1, &nelem, status );
