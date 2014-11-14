@@ -136,12 +136,20 @@ hdsLink(HDSLoc *locator, const char *group_str, int *status) {
 
   if (*status != SAI__OK) return *status;
 
-  /* Check that a group name is not already set */
-  if ( (locator->grpname)[0] != '\0') {
+  /* If we get a zero length string this either means we are trying to unlink
+     the locator from the group or we have a bug in the calling code or else
+     we mean that we don't want to link the locator at all. For now trigger
+     an error */
+  if (!group_str || strlen(group_str) == 0) {
     *status = DAT__GRPIN;
-    emsRepf("hdsLink", "This locator has already been assigned to group '%s'",
-            status, locator->grpname );
+    emsRep("hdsLink_2", "Supplied group name is empty or null", status );
     return *status;
+  }
+
+  /* Check that a group name is not already set - we are allowed to
+     move a locator to a different group. We must unregister it though. */
+  if ( (locator->grpname)[0] != '\0') {
+    hds1RemoveLocator(locator, status);
   }
 
   /* Now copy the group name to the locator */
