@@ -183,6 +183,20 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     goto CLEANUP;
   }
 
+  /* Not allowed to map undefined data in READ or UPDATE mode */
+  if (accmode == HDSMODE_UPDATE || accmode == HDSMODE_READ) {
+    hdsbool_t defined;
+    if (*status == SAI__OK) {
+      datState( locator, &defined, status );
+      if (!defined) {
+        *status = DAT__UNSET;
+        emsRepf("datMap_6bb", "Can not map an undefined primitive in mode '%s'",
+                status, mode_str);
+        goto CLEANUP;
+      }
+    }
+  }
+
   /* How did we open this file? */
   CALLHDFQ( H5Fget_intent( locator->file_id, &intent ));
   if (accmode == HDSMODE_UPDATE || accmode == HDSMODE_WRITE) {
@@ -372,18 +386,9 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     mapped = dat1Mmap( nbytes, PROT_READ|PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0,
                        &isreg, &regpntr, &actbytes, status );
 
-    /* Populate the memory */
+    /* Populate the memory - check with datState occurred earlier */
     if (accmode == HDSMODE_READ || accmode == HDSMODE_UPDATE) {
-      hdsbool_t do_get = HDS_TRUE;
-      if (accmode == HDSMODE_UPDATE) {
-        /* If this is UPDATE mode but the data array has not actually
-           been defined yet we do not actually want to call datGet */
-        hdsbool_t defined;
-        datState( locator, &defined, status );
-        if (!defined) do_get = HDS_FALSE;
-      }
-
-      if (do_get) datGet( locator, normtypestr, ndim, dims, regpntr, status );
+      datGet( locator, normtypestr, ndim, dims, regpntr, status );
     }
   }
 
