@@ -162,7 +162,6 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
     one_snprintf(tempname, sizeof(tempname), "TEMP_%-*zu", status,
                  (int)(sizeof(tempname) - 1 - 5), ++tmpcount );
     datThere(tmploc, tempname, &there, status ); /* multi-threaded race here... */
-    printf("looking for temp %s - %d\n", tempname, there);
     if (*status != SAI__OK) break;
   } while (there);
 
