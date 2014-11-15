@@ -195,6 +195,29 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     }
   }
 
+  /* Verify that the specified dimensions match the locator dimensions */
+  if (*status == SAI__OK) {
+    hdsdim locdims[DAT__MXDIM];
+    int locndims;
+    int i;
+    datShape(locator, DAT__MXDIM, locdims, &locndims, status );
+    if (ndim != locndims) {
+      *status = DAT__DIMIN;
+      emsRepf("datMap_6c", "datMap: Dimensionality mismatch --"
+              " requested number: %d locator number: %d", status,
+              ndim, locndims );
+      goto CLEANUP;
+    }
+    for (i=0; i<ndim; i++) {
+      if ( locdims[i] != dims[i] ) {
+        *status = DAT__DIMIN;
+        emsRepf("datMap_6d", "datMap: Dimension %d has size %zu but requested size %zu",
+                status, i, (size_t)locdims[i], (size_t)dims[i]);
+        goto CLEANUP;
+      }
+    }
+  }
+
   /* There is a super-special case for datMap when called with a map
      type of "_CHAR". In that case we need to work out the size ourselves
      and adjust the type size */
