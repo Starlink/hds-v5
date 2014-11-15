@@ -113,7 +113,7 @@ datNew( const HDSLoc    *locator,
 
   if (*status != SAI__OK) return *status;
 
-  newloc = dat1New( locator, name_str, type_str, ndim, dims, status );
+  newloc = dat1New( locator, 0, name_str, type_str, ndim, dims, status );
 
   /* Free the locator as datNew does not expect you to use the
      component you have just created */

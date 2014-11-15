@@ -13,12 +13,15 @@
 *     Library routine
 
 *  Invocation:
-*     HDSLoc * dat1New( const HDSLoc *locator, const char *name_str, const char *type_str,
-*                      int ndim, const hdsdim dims[], int * status );
+*     HDSLoc * dat1New( const HDSLoc *locator, hdsbool_t isprimary,
+*                       const char *name_str, const char *type_str,
+*                       int ndim, const hdsdim dims[], int * status );
 
 *  Arguments:
 *     locator = const HDSLoc * (Given)
 *        Locator to structure that will receive the new component.
+*     isprimary = hdsbool_t (Given)
+*        Whether the new locator is primary or secondary locator.
 *     name = const char * (Given)
 *        Name of the object in the container.
 *     type = const char * (Given)
@@ -57,6 +60,9 @@
 *        Unlimited dimensions.
 *     2014-09-05 (TIMJ):
 *        Add arrays of structures
+*     2014-11-14 (TIMJ):
+*        Add isprimary argument so that newly created objects can be
+*        created as secondary locators.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -117,6 +123,7 @@
 
 HDSLoc *
 dat1New( const HDSLoc    *locator,
+         hdsbool_t      isprimary,
         const char      *name_str,
         const char      *type_str,
         int       ndim,
@@ -217,7 +224,7 @@ dat1New( const HDSLoc    *locator,
       thisloc->dataspace_id = dataspace_id;
       thisloc->dtype = h5type;
       thisloc->file_id = locator->file_id;
-      thisloc->isprimary = 1;
+      thisloc->isprimary = isprimary;
       hds1RegLocator( thisloc, status );
     }
     return thisloc;

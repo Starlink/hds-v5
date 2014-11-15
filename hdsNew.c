@@ -184,7 +184,7 @@ hdsNew(const char *file_str,
 
       /* We use dat1New instead of datNew so that we do not have to follow
          up immediately with a datFind */
-      thisloc = dat1New( tmploc, name_str, type_str, ndim, dims, status );
+      thisloc = dat1New( tmploc, 1, name_str, type_str, ndim, dims, status );
 
       /* Annul the temporary locator. The file will not close if
          we still have a primary from the dat1New */

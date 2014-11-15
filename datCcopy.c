@@ -112,7 +112,7 @@ datCcopy(const HDSLoc *locator1, const HDSLoc *locator2, const char *name,
     datType( locator1, type_str, status );
     datShape( locator1, DAT__MXDIM, hdims, &ndims, status );
 
-    *locator3 = dat1New( locator2, name, type_str, ndims, hdims, status );
+    *locator3 = dat1New( locator2, 0, name, type_str, ndims, hdims, status );
 
   } else {
     hdsbool_t state = 0;

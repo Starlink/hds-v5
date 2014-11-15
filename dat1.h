@@ -224,7 +224,7 @@ void dat1InitHDF5(void);
 void dat1H5EtoEMS( int *status );
 
 HDSLoc *
-dat1New( const HDSLoc *locator, const char *name_str, const char *type_str,
+dat1New( const HDSLoc *locator, hdsbool_t isprimary, const char *name_str, const char *type_str,
         int ndim, const hdsdim dims[], int *status);
 
 void
