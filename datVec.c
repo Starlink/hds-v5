@@ -100,7 +100,15 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   *locator2 = NULL;
   if (*status != SAI__OK) return *status;
 
+  if (locator1->vectorized) {
+    /* if it is already vectorized we just clone the locator and return
+       it directly */
+    datClone( locator1, locator2, status );
+    goto CLEANUP;
+  }
+
   if (locator1->isslice) {
+    dat1DumpLoc(locator1,status);
     *status = DAT__OBJIN;
     /* It can be done if the slice corresponds to a contiguous
        chunk of memory but for now stay well away */
