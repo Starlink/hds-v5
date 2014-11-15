@@ -54,6 +54,10 @@
 *        ask for a structure. May well need to create an extra layer
 *        of hierarchy, store the locator to the top-level but return
 *        a locator from a level below with a dynamic name.
+*     2014-11-14 (TIMJ):
+*        Now create a root HDS_SCRATCH locator and for each call to the
+*        routine create a TEMP_nnn object for the caller. This is how
+*        HDSv4 implemented things.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -111,6 +115,7 @@
 #include "dat_err.h"
 
 HDSLoc * tmploc = NULL;
+size_t tmpcount = 0;
 
 int
 datTemp( const char *type_str, int ndim, const hdsdim dims[],
@@ -119,36 +124,57 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
   char * prefix = NULL;
   char fname[256];
   char fname_with_suffix[256+DAT__SZFLX];
+  char tempname[DAT__SZNAM+1];
+  hdsbool_t there = 1;
 
   if (*status != SAI__OK) return *status;
 
-  /* If we know that HDS_SCRATCH is not changing then we know
-     that the temp file will be fixed for this process. This
-     allows us to retain the locator from previous calls and just
-     return it directly for each additional call. If we worry that
-     HDS_SCRATCH will be modified at run time then we will have
-     to store the locator in a hash map like we do for groups. */
-  if (tmploc) {
-    datClone(tmploc, locator, status );
-    return *status;
+  /* We create one temporary file per process. We create a top-level
+     container object and for each call to datTemp we create a new
+     structure of the requested type and dimensionality. We have to
+     create this extra layer to enforce a namespace on temporary
+     structures (and otherwise some one creating a primitive temp
+     type will mess up subsequent calls). Note that the temp root locator
+     therefore lives for as long as the process as there is no API to
+     annul the locator that we cache. */
+
+  /* Create a temp file if required */
+  if (!tmploc) {
+
+    /* Probably should use the OS temp file name generation
+       system -- but for now use the HDS scheme. */
+    prefix = getenv( "HDS_SCRATCH" );
+    one_snprintf( fname, sizeof(fname), "%s/t%x", status,
+                  (prefix ? prefix : "."), getpid() );
+
+    /* Open the temp file: type and name are the same */
+    hdsNew(fname, "HDS_SCRATCH", "HDS_SCRATCH", 0, dims, &tmploc, status );
   }
 
-  /* Probably should use the OS temp file name generation
-     system. */
-  prefix = getenv( "HDS_SCRATCH" );
-  one_snprintf( fname, sizeof(fname), "%s/t%x", status,
-                (prefix ? prefix : "."), getpid() );
+  /* Create a structure inside the temporary file. Compatibility with HDS
+     suggests we call these TEMP_nnnn (although we only have to use the
+     scheme that hdsInfoI is expecting. HDS used a global temp counter as
+     a starting point as that gives you an idea of the total number of
+     temp components that have been created and there is no reasonable
+     chance of running out of counter space */
 
-  /* Open the temp file */
-  hdsNew(fname, "DAT_TEMP", type_str, ndim, dims, &tmploc, status );
-  datClone(tmploc, locator, status );
+  do {
+    one_snprintf(tempname, sizeof(tempname), "TEMP_%-*zu", status,
+                 (int)(sizeof(tempname) - 1 - 5), ++tmpcount );
+    datThere(tmploc, tempname, &there, status ); /* multi-threaded race here... */
+    printf("looking for temp %s - %d\n", tempname, there);
+    if (*status != SAI__OK) break;
+  } while (there);
+
+  /* Now create the temporary object of the correct type and size */
+  *locator = dat1New( tmploc, 0, tempname, type_str, ndim, dims, status );
 
   /* Usually at this point you should unlink the file and hope the
      operating system will keep the file handle open whilst deferring the delete.
      This will work on unix systems. On Windows not so well. */
   one_snprintf(fname_with_suffix, sizeof(fname_with_suffix),"%s%s", status,
                fname, DAT__FLEXT);
-  unlink(fname_with_suffix);
+  if (*status == SAI__OK) unlink(fname_with_suffix);
 
   return *status;
 }
