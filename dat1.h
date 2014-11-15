@@ -323,5 +323,12 @@ hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status );
 
 void
 hds1ShowLocators( hid_t file_id, int * status );
+
+int
+hds1CountFiles();
+
+int
+hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int * status );
+
 /* DAT1_H_INCLUDED */
 #endif

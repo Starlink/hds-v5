@@ -494,3 +494,107 @@ hds1ShowLocators( hid_t file_id, int * status ) {
     MEM_FREE(namestr);
   }
 }
+
+int
+hds1CountFiles() {
+  int num_files;
+  num_files = HASH_COUNT(all_locators);
+  return num_files;
+}
+
+/*
+  ncomp = number of components in search filter
+  comps = char ** - array of pointers to filter strings
+  skip_scratch_root = true, skip HDS_SCRATCH root locators
+*/
+
+int
+hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int * status ) {
+
+  HDSregistry * entry = NULL;
+  int nlocator = 0;
+  if (*status != SAI__OK) return nlocator;
+
+  for (entry = all_locators; entry != NULL; entry = entry->hh.next) {
+    unsigned int len = 0;
+    hid_t file_id = entry->file_id;
+    /* Look for the entry associated with this name */
+    HASH_FIND_FILE_ID( all_locators, &file_id, entry );
+    if (!entry) continue;
+    len = utarray_len( entry->locators );
+
+    /* if we do not have to filter the list then we just add that to the sum */
+    if (ncomp == 0) {
+      nlocator += len;
+    } else {
+      unsigned int i;
+      /* Loop over each locator in the utarray */
+      for ( i = 0; i < len; i++) {
+        HDSLoc * thisloc;
+        char path_str[1024];
+        char file_str[1024];
+        HDSelement * elt = NULL;
+        int nlev;
+        elt = (HDSelement *)utarray_eltptr( entry->locators, i );
+        thisloc = elt->locator;
+
+        /* filter provided so we have to check the path of each locator against
+           the filter */
+        hdsTrace(thisloc, &nlev, path_str, file_str, status, sizeof(path_str),
+                 sizeof(file_str));
+
+        if (*status == SAI__OK) {
+          /* Now we compare the trace to the filters */
+          hdsbool_t match = 0;
+          hdsbool_t exclude = 0;
+
+          if (skip_scratch_root) {
+            const char *root = "HDS_SCRATCH.TEMP_";
+            const size_t rootlen = strlen(root);
+            if (strncmp( path_str, root, rootlen) == 0)  {
+              /* exclude if the string only has one "." */
+              if ( !strstr( &((path_str)[rootlen-1]), ".")) {
+                exclude = 1;
+              }
+            } else if (strcmp( path_str, "HDS_SCRATCH") == 0) {
+              /* HDS seems to hide the underlying root locator of the
+                 temp file (the global primary locator) and does not
+                 even report it with hdsShow -- we skip it here */
+              exclude = 1;
+            }
+          }
+
+          if (!exclude) {
+            size_t j;
+            for (j=0; j<ncomp; j++) {
+              /* matching or anti-matching? */
+              if ( *(comps[j]) == '!' ) {
+                /* do not forget to start one character in for the ! */
+                if (strncmp(path_str, (comps[j])+1,
+                            strlen(comps[j])-1) == 0) {
+                  /* Should be exempt */
+                  exclude = 1;
+                }
+              } else {
+                if (strncmp(path_str, comps[j], strlen(comps[j])) == 0) {
+                  /* Should be included */
+                  match = 1;
+                }
+              }
+            }
+          }
+
+          /* increment if we either matched something
+             or was not excluded */
+          if (match || !exclude ) nlocator++;
+
+        } else {
+          /* plough on regardless */
+          emsAnnul(status);
+        }
+      }
+    }
+  }
+
+  return nlocator;
+}
