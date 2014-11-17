@@ -144,12 +144,9 @@ datType( const HDSLoc *locator, char type_str[DAT__SZTYP+1], int * status ) {
     }
     break;
   case HDSTYPE_STRUCTURE:
-    /* Read the HDSTYPE attribute H5LTget_attribute_string does not seem
-     to nul terminate the string so I either fill the buffer with nuls before
-     hand or use the H5A interface directly. The attribute was created
-     with NUL padding */
-    memset( type_str, '\0', DAT__SZTYP+1);
-    CALLHDFQ( H5LTget_attribute_string( locator->group_id, ".", HDS__ATTR_STRUCT_TYPE, type_str ) );
+    /* Read the type attribute */
+    dat1GetAttrString( locator->group_id, HDS__ATTR_STRUCT_TYPE, HDS_TRUE,
+                       "HDF5NATIVEGROUP", type_str, DAT__SZTYP+1, status );
     break;
   default:
     *status = DAT__TYPIN;

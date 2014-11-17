@@ -330,5 +330,47 @@ hds1CountFiles();
 int
 hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int * status );
 
+void
+dat1SetAttrString( hid_t obj_id, const char * attrname,
+                   const char * value, int * status );
+
+void
+dat1SetAttr( hid_t obj_id, const char * attrname, hid_t attrtype,
+             size_t nvals, const void * value, int * status );
+
+void
+dat1SetAttrInt( hid_t obj_id, const char * attrname,
+                int value, int * status );
+
+void
+dat1SetAttrBool( hid_t obj_id, const char * attrname,
+                 hdsbool_t value, int * status );
+
+void
+dat1SetAttrHdsdims( hid_t obj_id, const char * attrname,
+                    int nvals, const hdsdim values[], int * status );
+
+hdsbool_t
+dat1GetAttr( hid_t obj_id, const char * attrname, hid_t attrtype,
+             size_t maxvals, void * values, size_t *actvals, int * status );
+
+hdsbool_t
+dat1GetAttrBool( hid_t objid, const char * attrname, hdsbool_t usedef,
+                 hdsbool_t defval, int *status);
+
+void
+dat1GetAttrHdsdims( hid_t objid, const char * attrname, hdsbool_t usedef,
+                    size_t ndefault, const hdsdim defdims[], size_t maxvals,
+                    hdsdim values[], size_t *actvals, int *status);
+
+int
+dat1GetAttrInt( hid_t objid, const char * attrname, hdsbool_t usedef,
+                 int defval, int *status);
+
+void
+dat1GetAttrString( hid_t objid, const char * attrname, hdsbool_t usedef,
+                   const char * defval, char * attrval, size_t attrvallen,
+                   int *status);
+
 /* DAT1_H_INCLUDED */
 #endif

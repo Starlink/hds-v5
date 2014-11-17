@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     datState
+*     dat1SetAttrBool
 
 *  Purpose:
-*     Enquire object state
+*     Store scalar boolean value in an HDF5 attribute
 
 *  Language:
 *     Starlink ANSI C
@@ -13,28 +13,29 @@
 *     Library routine
 
 *  Invocation:
-*     datState( const HDSLoc *locator, hdsbool_t *state, int *status);
+*     dat1SetAttrBool( hid_t obj_id, const char * attrname,
+*                      hdsbool_t value, int * status );
 
 *  Arguments:
-*     locator = const HDSLoc * (Given)
-*        Primitive locator.
-*     state = hdsbool_t * (Returned)
-*        1 if defined, otherwise 0.
+*     obj_id = hid_t (Given)
+*        HDF5 object to associate with attribute.
+*     attrname = const char * (Given)
+*        Name of attribute.
+*     value = hdsbool_t (Given)
+*        Value to store in attribute.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-*     Enquire the state of a primitive, ie. whether its value is defined or not.
+*     Store a single boolean value in an attribute associated
+*     with the specified HDF5 object.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
-*  Notes:
-*     - Not Yet Implemented.
-
 *  History:
-*     2014-10-16 (TIMJ):
+*     2014-11-17 (TIMJ):
 *        Initial version
 *     {enter_further_changes_here}
 
@@ -80,7 +81,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -91,25 +91,25 @@
 
 #include "dat_err.h"
 
-int
-datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
-  *state = HDS_FALSE;
+void
+dat1SetAttrBool( hid_t obj_id, const char * attrname,
+                 hdsbool_t value, int * status ) {
 
-  if (*status != SAI__OK) return *status;
+  hid_t attrtype = 0;
+  unsigned char bvalue;
 
-  if (dat1IsStructure(locator, status)) {
-    *status = DAT__OBJIN;
-    emsRep("datState_1", "datState can only be called on primitive locator",
-           status);
-    return *status;
-  }
+  if (*status != SAI__OK) return;
 
-  /* Need to read the attribute -- if for some reason the attribute is missing
-     (say it's an external HDF5 file) we need to know what to do. We do not trigger
-     an error at the moment. Just treat it as undefined. An argument could be made for
-     taking the opposite view that an unmanaged HDF5 dataset is always defined
-     from an HDS perspective. */
-  *state = dat1GetAttrBool(locator->dataset_id, HDS__ATTR_DEFINED, HDS_TRUE, HDS_FALSE, status );
+  CALLHDF( attrtype,
+           H5Tcopy(H5T_NATIVE_B8),
+           DAT__HDF5E,
+           emsRepf("dat1SetAttrBool_1", "Error copying data type during writing of attribute '%s'", status, attrname );
+           );
 
-  return *status;
+  bvalue = ( value ? 1 : 0 );
+  dat1SetAttr( obj_id, attrname, attrtype, 0, &bvalue, status );
+
+ CLEANUP:
+  if (attrtype > 0) H5Tclose(attrtype);
+  return;
 }

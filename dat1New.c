@@ -110,7 +110,6 @@
 #include <strings.h>
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 #include "ems.h"
 #include "star/one.h"
 #include "prm_par.h"
@@ -176,10 +175,10 @@ dat1New( const HDSLoc    *locator,
              );
 
     /* Actual data type of the structure/group must be stored in an attribute */
-    CALLHDFQ( H5LTset_attribute_string( group_id, ".", HDS__ATTR_STRUCT_TYPE, groupstr ) );
+    dat1SetAttrString( group_id, HDS__ATTR_STRUCT_TYPE, groupstr, status );
 
     /* Also store the number of dimensions */
-    CALLHDFQ( H5LTset_attribute_int( group_id, ".", HDS__ATTR_STRUCT_NDIMS, &ndim, 1 ) );
+    dat1SetAttrInt( group_id, HDS__ATTR_STRUCT_NDIMS, ndim, status );
 
     if (ndim > 0) {
       /* HDF5 can not define an array of structures so we create a collection

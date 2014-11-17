@@ -83,7 +83,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -95,17 +94,6 @@
 
 void
 dat1SetStructureDims( hid_t group_id, int ndim, const hdsdim dims[], int *status ) {
-  long long groupdims[DAT__MXDIM];
-  int i;
-
-  if (*status != SAI__OK) return;
-
-  for (i=0; i<ndim; i++) {
-    /* We store in HDS order */
-    groupdims[i] = dims[i];
-  }
-  CALLHDFQ( H5LTset_attribute_long_long( group_id, ".", HDS__ATTR_STRUCT_DIMS,
-                                         groupdims, ndim ) );
- CLEANUP:
+  dat1SetAttrHdsdims( group_id, HDS__ATTR_STRUCT_DIMS, ndim, dims, status );
   return;
 }

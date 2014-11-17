@@ -87,7 +87,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -128,25 +127,24 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
   }
 
   if (dat1IsStructure( locator, status ) ) {
-    int i;
-    long long structdims[DAT__MXDIM];
-
-    CALLHDFQ( H5LTget_attribute_int( locator->group_id, ".", HDS__ATTR_STRUCT_NDIMS, &rank ) );
+    /* Assume scalar structure if we are missing the attribute */
+    rank = dat1GetAttrInt( locator->group_id, HDS__ATTR_STRUCT_NDIMS, HDS_TRUE, 0, status );
 
     if (rank > 0) {
+      int i;
+      size_t actvals = 0; /* sanity check */
+      dat1GetAttrHdsdims( locator->group_id, HDS__ATTR_STRUCT_DIMS, HDS_FALSE,
+                          0, NULL, DAT__MXDIM, upper, &actvals, status );
 
-      CALLHDFQ( H5LTget_attribute_long_long( locator->group_id, ".", HDS__ATTR_STRUCT_DIMS, structdims ) );
-
-      if (rank > DAT__MXDIM) {
+      if (rank != (int)actvals) {
         *status = DAT__DIMIN;
-        emsRepf("datshape_1b", "datShape: Dimensions of object exceed maximum allowed size of %d",
-                status, DAT__MXDIM);
+        emsRepf("datshape_1b", "datBounds: Inconsistency in object dimensions of structure (%d != %zu)",
+                status, rank, actvals);
         goto CLEANUP;
       }
 
       for (i=0; i<rank; i++) {
         lower[i] = 1;
-        upper[i] = structdims[i];
       }
 
     }

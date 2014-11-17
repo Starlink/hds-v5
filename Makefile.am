@@ -146,6 +146,11 @@ dat1EncodeSubscript.c \
 dat1ExportDims.c \
 dat1FixNameCell.c \
 dat1FreeLoc.c \
+dat1GetAttr.c \
+dat1GetAttrBool.c \
+dat1GetAttrHdsdims.c \
+dat1GetAttrInt.c \
+dat1GetAttrString.c \
 dat1GetBounds.c \
 dat1GetFullName.c \
 dat1H5EtoEMS.c \
@@ -158,6 +163,11 @@ dat1New.c \
 dat1NewPrim.c \
 dat1RetrieveContainer.c \
 dat1RetrieveIdentifier.c \
+dat1SetAttr.c \
+dat1SetAttrBool.c \
+dat1SetAttrHdsdims.c \
+dat1SetAttrInt.c \
+dat1SetAttrString.c \
 dat1SetStructureDims.c \
 dat1Type.c \
 dat1TypeInfo.c \

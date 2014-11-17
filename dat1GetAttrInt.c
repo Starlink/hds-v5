@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     datState
+*     dat1GetAttrInt
 
 *  Purpose:
-*     Enquire object state
+*     Retrieve int scalar from an attribute
 
 *  Language:
 *     Starlink ANSI C
@@ -13,28 +13,41 @@
 *     Library routine
 
 *  Invocation:
-*     datState( const HDSLoc *locator, hdsbool_t *state, int *status);
+*     dat1GetAttrInt( hid_t objid, const char * attrname, hdsbool_t usedef,
+*                     int defval, int *status);
 
 *  Arguments:
-*     locator = const HDSLoc * (Given)
-*        Primitive locator.
-*     state = hdsbool_t * (Returned)
-*        1 if defined, otherwise 0.
+*     objid = hid_t (Given)
+*        HDF5 object containing the attribute.
+*     attrname = const char * (Given)
+*        Name of attribute.
+*     usedef = hdsbool_t (Given)
+*        If the attribute is missing, use the default value
+*        if this parameter is true.
+*     defval = int (Given)
+*        Default value to use for the attribute. Only used if
+*        usedef is true.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-*     Enquire the state of a primitive, ie. whether its value is defined or not.
+*     Read a scalar int from the named attribute and return it. Use
+*     a default value if the attribute is missing.
+
+*  Returned Value:
+*     Returns the int value from the attribute (or default).
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Not Yet Implemented.
+*     - Assuming there is not a bug in the HDSv5 library, the main reason
+*       the attribute could be missing is if an HDF5 file not created in HDS
+*       was given to the HDSv5 library.
 
 *  History:
-*     2014-10-16 (TIMJ):
+*     2014-11-17 (TIMJ):
 *        Initial version
 *     {enter_further_changes_here}
 
@@ -80,7 +93,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -92,24 +104,35 @@
 #include "dat_err.h"
 
 int
-datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
-  *state = HDS_FALSE;
+dat1GetAttrInt( hid_t objid, const char * attrname, hdsbool_t usedef,
+                int defval, int *status) {
+  hdsbool_t existed = HDS_FALSE;
+  int retval = 0;
+  hid_t attrtype = 0;
 
-  if (*status != SAI__OK) return *status;
+  if (*status != SAI__OK) return retval;
 
-  if (dat1IsStructure(locator, status)) {
-    *status = DAT__OBJIN;
-    emsRep("datState_1", "datState can only be called on primitive locator",
-           status);
-    return *status;
+  CALLHDF( attrtype,
+           H5Tcopy(H5T_NATIVE_INT32),
+           DAT__HDF5E,
+           emsRepf("dat1GetAttrInt_1", "Error copying data type during reading of attribute '%s'", status, attrname );
+           );
+
+  existed = dat1GetAttr( objid, attrname, attrtype, 1, &retval, NULL,
+                         status );
+
+  if (*status == SAI__OK) {
+    if (!existed) {
+      if (usedef) {
+        retval = defval;
+      } else {
+        *status = DAT__OBJIN;
+        emsRepf("dat1GetAttrInt", "Could not retrieve mandatory integer attribute from '%s'", status, attrname);
+      }
+    }
   }
 
-  /* Need to read the attribute -- if for some reason the attribute is missing
-     (say it's an external HDF5 file) we need to know what to do. We do not trigger
-     an error at the moment. Just treat it as undefined. An argument could be made for
-     taking the opposite view that an unmanaged HDF5 dataset is always defined
-     from an HDS perspective. */
-  *state = dat1GetAttrBool(locator->dataset_id, HDS__ATTR_DEFINED, HDS_TRUE, HDS_FALSE, status );
-
-  return *status;
+ CLEANUP:
+  if (attrtype > 0) H5Tclose(attrtype);
+  return retval;
 }

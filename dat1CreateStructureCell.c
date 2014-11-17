@@ -90,7 +90,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -122,10 +121,10 @@ dat1CreateStructureCell( hid_t group_id, size_t index, const char * typestr, con
            );
 
   /* Actual data type of the structure/group must be stored in an attribute */
-  CALLHDFQ( H5LTset_attribute_string( cellgroup_id, ".", HDS__ATTR_STRUCT_TYPE, typestr ) );
+  dat1SetAttrString( cellgroup_id, HDS__ATTR_STRUCT_TYPE, typestr, status );
 
   /* Also store the number of dimensions */
-  CALLHDFQ( H5LTset_attribute_int( cellgroup_id, ".", HDS__ATTR_STRUCT_NDIMS, &scalardims, 1 ) );
+  dat1SetAttrInt( cellgroup_id, HDS__ATTR_STRUCT_NDIMS, scalardims, status );
 
  CLEANUP:
   if (*status != SAI__OK) {

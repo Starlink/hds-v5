@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     datState
+*     dat1SetAttHdsdims
 
 *  Purpose:
-*     Enquire object state
+*     Store HDS dimensions array in an HDF5 attribute
 
 *  Language:
 *     Starlink ANSI C
@@ -13,28 +13,31 @@
 *     Library routine
 
 *  Invocation:
-*     datState( const HDSLoc *locator, hdsbool_t *state, int *status);
+*     dat1SetAttrHdsdims( hid_t obj_id, const char * attrname,
+*                         int nvals, const hdsdim_t values[], int * status );
 
 *  Arguments:
-*     locator = const HDSLoc * (Given)
-*        Primitive locator.
-*     state = hdsbool_t * (Returned)
-*        1 if defined, otherwise 0.
+*     obj_id = hid_t (Given)
+*        HDF5 object to associate with attribute.
+*     attrname = const char * (Given)
+*        Name of attribute.
+*     nvals = int (Given)
+*        Number of values. Can not exceed DAT__MXDIM.
+*     values = const hdsdim_t [] (Given)
+*        Values to store in attribute.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-*     Enquire the state of a primitive, ie. whether its value is defined or not.
+*     Store an array of hdsdim integers in an attribute associated
+*     with the specified HDF5 object.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
-*  Notes:
-*     - Not Yet Implemented.
-
 *  History:
-*     2014-10-16 (TIMJ):
+*     2014-11-17 (TIMJ):
 *        Initial version
 *     {enter_further_changes_here}
 
@@ -80,7 +83,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -91,25 +93,36 @@
 
 #include "dat_err.h"
 
-int
-datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
-  *state = HDS_FALSE;
+void
+dat1SetAttrHdsdims( hid_t obj_id, const char * attrname,
+                    int nvals, const hdsdim values[], int * status ) {
+  hsize_t hvalues[DAT__MXDIM];
+  int i;
+  hid_t attrtype = 0;
 
-  if (*status != SAI__OK) return *status;
+  if (*status != SAI__OK) return;
 
-  if (dat1IsStructure(locator, status)) {
-    *status = DAT__OBJIN;
-    emsRep("datState_1", "datState can only be called on primitive locator",
-           status);
-    return *status;
+  if (nvals > DAT__MXDIM) {
+    *status = DAT__DIMIN;
+    emsRepf("dat1SetAttrHdsdims", "Can not store a dimensions attribute with more than DAT__MXDIM elements",
+            status);
+    return;
   }
 
-  /* Need to read the attribute -- if for some reason the attribute is missing
-     (say it's an external HDF5 file) we need to know what to do. We do not trigger
-     an error at the moment. Just treat it as undefined. An argument could be made for
-     taking the opposite view that an unmanaged HDF5 dataset is always defined
-     from an HDS perspective. */
-  *state = dat1GetAttrBool(locator->dataset_id, HDS__ATTR_DEFINED, HDS_TRUE, HDS_FALSE, status );
+  /* Need to type convert the values */
+  for (i=0; i<nvals; i++) {
+    hvalues[i] = values[i];
+  }
 
-  return *status;
+  CALLHDF( attrtype,
+           H5Tcopy(H5T_NATIVE_HSIZE),
+           DAT__HDF5E,
+           emsRepf("dat1SetAttrString_1", "Error copying data type during writing of attribute '%s'", status, attrname );
+           );
+
+  dat1SetAttr( obj_id, attrname, attrtype, nvals, hvalues, status );
+
+ CLEANUP:
+  if (attrtype > 0) H5Tclose(attrtype);
+  return;
 }

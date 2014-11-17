@@ -80,7 +80,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -93,7 +92,6 @@
 
 int
 datReset(const HDSLoc *locator, int *status) {
-  int attrval = 0;
   char name_str[DAT__SZNAM+1];
 
   if (*status != SAI__OK) return *status;
@@ -106,10 +104,9 @@ datReset(const HDSLoc *locator, int *status) {
     return *status;
   }
 
-  CALLHDFQ( H5LTset_attribute_int( locator->dataset_id, ".", HDS__ATTR_DEFINED, &attrval, 1 ) );
+  dat1SetAttrBool( locator->dataset_id, HDS__ATTR_DEFINED, HDS_FALSE, status );
 
   /* Could consider wiping the content of the data array as well */
 
- CLEANUP:
   return *status;
 }

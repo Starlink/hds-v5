@@ -90,7 +90,6 @@
 #include <unistd.h>
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -149,12 +148,10 @@ datUnmap( HDSLoc * locator, int * status ) {
   if (locator->uses_true_mmap) {
     if (locator->accmode == HDSMODE_WRITE ||
         locator->accmode == HDSMODE_UPDATE) {
-      int attrval = 1;
-      CALLHDFQ( H5LTset_attribute_int( locator->dataset_id, ".", HDS__ATTR_DEFINED, &attrval, 1 ) );
+        dat1SetAttrBool( locator->dataset_id, HDS__ATTR_DEFINED, HDS_TRUE, status );
     }
   }
 
- CLEANUP:
   locator->pntr = NULL;
   locator->regpntr = NULL;
   locator->bytesmapped = 0;
