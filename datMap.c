@@ -215,19 +215,36 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     int locndims;
     int i;
     datShape(locator, DAT__MXDIM, locdims, &locndims, status );
-    if (ndim != locndims) {
-      *status = DAT__DIMIN;
-      emsRepf("datMap_6c", "datMap: Dimensionality mismatch --"
-              " requested number: %d locator number: %d", status,
-              ndim, locndims );
-      goto CLEANUP;
-    }
-    for (i=0; i<ndim; i++) {
-      if ( locdims[i] != dims[i] ) {
+
+    /* Note that if we are mapping as a scalar the locator should
+       refer to a single element */
+    if (ndim == 0) {
+      size_t nelem = 1;
+      for (i=0; i<locndims; i++) {
+        nelem *= locdims[i];
+      }
+      if (nelem != 1) {
         *status = DAT__DIMIN;
-        emsRepf("datMap_6d", "datMap: Dimension %d has size %zu but requested size %zu",
-                status, i, (size_t)locdims[i], (size_t)dims[i]);
+        emsRepf("datMap_6e", "datMap: Attempt to map as a scalar but locator"
+                " refers to a primitive with %zu elements",
+                status, nelem);
         goto CLEANUP;
+      }
+    } else {
+      if (ndim != locndims) {
+        *status = DAT__DIMIN;
+        emsRepf("datMap_6c", "datMap: Dimensionality mismatch --"
+                " requested number: %d locator number: %d", status,
+                ndim, locndims );
+        goto CLEANUP;
+      }
+      for (i=0; i<ndim; i++) {
+        if ( locdims[i] != dims[i] ) {
+          *status = DAT__DIMIN;
+          emsRepf("datMap_6d", "datMap: Dimension %d has size %zu but requested size %zu",
+                  status, i, (size_t)locdims[i], (size_t)dims[i]);
+          goto CLEANUP;
+        }
       }
     }
   }
