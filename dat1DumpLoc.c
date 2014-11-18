@@ -120,7 +120,7 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
     dump_dataspace_info( dspace_id, "Dataset associated", status );
     H5Sclose( dspace_id );
   }
- CLEANUP:
+
   if (file_str) MEM_FREE(file_str);
   if (name_str) MEM_FREE(name_str);
   return;

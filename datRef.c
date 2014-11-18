@@ -116,7 +116,7 @@ int datRef( const HDSLoc * locator, char * ref, size_t reflen, int * status ) {
   char *bra;   /* Position of '(' character */
   char *dot;   /* Position of '.' */
   size_t ncf;   /* Number of characters in filename */
-  int i;    /* Loop counter */
+  size_t i;    /* Loop counter */
   int nlev; /* Object level in HDS */
 #if defined( vms )
   char *semi;  /* Position of ';' */

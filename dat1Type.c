@@ -97,7 +97,6 @@ hdstype_t
 dat1Type( const HDSLoc *locator, int * status ) {
 
   hid_t h5type = 0;
-  size_t dsize = 0;
   hdstype_t thetype = HDSTYPE_NONE;
 
   if (*status != SAI__OK) return thetype;

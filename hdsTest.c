@@ -101,7 +101,6 @@ int main (void) {
   size_t nelt;
   size_t nbytes;
   size_t i;
-  int n;
   double sumd;
   int sumi;
   int64_t sumi64;

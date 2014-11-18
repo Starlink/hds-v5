@@ -135,7 +135,7 @@ datGet1C( const HDSLoc * locator,  size_t maxval, size_t bufsize, char *buffer,
   char * outpos;
   hdsdim dims[1];
   size_t nleft;
-  int n;
+  size_t n;
   int i;
 
   /* Initialize return variables in case bad status */
@@ -211,7 +211,7 @@ datGet1C( const HDSLoc * locator,  size_t maxval, size_t bufsize, char *buffer,
 	/* Number of characters to copy is 1 plus position at exit of loop */
 	i++;
 
-	if ( nleft < (i+1) ) {
+	if ( nleft < (size_t)(i+1) ) {
 	  *status = DAT__TRUNC;
 	  emsSeti( "N", *actval );
 	  emsSeti( "SZ", lenstr );

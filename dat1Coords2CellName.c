@@ -104,7 +104,6 @@ void
 dat1Coords2CellName( int ndim, const hdsdim coords[], char * cellname,
                      size_t cellnamelen, int * status ) {
 
-  int i;
   const char nameroot[] = DAT__CELLNAME;
   size_t lenstr = 0;
 

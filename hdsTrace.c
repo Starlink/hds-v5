@@ -171,7 +171,6 @@ static void objid_to_name ( hid_t objid, int asfile, char * buffer, size_t bufle
                             int *status) {
   char *tempstr = NULL;
   char *cleanstr = NULL;
-  ssize_t lenstr = 0;
   size_t iposn = 0;
 
   if (*status != SAI__OK) return;
@@ -190,7 +189,6 @@ static void objid_to_name ( hid_t objid, int asfile, char * buffer, size_t bufle
   iposn = (asfile ? 0 : 1);
   one_strlcpy( buffer, &(cleanstr[iposn]), buflen, status );
 
- CLEANUP:
   if (cleanstr != tempstr) MEM_FREE(cleanstr);
   if (tempstr) MEM_FREE(tempstr);
 

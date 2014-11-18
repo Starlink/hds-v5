@@ -112,6 +112,7 @@
 */
 
 #include <string.h>
+#include <ctype.h>
 
 #include "ems.h"
 #include "sae_par.h"

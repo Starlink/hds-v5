@@ -115,7 +115,6 @@ dat1GetAttrHdsdims( hid_t objid, const char * attrname, hdsbool_t usedef,
                     size_t ndefault, const hdsdim defdims[], size_t maxvals,
                     hdsdim values[], size_t *actvals, int *status) {
   hdsbool_t existed = HDS_FALSE;
-  int retval = 0;
   hid_t attrtype = 0;
   hsize_t hvalues[DAT__MXDIM];
 
