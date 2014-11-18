@@ -113,7 +113,6 @@ hdsDimC2F.c \
 hdsDimF2C.c \
 hdsFree.c \
 hdsGroup.c \
-hdsGtune.c \
 hdsInfoI.c \
 hdsLock.c \
 hdsNew.c \
@@ -122,7 +121,6 @@ hdsShow.c \
 hdsState.c \
 hdsStop.c \
 hdsTrace.c \
-hdsTune.c \
 hdsWild.c \
 datConv.c \
 hdsClose.c \
@@ -133,6 +131,7 @@ datnew0.c \
 datnew1.c \
 datput0.c \
 datput1.c \
+hdstuning.c \
 hdsgroups.c
 
 PRIVATE_C_ROUTINES = \
@@ -152,6 +151,7 @@ dat1GetAttrHdsdims.c \
 dat1GetAttrInt.c \
 dat1GetAttrString.c \
 dat1GetBounds.c \
+dat1Getenv.c \
 dat1GetFullName.c \
 dat1H5EtoEMS.c \
 dat1ImportDims.c \

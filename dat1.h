@@ -101,6 +101,17 @@ typedef enum {
   HDSTYPE_STRUCTURE
 } hdstype_t;
 
+/* Which shell should be used when expanding environment
+   variables. Not all HDS supported shells are supported
+   by this library.
+*/
+
+typedef enum {
+  HDS__NOSHELL = -1,  /* Do not expand shell variables */
+  HDS__SHSHELL,       /* Use "sh" aka wordexp() */
+  HDS__MAXSHELL       /* Too high */
+} hds_shell_t;
+
 /* Global Constants:                                                        */
 /* ================                                                         */
 #include "dat_par.h"
@@ -371,6 +382,12 @@ void
 dat1GetAttrString( hid_t objid, const char * attrname, hdsbool_t usedef,
                    const char * defval, char * attrval, size_t attrvallen,
                    int *status);
+
+void dat1Getenv( const char *varname, int def, int *val );
+
+hdsbool_t hds1GetUseMmap();
+
+hds_shell_t hds1GetShell();
 
 /* DAT1_H_INCLUDED */
 #endif
