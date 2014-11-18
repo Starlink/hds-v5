@@ -311,6 +311,9 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
      For now only allow mmap for files opened read only */
   if (intent != H5F_ACC_RDONLY) try_mmap = 0;
 
+  /* If mmap has been disabled by tuning the environment we just force it off here. */
+  if (!hds1GetUseMmap()) try_mmap = 0;
+
 #if DEBUG_HDS
   {
     char *name_str;
