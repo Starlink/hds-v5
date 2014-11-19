@@ -273,15 +273,15 @@ hds1FlushFile( hid_t file_id, int *status) {
        this file from the active list. */
     loc->file_id = 0;
 
-    /* Auto-annulling the locator will free the memory. This will
-       cause problems if a program attempts to access a secondary
-       locator after they have annulled the primary locator. In HDSv4
-       the locator struct was distinct from all the machinery so
-       using an annulled locator would trigger an error, but not
-       a SEGV. May have to have a special datAnnul that does not free
-       the struct memory itself, storing them all in a group that
-       can be freed at exit. */
-    datAnnul( &loc, status );
+    /* Auto-annull the locator. We use dat1Annul so as not to free the
+       C struct memory itself. This results in a memory leak but
+       protects against the case where a primary locator is freed
+       whilst the user still assumes they have a secondary locator
+       to annul. We probably need a new HDS routine to allow
+       these resources to be freed at the end of a monolith action
+       (similar to an ndfBegin/ndfEnd pairing). To do that we will
+       need to store the auto-annulled pointer somewhere. */
+    dat1Annul( loc, status );
   }
 
   /* Now we close the file itself */

@@ -389,5 +389,7 @@ hdsbool_t hds1GetUseMmap();
 
 hds_shell_t hds1GetShell();
 
+int dat1Annul( HDSLoc *locator, int * status );
+
 /* DAT1_H_INCLUDED */
 #endif

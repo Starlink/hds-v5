@@ -136,6 +136,7 @@ hdsgroups.c
 
 PRIVATE_C_ROUTINES = \
 dat1AllocLoc.c \
+dat1Annul.c \
 dat1Coords2CellName.c \
 dat1CreateStructureCell.c \
 dat1CvtChar.c \

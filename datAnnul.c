@@ -89,8 +89,6 @@
 
 int datAnnul( HDSLoc **locator, int * status ) {
   /* Attempts to run even if status is bad */
-  HDSLoc * thisloc;
-  hdsbool_t ingrp = 0;
   int lstat = SAI__OK;
 
   /* Sanity check argument */
@@ -103,53 +101,11 @@ int datAnnul( HDSLoc **locator, int * status ) {
   emsBegin( &lstat );
   emsMark();
 
-  /* Remove from group. If we do not do this then we risk a segv
-     if someone later calls hdsFlush. They are not meant to call datAnnul
-     if it is part of a group and maybe we should simply return without
-     doing anything if it is part of a group. For now we continue but
-     remove from the group.
-  */
-  ingrp = hds1RemoveLocator( *locator, &lstat );
-  /* The following code can be used to indicated whether we should be worried
-     about group usage */
-  /*
-  if (ingrp) {
-    printf("ANNULING LOCATOR %p : part of group '%s'\n", *locator, (*locator)->grpname);
-  }
-  */
+  /* Free file resources */
+  dat1Annul( *locator, &lstat );
 
-  /* Sort out any memory mapping */
-  datUnmap( *locator, &lstat );
-
-  thisloc = *locator;
-
-  /* Free HDF5 resources. We zero them out so that unregistering
-     the locator does not cause confusion */
-  if (thisloc->dtype) {
-    H5Tclose(thisloc->dtype);
-    thisloc->dtype = 0;
-  }
-  if (thisloc->dataspace_id) {
-    H5Sclose(thisloc->dataspace_id);
-    thisloc->dataspace_id = 0;
-  }
-  if (thisloc->dataset_id) {
-    H5Dclose(thisloc->dataset_id);
-    thisloc->dataset_id = 0;
-  }
-  if (thisloc->group_id) {
-    H5Gclose(thisloc->group_id);
-    thisloc->group_id = 0;
-  }
-
-  /* Unregister this -- this may result in many other
-     secondary locators being freed. It may or may not result
-     in the file handle being closed. We only unregister if
-     we have a file_id (otherwise we will not know from where
-     to unregister it. */
-  if (thisloc->file_id > 0) hds1UnregLocator( thisloc, &lstat );
-
-  *locator = dat1FreeLoc( thisloc, &lstat );
+  /* Free the memory associated with this locator */
+  *locator = dat1FreeLoc( *locator, &lstat );
 
   /* End the error context and return the final status */
   emsRlse();
