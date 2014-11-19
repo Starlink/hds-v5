@@ -198,6 +198,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   if (*status == SAI__OK) (*locator)->isprimary = HDS_TRUE;
 
  CLEANUP:
+  if (fname) MEM_FREE(fname);
 
   /* Free the temporary which will close the parent group */
   if (temploc) datAnnul(&temploc, status );
