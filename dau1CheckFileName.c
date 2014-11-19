@@ -23,12 +23,13 @@
 
 *  Returned Value:
 *     fname = char *
-*        Updated filename with extension if appropriate. Should be freed
-*        by calling MEM_FREE.
+*        Updated filename with shall variables expended and with extension
+*        added if appropriate. Should be freed by calling MEM_FREE.
 
 *  Description:
 *     Validate the supplied file name and add the standard extension if
-*     required.
+*     required. If a shell has been enabled via the SHELL tuning parameter
+*     wildcards and shell variables will be expanded.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
@@ -40,6 +41,8 @@
 *  History:
 *     2014-08-29 (TIMJ):
 *        Initial version
+*     2014-11-18 (TIMJ):
+*        Add shell expansion
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -85,11 +88,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <wordexp.h>
+#include <ctype.h>
 
 #include "hdf5.h"
 #include "hdf5_hl.h"
 
-#include "star/one.h"
+#include "star/util.h"
 #include "ems.h"
 #include "sae_par.h"
 
@@ -99,44 +104,168 @@
 
 #include "dat_err.h"
 
+#if __MINGW32__
+      /* Use Windows separator */
+#define DIRSEP  '\\'
+#else
+#define DIRSEP  '/'
+#endif
+
 char *
 dau1CheckFileName( const char * file_str, int * status ) {
 
-  size_t lenstr;
+  ssize_t lenstr;
   char *fname = NULL;
   int needext = 0;
-  size_t i;
+  ssize_t i;
+  ssize_t endpos;
+  ssize_t startpos = 0;
+  ssize_t dotpos = -1;
+  ssize_t dirpos = -1;
+  hdsbool_t special = HDS_FALSE;
+  size_t outstrlen = 0;
+  size_t nspaces = 0;   /* Spaces in path */
 
   if (*status != SAI__OK) return NULL;
 
-  /* Check to see if we need to add a file extension. If we find no dot before the
-     final slash we add an extension later */
+  /* HDSv4 removes leading and trailing whitespace */
   lenstr = strlen(file_str);
-  needext = 1; /* Assume we will need to add the suffix */
-  for (i=0; i < lenstr; i++) {
-    /* start from the end */
-    size_t iposn = lenstr - (i + 1);
-    if ( file_str[iposn] == '/' ) break;
-    if ( file_str[iposn] == '.') {
-      needext = 0;
+  endpos = lenstr;
+
+  /* Check for trailing whitespace */
+  for ( ; lenstr > 0; lenstr-- ) {
+    if ( !isspace( file_str[lenstr-1] ) ) {
+      endpos = lenstr;
       break;
     }
   }
 
-  /* Create buffer for file name so that we include the file extension */
-  if (*status == SAI__OK) {
-    size_t outstrlen = lenstr + DAT__SZFLX + 1;
+  /* Find where non-whitespace starts */
+  for ( ; startpos < lenstr; startpos++ ) {
+    if ( !isspace( file_str[startpos] ) ) break;
+  }
+
+  /* blank file is not good */
+  if ( startpos == endpos ) {
+    *status = DAT__FILNF;
+    emsRep("dau1CheckFileName_1", "Invalid blank file name given",
+           status );
+    goto CLEANUP;
+  }
+
+  /* Now scan through the file name recording the position of the last
+     slash, the last dot and whether there are any special characters
+     that might require shell expansion. */
+  for (i=startpos; i<lenstr; i++) {
+    switch ( file_str[i] ) {
+    case '.':
+      dotpos = i;
+      break;
+
+    case ' ':
+      nspaces++;
+      break;
+
+    case DIRSEP:
+      dirpos = i;
+      break;
+
+      /* _ and - are allowed in portable file names so no special action */
+    case '_':
+    case '-':
+      break;
+
+    default:
+      /* all other characters are assumed to be restricted to shell metacharacters */
+      if ( !isalnum( file_str[i] ) ) special = HDS_TRUE;
+    }
+  }
+
+  /* We only need to add a file extension if the dot comes before the
+     directory separator */
+  needext = ( dotpos <= dirpos );
+
+  /* only need to worry about special characters if we have found some
+     and if the tuning parameter indicates we can use a shell expansion */
+  if ( hds1GetShell() == HDS__NOSHELL ) special = 0;
+
+  /* Work out length of buffer required without shell expansion (include terminator) */
+  outstrlen = ( lenstr - startpos ) + 1 + 1;
+  if (needext) outstrlen += DAT__SZFLX;
+
+  /* We will need a buffer filled with the input string
+     if there are no special characters (because we just return it)
+     of if we need the extension added */
+
+  if ( !special || needext ) {
+
     fname = MEM_MALLOC( outstrlen );
-    if (fname) {
-      one_strlcpy( fname, file_str, outstrlen, status );
-      if (needext) one_strlcat( fname, DAT__FLEXT, outstrlen, status );
-    } else {
+    if (!fname) {
       *status = DAT__NOMEM;
       emsRep("", "Error in a string malloc. This is not good",
              status );
+      goto CLEANUP;
     }
+
+    /* Do not need error checking version as we know the length of the input
+       might be too long (trailing spaces) but it does not matter as we
+       also know it will fit. */
+    star_strlcpy( fname, &(file_str[startpos]), outstrlen );
+    if (needext) star_strlcat( fname, DAT__FLEXT, outstrlen );
 
   }
 
+  /* Shell expansion here, using either the temporary buffer or the input buffer.
+     We use the wordexp() system call. */
+  if (special) {
+    int retval = 0;      /* Status from wordexp() */
+    wordexp_t pwordexp;  /* Results from wordexp */
+    const char * tmpbuffer;
+
+    tmpbuffer = fname ? fname : &(file_str[startpos]);
+    retval = wordexp( tmpbuffer, &pwordexp, 0 );
+
+    if (retval == 0) {
+
+      if (pwordexp.we_wordc == 1) {
+        /* one match so we will copy that into an output buffer */
+        size_t szword;
+        tmpbuffer = (pwordexp.we_wordv)[0];
+        szword = strlen( tmpbuffer ) + 1;
+
+        /* Grow the buffer as required [fname may or may not be NULL already] */
+        fname = MEM_REALLOC( fname, szword );
+        star_strlcpy( fname, tmpbuffer, szword );
+
+      } else if (pwordexp.we_wordc > 1) {
+        *status = DAT__FATAL;
+        emsRepf("dau1CheckFileName_toomany",
+                "%d results from string expansion of '%s'"
+                " but HDS can only open a single file at a time",
+                status, (int)(pwordexp.we_wordc), tmpbuffer );
+        goto CLEANUP;
+      } else {
+        /* This should not happen as wordexp() always seems to return something
+           even if it is a copy of the input */
+        *status = DAT__FILNF;
+        emsRepf("dau1CheckFileName_worexp_c",
+                "Shell expansion failed to find any results", status );
+        goto CLEANUP;
+      }
+    } else {
+      *status = DAT__FATAL;
+      emsRepf("dau1CheckFileName_wordexp", "Internal error (%d) from wordexp()",
+              status, retval );
+      goto CLEANUP;
+    }
+  }
+
+ CLEANUP:
+  if (*status != SAI__OK) {
+    if (fname) {
+      MEM_FREE(fname);
+      fname = NULL;
+    }
+  }
   return fname;
 }
