@@ -52,6 +52,13 @@ typedef struct {
 /* Declare the hash */
 HDSregistry *all_locators = NULL;
 
+/* Internal routines */
+static size_t hds1PrimaryCountByFileID( hid_t file_id, int * status );
+
+static hid_t * hds1GetFileIds( hid_t file_id, int *status );
+
+static int hds1FlushFileID( hid_t file_id, int *status);
+
 /*
 *+
 *  Name:
@@ -172,7 +179,7 @@ hds1RegLocator(HDSLoc *locator, int *status) {
 *     hds1FlushFile
 
 *  Purpose:
-*     Annul all locators associated with a specific file_id
+*     Annul all locators associated with a specific open file
 
 *  Language:
 *     Starlink ANSI C
@@ -181,11 +188,12 @@ hds1RegLocator(HDSLoc *locator, int *status) {
 *     Library routine
 
 *  Invocation:
-*     hdsFlush( hid_t file_id, int *status);
+*     hds1FlushFile( hid_t file_id, int *status);
 
 *  Arguments:
 *     file_id = hid_t (Given)
-*        Group name
+*        File identifier. Used to determine all file identifiers
+*        associated with the file.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
@@ -247,8 +255,27 @@ hds1RegLocator(HDSLoc *locator, int *status) {
 *-
 */
 
-int
-hds1FlushFile( hid_t file_id, int *status) {
+int hds1FlushFile( hid_t file_id, int *status ) {
+  hid_t *file_ids = 0;
+  size_t i = 0;
+  if (*status != SAI__OK) return *status;
+
+  /* Get all the file ids associated with this individual file_id */
+  file_ids = hds1GetFileIds( file_id, status );
+
+  /* Get count from each file_id */
+  while (file_ids[i]) {
+    hds1FlushFileID( file_ids[i], status );
+    i++;
+  }
+
+  if (file_ids) MEM_FREE(file_ids);
+  return *status;
+}
+
+
+static int
+hds1FlushFileID( hid_t file_id, int *status) {
   HDSregistry * entry = NULL;
   HDSelement * elt = NULL;
 
@@ -314,14 +341,13 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
   unsigned int len = 0;
   unsigned int i = 0;
   int removed = 0;
-  int nprimary = 0;
 
   if (*status != SAI__OK) return removed;
 
   /* Not associated with a file, should not happen */
   if (locator->file_id <= 0) {
     *status = DAT__FATAL;
-    emsRep("hds1RegLocator_1", "Can not register a locator that is not"
+    emsRep("hds1RegLocator_1", "Can not unregister a locator that is not"
            " associated with a file", status );
     return *status;
   }
@@ -342,24 +368,26 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
   }
 
   len = utarray_len( entry->locators );
-  /* Read all the elements from the entry, looking for the relevant one
-     but also counting how many primary locators we have. */
+  /* Read all the elements from the entry, looking for the relevant one */
+  /* Do not count primary/secondary as that needs to be done across
+     multiple file handles */
   for ( i = 0; i < len; i++) {
     HDSLoc * thisloc;
     elt = (HDSelement *)utarray_eltptr( entry->locators, i );
     thisloc = elt->locator;
     if (thisloc == locator) {
+      /* Can break straight away */
       pos = i;
-    } else {
-      /* Do not count the found locator as it is no
-         longer relevant. We need to have more than zero
-         remaining primaries */
-      if (thisloc->isprimary) nprimary++;
+      break;
     }
   }
 
   if (pos > -1) {
+    size_t nprimary;
     unsigned int upos = pos;
+
+    /* Remove it from the list so that there will not be a later
+       attempt to remove it.*/
     utarray_erase( entry->locators, upos, 1 );
 
     /* This locator is being annulled so it's okay to remove
@@ -367,8 +395,12 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
        to confuse datAnnul into thinking it should close the file. */
     locator->file_id = 0;
 
-    /* if we have no more primary locators we have to free
-       resources -- we call flush even if we know this is the
+    /* Get the TOTAL count for this file (not just this file_id)
+       (without this locator, which we just removed) */
+    nprimary = hds1PrimaryCount( file_id, status );
+
+    /* Trigger a cleanup if there are no more primary locators
+       -- we call flush even if we know this is the
        only locator so that we do not duplicate the hash delete code */
     if (nprimary == 0) {
       /* Close all locators */
@@ -389,10 +421,33 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
 }
 
 /* Count how many primary locators are associated with a particular
+   file -- since a file can have multiple file_ids this routine
+   goes through them all. */
+size_t
+hds1PrimaryCount( hid_t file_id, int *status ) {
+  size_t nprimary = 0;
+  hid_t *file_ids = NULL;
+  size_t i = 0;
+  if (*status != SAI__OK) return nprimary;
+
+  /* Get all the file ids associated with this individual file_id */
+  file_ids = hds1GetFileIds( file_id, status );
+
+  /* Get count from each file_id */
+  while (file_ids[i]) {
+    nprimary += hds1PrimaryCountByFileID(file_ids[i], status);
+    i++;
+  }
+
+  if (file_ids) MEM_FREE(file_ids);
+  return nprimary;
+}
+
+/* Count how many primary locators are associated with a particular
    file_id */
 
-size_t
-hds1PrimaryCount( hid_t file_id, int * status ) {
+static size_t
+hds1PrimaryCountByFileID( hid_t file_id, int * status ) {
   HDSregistry * entry = NULL;
   HDSelement * elt = NULL;
   unsigned int len = 0;
@@ -451,7 +506,7 @@ hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status ) {
       intent_str = "Err";
     }
     len = utarray_len( entry->locators );
-    nprim = hds1PrimaryCount( file_id, status );
+    nprim = hds1PrimaryCountByFileID( file_id, status );
     name_str = dat1GetFullName( file_id, 1, NULL, status );
     if (listfiles) printf("File: %s [%s] (%d) (%u locator%s) (refcnt=%zu)\n", name_str, intent_str, file_id,
                           len, (len == 1 ? "" : "s"), nprim);
@@ -493,6 +548,80 @@ hds1ShowLocators( hid_t file_id, int * status ) {
     if (thisloc->isprimary) nprimary++;
     MEM_FREE(namestr);
   }
+}
+
+/* Retrieve the file descriptor of the underlying file */
+static int hds1GetFileDescriptor( hid_t file_id ) {
+  int fd = 0;
+  hid_t fapl_id;
+  hid_t fdriv_id;
+  void *file_handle;
+  herr_t herr = -1;
+  fapl_id = H5Fget_access_plist(file_id);
+  fdriv_id = H5Pget_driver(fapl_id);
+  herr = H5Fget_vfd_handle( file_id, fapl_id, (void**)&file_handle);
+  if (herr >= 0) {
+    if (fdriv_id == H5FD_SEC2) {
+      fd = *((int *)file_handle);
+    } else if (fdriv_id == H5FD_STDIO) {
+      FILE * fh = (FILE *)file_handle;
+      fd = fileno(fh);
+    }
+  }
+  if (fapl_id > 0) H5Pclose(fapl_id);
+  return fd;
+}
+
+/* This routine looks up all the file_ids associated with
+   the same file as the supplied file id. Currently uses
+   the underlying file descriptor for matching. This should
+   be more efficient and more accurate than getting the file name
+   and matching that. Might have issues if non-standard file drivers
+   are used later on. */
+
+
+static hid_t *
+hds1GetFileIds( hid_t file_id, int *status ) {
+  hid_t * file_ids = NULL;
+  size_t num_files;
+  size_t nfound = 0;
+  HDSregistry * entry = NULL;
+  int ref_fd = 0;
+
+  if (*status != SAI__OK) return NULL;
+
+  /* Inefficient: Allocate enough memory to hold all open file_ids plus
+     one so we can end with a NULL. */
+  num_files = hds1CountFiles();
+  file_ids = MEM_CALLOC( num_files + 1, sizeof(*file_ids) );
+  if (!file_ids) {
+    *status = DAT__NOMEM;
+    emsRep("GetFileIds", "Serious issue allocating array of file identifiers",
+           status );
+    goto CLEANUP;
+  }
+
+  /* Get this filename as the reference -- assume normalized */
+  ref_fd = hds1GetFileDescriptor( file_id );
+  file_ids[0] = file_id;
+  nfound++;
+  if (ref_fd == 0) goto CLEANUP;
+
+  for (entry = all_locators; entry != NULL; entry = entry->hh.next) {
+    hid_t this_file_id = entry->file_id;
+    int fd;
+    /* We know this matches */
+    if (this_file_id == file_id) continue;
+
+    fd = hds1GetFileDescriptor( this_file_id );
+    if (fd == ref_fd) {
+      file_ids[nfound] = this_file_id;
+      nfound++;
+    }
+  }
+
+ CLEANUP:
+  return file_ids;
 }
 
 int
