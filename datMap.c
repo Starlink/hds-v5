@@ -369,6 +369,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
           }
         }
       }
+      if (fapl_id > 0) H5Pclose( fapl_id );
 
       if (fd == 0) {
         /* We have to open the file ourselves! */
