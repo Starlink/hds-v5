@@ -30,11 +30,15 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Does nothing if hdsLock has not been called previously.
+*     - Flushes buffers to disk. This is consistent with HDSv4 but
+*       is not obviously mentioned in the documentation.
+*     - Should be called to free resources locked via hdsLock.
 
 *  History:
 *     2014-10-17 (TIMJ):
 *        Initial version
+*     2014-11-18 (TIMJ):
+*        Add call to flush buffers to disk.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -79,7 +83,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"
@@ -94,6 +97,10 @@ int
 hdsFree(const HDSLoc *locator, int *status) {
 
   if (*status != SAI__OK) return *status;
+
+  /* It seems that HDSv4 flushes buffers as well as unlocking
+     the file. This despite no hdsLock ever having been called */
+  H5Fflush( locator->file_id, H5F_SCOPE_LOCAL );
 
   /* Documented to do nothing if hdsLock has not been called
      so it is safe to do nothing here as we know that hdsLock
