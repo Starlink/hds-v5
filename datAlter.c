@@ -222,8 +222,9 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
           }
           goto CLEANUP;
         }
-        /* Remove the empty element */
-        datErase( locator, cellname, status );
+        /* Remove the empty element -- can not use datErase because
+           structure elements are deliberately too long. */
+        CALLHDFQ( H5Ldelete( locator->group_id, cellname, H5P_DEFAULT ) );
       }
     } else {
       /* Oddly, no change requested so we are done. Should this be an error? */
