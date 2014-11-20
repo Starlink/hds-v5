@@ -94,7 +94,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "hds1.h"
 #include "dat1.h"

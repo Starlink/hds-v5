@@ -90,7 +90,6 @@
 #include <errno.h>
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "ems.h"
 #include "sae_par.h"

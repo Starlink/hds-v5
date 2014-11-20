@@ -118,7 +118,6 @@
 #include "star/one.h"
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 int
 hdsNew(const char *file_str,

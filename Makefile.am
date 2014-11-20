@@ -17,7 +17,7 @@ libhds_v5_la_SOURCES = \
 	$(PRIVATE_INCLUDES) \
 	$(C_ROUTINES)
 
-libhds_v5_la_LIBADD = `starmem_link` `ems_link` `one_link` -lhdf5 -lhdf5_hl
+libhds_v5_la_LIBADD = `starmem_link` `ems_link` `one_link` -lhdf5
 
 # Make all library code position independent. This is handy for creating
 # shareable libraries from the static ones (Java JNI libraries).

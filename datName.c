@@ -82,7 +82,6 @@
 #include <string.h>
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "star/one.h"
 #include "ems.h"

@@ -77,7 +77,6 @@
 */
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 void dat1InitHDF5(void) {
   static int DONE = 0;

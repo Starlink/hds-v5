@@ -92,7 +92,6 @@
 #include <ctype.h>
 
 #include "hdf5.h"
-#include "hdf5_hl.h"
 
 #include "star/util.h"
 #include "ems.h"
