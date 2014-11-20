@@ -403,11 +403,18 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
   }
 
   /* If we have not been able to map anything yet, just get some memory. It is
-     zeroed to match mmap behavior. We rely on the OS to decide when it is reasonable
+     zeroed (for WRITE) to match mmap behavior. We rely on the OS to decide when it is reasonable
      to do an anonymous mmap. */
 
   if (!regpntr) {
-    regpntr = cnfCalloc( 1, nbytes );
+    hdsbool_t mustget;
+    mustget = (accmode == HDSMODE_READ || accmode == HDSMODE_UPDATE);
+
+    if (mustget) {
+      regpntr = cnfMalloc( nbytes );
+    } else {
+      regpntr = cnfCalloc( 1, nbytes );
+    }
     if (!regpntr) {
       *status = DAT__NOMEM;
       emsRepf("datMap_cnf","datMap: Unable to allocate %zu bytes of memory",
@@ -416,7 +423,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     }
 
     /* Populate the memory - check with datState occurred earlier */
-    if (accmode == HDSMODE_READ || accmode == HDSMODE_UPDATE) {
+    if (mustget) {
       datGet( locator, normtypestr, ndim, dims, regpntr, status );
     }
   }
