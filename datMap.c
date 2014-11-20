@@ -61,6 +61,8 @@
 *     2014-11-06 (TIMJ):
 *        First attempt at supporting mmap(). Currently
 *        disabled as it is not quite working correctly.
+*     2014-11-20 (TIMJ):
+*        Do not use mmap if we can't mmap a file. Use cnfCalloc directly.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -401,11 +403,18 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     }
   }
 
-  /* If we have not been able to map anything yet, just mmap some
-     memory not associated with a file */
-  if (!mapped) {
-    mapped = dat1Mmap( nbytes, PROT_READ|PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0,
-                       &isreg, &regpntr, &actbytes, status );
+  /* If we have not been able to map anything yet, just get some memory. It is
+     zeroed to match mmap behavior. We rely on the OS to decide when it is reasonable
+     to do an anonymous mmap. */
+
+  if (!regpntr) {
+    regpntr = cnfCalloc( 1, nbytes );
+    if (!regpntr) {
+      *status = DAT__NOMEM;
+      emsRepf("datMap_cnf","datMap: Unable to allocate %zu bytes of memory",
+              status, nbytes);
+      goto CLEANUP;
+    }
 
     /* Populate the memory - check with datState occurred earlier */
     if (accmode == HDSMODE_READ || accmode == HDSMODE_UPDATE) {
@@ -426,7 +435,10 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
         emsRep("datMap_4", "Error unmapping mapped memory: ^MESSAGE", status);
       }
       mapped = NULL;
+    } else if (regpntr) {
+      cnfFree( regpntr );
     }
+    regpntr = NULL;
   }
 
   /* Update the locator to reflect the mapped status */

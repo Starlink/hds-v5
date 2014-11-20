@@ -133,7 +133,7 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
     return *status;
   }
 
-  if (locator->pntr) {
+  if (locator->regpntr) {
     *status = DAT__OBJIN;
     emsRep("datAlter_2", "Can not alter the size of a mapped primitive",
            status);

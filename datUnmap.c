@@ -42,6 +42,8 @@
 *     2014-11-06 (TIMJ):
 *        If pointer was memory mapped directly from a file close
 *        the file and do not use datPut.
+*     2014-11-20 (TIMJ):
+*        Use cnfFree if the pointer was not actually mapped.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -109,7 +111,7 @@ datUnmap( HDSLoc * locator, int * status ) {
   if (!locator) return *status;
 
   /* if there is no mapped pointer in this locator do nothing */
-  if (!locator->pntr) return *status;
+  if (!locator->regpntr) return *status;
 
   /* We only copy back explicitly if we did not do a native mmap on the file */
   if (!locator->uses_true_mmap) {
@@ -132,15 +134,21 @@ datUnmap( HDSLoc * locator, int * status ) {
     emsRlse();
   }
 
-  /* Need to free the memory and unregister the pointer */
-  cnfUregp( locator->regpntr );
+  /* Need to free the memory and, if needed, unregister the pointer.
+     If "pntr" is defined then this was mmapped. */
+  if (locator->pntr) {
+    cnfUregp( locator->regpntr );
 
-  if ( munmap( locator->pntr, locator->bytesmapped ) != 0 ) {
-    if (*status == SAI__OK) {
-      *status = DAT__FILMP;
-      emsSyser( "MESSAGE", errno );
-      emsRep("datUnMap_4", "datUnmap: Error unmapping mapped memory: ^MESSAGE", status);
+    if ( munmap( locator->pntr, locator->bytesmapped ) != 0 ) {
+      if (*status == SAI__OK) {
+        *status = DAT__FILMP;
+        emsSyser( "MESSAGE", errno );
+        emsRep("datUnMap_4", "datUnmap: Error unmapping mapped memory: ^MESSAGE", status);
+      }
     }
+  } else if (locator->regpntr) {
+    /* Allocated memory that needs to be freed by CNF but was not mmapped */
+    cnfFree( locator->regpntr );
   }
 
   /* If these data were mmap-ed directly on disk then we have to update
