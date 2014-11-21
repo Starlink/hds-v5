@@ -30,12 +30,11 @@
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
-*  Notes:
-*     - Not Yet Implemented.
-
 *  History:
 *     2014-10-16 (TIMJ):
 *        Initial version
+*     2014-11-21 (TIMJ):
+*        If the attribute is missing, query the dataset directly.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -105,10 +104,17 @@ datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
 
   /* Need to read the attribute -- if for some reason the attribute is missing
      (say it's an external HDF5 file) we need to know what to do. We do not trigger
-     an error at the moment. Just treat it as undefined. An argument could be made for
-     taking the opposite view that an unmanaged HDF5 dataset is always defined
-     from an HDS perspective. */
-  *state = dat1GetAttrBool(locator->dataset_id, HDS__ATTR_DEFINED, HDS_TRUE, HDS_FALSE, status );
+     an error at the moment. If the attribute is missing we query the dataset
+     to see if it has been defined yet. We can not do this for HDS files as datReset
+     has to work. */
 
+  if (H5Aexists( locator->dataset_id, HDS__ATTR_DEFINED)) {
+    *state = dat1GetAttrBool(locator->dataset_id, HDS__ATTR_DEFINED, HDS_TRUE, HDS_FALSE, status );
+  } else {
+    H5D_space_status_t dstatus = 0;
+    CALLHDFQ( H5Dget_space_status( locator->dataset_id, &dstatus) );
+    *state = ( dstatus == H5D_SPACE_STATUS_ALLOCATED ? HDS_TRUE : HDS_FALSE );
+  }
+ CLEANUP:
   return *status;
 }
