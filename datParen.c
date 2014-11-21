@@ -114,9 +114,7 @@
 int
 datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   hid_t objid = 0;
-  char * tempstr = NULL;
   HDSLoc * thisloc = NULL;
-  ssize_t lenstr = 0;
   hid_t parent_id = 0;
 
   *locator2 = NULL;
@@ -125,46 +123,8 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   /* Need to get the relevant identfier */
   objid = dat1RetrieveIdentifier( locator1, status );
 
-  /* Not sure if there is a specific API for this. For now,
-     get the full name of the object and then open the group
-     with the lowest part of the path removed */
-  tempstr = dat1GetFullName( objid, 0, &lenstr, status );
-
-  /* Now walk through the name in reverse and nul out the first "/"
-     we encounter. */
-  if (*status == SAI__OK) {
-    ssize_t iposn;
-    ssize_t i;
-    for (i = 0; i < lenstr; i++) {
-      iposn = lenstr - (i+1);
-      if (tempstr[iposn] == '/') {
-        tempstr[iposn] = '\0';
-        break;
-      }
-    }
-  }
-
-  /* if this seems to be the root group we return an error */
-  if (tempstr[0] == '\0') {
-    if (*status == SAI__OK) {
-      *status = DAT__OBJIN;
-      emsRep("datParen_1",
-             "Object is a top-level object and has no parent "
-             "structure (possible programming error).", status);
-      goto CLEANUP;
-    }
-  }
-
-  /* It seems you can open a group on an arbitrary
-     item (group or dataset) if you use a fully specified
-     path. This means you do not need to get an
-     explicit file_id to open the group */
-  CALLHDF(parent_id,
-          H5Gopen(objid, tempstr, H5P_DEFAULT),
-          DAT__HDF5E,
-          emsRepf("datParen_2", "Error opening parent structure '%s'",
-                  status, tempstr );
-          );
+  /* Get the parent group. Do not want the root group */
+  parent_id = dat1GetParentID( objid, 0, status );
 
   thisloc = dat1AllocLoc( status );
 
@@ -177,7 +137,6 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   }
 
  CLEANUP:
-  if (tempstr) MEM_FREE(tempstr);
   if (*status != SAI__OK) {
     datAnnul( &thisloc, status );
   } else {
