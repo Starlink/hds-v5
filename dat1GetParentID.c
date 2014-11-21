@@ -109,7 +109,7 @@ dat1GetParentID( hid_t objid, hdsbool_t allow_root, int * status ) {
      get the full name of the object and then open the group
      with the lowest part of the path removed */
   tempstr = dat1GetFullName( objid, 0, &lenstr, status );
-  printf("PATH to current =%s\n",tempstr);
+
   if (*status == SAI__OK && lenstr <= 1) {
     *status = DAT__OBJIN;
     emsRep("datParen_0",
@@ -147,8 +147,6 @@ dat1GetParentID( hid_t objid, hdsbool_t allow_root, int * status ) {
     }
   }
 
-  printf("PATH TO PARENT: %s\n",tempstr);
-  
   /* It seems you can open a group on an arbitrary
      item (group or dataset) if you use a fully specified
      path. This means you do not need to get an
