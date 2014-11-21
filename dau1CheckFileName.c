@@ -210,6 +210,12 @@ dau1CheckFileName( const char * file_str, int * status ) {
        might be too long (trailing spaces) but it does not matter as we
        also know it will fit. */
     star_strlcpy( fname, &(file_str[startpos]), outstrlen );
+
+    /* NUL terminate so trailing spaces are ignored. We could not
+       terminate file_str because it is const */
+    fname[lenstr-startpos] = '\0';
+
+    /* Append the file extension if necessary */
     if (needext) star_strlcat( fname, DAT__FLEXT, outstrlen );
 
   }
