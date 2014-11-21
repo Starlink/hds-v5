@@ -99,9 +99,10 @@ int
 datCopy( const HDSLoc *locator1, const HDSLoc *locator2,
          const char *name_str, int *status) {
 
-  HDSLoc * parentloc = NULL;
   char sourcename[DAT__SZNAM+1];
   char cleanname[DAT__SZNAM+1];
+  hid_t parent_id = -1;
+  hid_t objid = -1;
 
   if (*status != SAI__OK) return *status;
 
@@ -109,15 +110,18 @@ datCopy( const HDSLoc *locator1, const HDSLoc *locator2,
   if (*status != SAI__OK) return *status;
 
   /* Have to give the source name as "." doesn't seem to be allowed.
-     so get the name and the parent locator */
-  datParen( locator1, &parentloc, status );
+     so get the name and the parent locator. In this particular
+     case the parent can be the HDF5 root group so do not use datParen */
+  objid = dat1RetrieveIdentifier( locator1, status );
+  parent_id = dat1GetParentID( objid, 1, status );
+
   datName( locator1, sourcename, status );
 
-  CALLHDFQ(H5Ocopy( parentloc->group_id, sourcename,
+  CALLHDFQ(H5Ocopy( parent_id, sourcename,
                     locator2->group_id, cleanname, H5P_DEFAULT, H5P_DEFAULT));
 
  CLEANUP:
-  if (parentloc) datAnnul( &parentloc, status );
+  if (parent_id) H5Gclose(parent_id);
   return *status;
 
 }
