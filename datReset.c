@@ -92,6 +92,7 @@
 
 int
 datReset(const HDSLoc *locator, int *status) {
+  unsigned intent = 0;
   char name_str[DAT__SZNAM+1];
 
   if (*status != SAI__OK) return *status;
@@ -104,9 +105,20 @@ datReset(const HDSLoc *locator, int *status) {
     return *status;
   }
 
+    /* How did we open this file? */
+  CALLHDFQ( H5Fget_intent( locator->file_id, &intent ));
+  /* Must check whether the file was opened for write */
+  if ( intent == H5F_ACC_RDONLY ) {
+    *status = DAT__ACCON;
+    emsRepf("datReset", "datReset: Can not reset readonly primitive",
+            status);
+    goto CLEANUP;
+  }
+
   dat1SetAttrBool( locator->dataset_id, HDS__ATTR_DEFINED, HDS_FALSE, status );
 
   /* Could consider wiping the content of the data array as well */
 
+ CLEANUP:
   return *status;
 }
