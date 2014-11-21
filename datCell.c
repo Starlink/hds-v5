@@ -152,11 +152,12 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
     hdsdim groupsub[DAT__MXDIM];
 
     if (locator1->vectorized > 0) {
-
+      hdsdim structdims[DAT__MXDIM];
       /* If this locator is vectorized then the name will be incorrect
          if we naively calculate the name. */
-      /* Assume scalar structure if we are missing the attribute */
-      rank = dat1GetAttrInt( locator1->group_id, HDS__ATTR_STRUCT_NDIMS, HDS_TRUE, 0, status );
+
+      /* Get the dimensionality */
+      rank = dat1GetStructureDims( locator1, DAT__MXDIM, structdims, status );
 
       if (rank == 0) {
         /* So the group is really a scalar so we just need to clone the
@@ -169,16 +170,6 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
       } else if (rank > 1) {
         /* Map vectorized index to underlying dimensionality */
-        size_t actvals;
-        hdsdim structdims[DAT__MXDIM];
-        dat1GetAttrHdsdims( locator1->group_id, HDS__ATTR_STRUCT_DIMS, HDS_FALSE,
-                            0, NULL, DAT__MXDIM, structdims, &actvals, status );
-        if (rank != (int)actvals) {
-          *status = DAT__DIMIN;
-          emsRepf("datshape_1b", "datCell: Inconsistency in object dimensions of structure (%d != %zu)",
-                  status, rank, actvals);
-          goto CLEANUP;
-        }
         dat1Index2Coords( subs[0], rank, structdims, groupsub, status );
         ndim = rank;
       } else {

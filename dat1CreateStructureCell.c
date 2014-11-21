@@ -120,11 +120,9 @@ dat1CreateStructureCell( hid_t group_id, size_t index, const char * typestr, con
            emsRepf("dat1New_4", "Error creating structure/group '%s'", status, parentstr)
            );
 
-  /* Actual data type of the structure/group must be stored in an attribute */
+  /* Actual data type of the structure/group must be stored in an attribute.
+     Do not need to store dimensions as each cell is itself scalar. */
   dat1SetAttrString( cellgroup_id, HDS__ATTR_STRUCT_TYPE, typestr, status );
-
-  /* Also store the number of dimensions */
-  dat1SetAttrInt( cellgroup_id, HDS__ATTR_STRUCT_NDIMS, scalardims, status );
 
  CLEANUP:
   if (*status != SAI__OK) {

@@ -177,9 +177,6 @@ dat1New( const HDSLoc    *locator,
     /* Actual data type of the structure/group must be stored in an attribute */
     dat1SetAttrString( group_id, HDS__ATTR_STRUCT_TYPE, groupstr, status );
 
-    /* Also store the number of dimensions */
-    dat1SetAttrInt( group_id, HDS__ATTR_STRUCT_NDIMS, ndim, status );
-
     if (ndim > 0) {
       /* HDF5 can not define an array of structures so we create a collection
          of groups below the parent group. */

@@ -135,7 +135,6 @@ typedef enum {
 /* Names of attributes */
 #define HDS__ATTR_DEFINED "HDS_DATASET_IS_DEFINED?"
 #define HDS__ATTR_STRUCT_TYPE "CLASS"
-#define HDS__ATTR_STRUCT_NDIMS "HDS_STRUCTURE_NDIMS"
 #define HDS__ATTR_STRUCT_DIMS "HDS_STRUCTURE_DIMS"
 
 /* Private definition of the HDS locator struct */
@@ -392,6 +391,9 @@ hds_shell_t hds1GetShell();
 int dat1Annul( HDSLoc *locator, int * status );
 
 hid_t dat1GetParentID( hid_t objid, hdsbool_t allow_root, int *status );
+
+int
+dat1GetStructureDims( const HDSLoc * locator, int maxdims, hdsdim dims[], int *status );
 
 /* DAT1_H_INCLUDED */
 #endif

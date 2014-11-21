@@ -155,6 +155,7 @@ dat1GetBounds.c \
 dat1Getenv.c \
 dat1GetFullName.c \
 dat1GetParentID.c \
+dat1GetStructureDims.c \
 dat1H5EtoEMS.c \
 dat1ImportDims.c \
 dat1ImportFloc.c \

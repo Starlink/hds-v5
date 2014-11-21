@@ -43,6 +43,8 @@
 *  History:
 *     2014-09-15 (TIMJ):
 *        Initial version
+*     2014-11-21 (TIMJ):
+*        Use dat1GetStructDims
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -127,22 +129,12 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
   }
 
   if (dat1IsStructure( locator, status ) ) {
-    /* Assume scalar structure if we are missing the attribute */
-    rank = dat1GetAttrInt( locator->group_id, HDS__ATTR_STRUCT_NDIMS, HDS_TRUE, 0, status );
+
+    /* Query the dimensions of the structure */
+    rank = dat1GetStructureDims( locator, DAT__MXDIM, upper, status );
 
     if (rank > 0) {
       int i;
-      size_t actvals = 0; /* sanity check */
-      dat1GetAttrHdsdims( locator->group_id, HDS__ATTR_STRUCT_DIMS, HDS_FALSE,
-                          0, NULL, DAT__MXDIM, upper, &actvals, status );
-
-      if (rank != (int)actvals) {
-        *status = DAT__DIMIN;
-        emsRepf("datshape_1b", "datBounds: Inconsistency in object dimensions of structure (%d != %zu)",
-                status, rank, actvals);
-        goto CLEANUP;
-      }
-
       for (i=0; i<rank; i++) {
         lower[i] = 1;
       }
