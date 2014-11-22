@@ -225,9 +225,6 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
                       (tmpvalues ? tmpvalues : values )
                       ) );
 
-  /* Now that we have written we know for a fact that the primitive is defined */
-  dat1SetAttrBool( locator->dataset_id, HDS__ATTR_DEFINED, HDS_TRUE, status );
-
  CLEANUP:
   if (h5type) H5Tclose(h5type);
   if (mem_dataspace_id > 0) H5Sclose(mem_dataspace_id);

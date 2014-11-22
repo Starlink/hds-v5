@@ -174,10 +174,6 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
                    status, name_str )
            );
 
-  /* In HDS parlance the primitive data are currently undefined at this point */
-  /* We indicate this by setting an attribute */
-  dat1SetAttrBool( *dataset_id, HDS__ATTR_DEFINED, HDS_FALSE, status );
-
  CLEANUP:
   if (*status != SAI__OK) {
     /* tidy */

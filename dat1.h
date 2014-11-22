@@ -133,7 +133,6 @@ typedef enum {
 #define DAT__CELLNAME "ARRAY_OF_STRUCTURES_CELL"
 
 /* Names of attributes */
-#define HDS__ATTR_DEFINED "HDS_DATASET_IS_DEFINED?"
 #define HDS__ATTR_STRUCT_TYPE "CLASS"
 #define HDS__ATTR_STRUCT_DIMS "HDS_STRUCTURE_DIMS"
 

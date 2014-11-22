@@ -151,12 +151,15 @@ datUnmap( HDSLoc * locator, int * status ) {
     cnfFree( locator->regpntr );
   }
 
-  /* If these data were mmap-ed directly on disk then we have to update
-     the defined attribute */
+  /* If these data were mmap-ed directly on disk in WRITE mode then
+     we cause an error as this has not been tested. */
   if (locator->uses_true_mmap) {
-    if (locator->accmode == HDSMODE_WRITE ||
-        locator->accmode == HDSMODE_UPDATE) {
-        dat1SetAttrBool( locator->dataset_id, HDS__ATTR_DEFINED, HDS_TRUE, status );
+    if (locator->accmode == HDSMODE_WRITE) {
+      if (*status == SAI__OK) {
+        *status = DAT__FATAL;
+        emsRep("datUnmap_no", "datUnmap: Unexpectedly mapped an array in WRITE mode",
+               status);
+      }
     }
   }
 

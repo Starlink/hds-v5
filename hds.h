@@ -870,7 +870,7 @@ datRenam(HDSLoc *locator, const char *name_str, int *status);
 /*================================*/
 
 int
-datReset(const HDSLoc *locator, int *status);
+datReset(HDSLoc *locator, int *status);
 
 /*================================*/
 /* datRetyp - Change object type */

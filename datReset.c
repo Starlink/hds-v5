@@ -31,11 +31,14 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - Not Yet Implemented.
+*     - All data are deleted from the primitive.
 
 *  History:
 *     2014-10-16 (TIMJ):
 *        Initial version
+*     2014-11-21 (TIMJ):
+*        Stop using an attribute and switch to deleting
+*        the primitive and recreating it empty.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -91,14 +94,20 @@
 #include "dat_err.h"
 
 int
-datReset(const HDSLoc *locator, int *status) {
+datReset(HDSLoc *locator, int *status) {
   unsigned intent = 0;
   char name_str[DAT__SZNAM+1];
+  hid_t h5type = -1;
+  hid_t new_dataset_id = -1;
+  hid_t new_dataspace_id = -1;
+  hid_t parent_id = -1;
+  hsize_t h5dims[DAT__MXDIM];
+  int rank;
 
   if (*status != SAI__OK) return *status;
+  datName( locator, name_str, status );
 
   if (dat1IsStructure(locator, status)) {
-    datName( locator, name_str, status );
     *status = DAT__OBJIN;
     emsRepf("datState_1", "datReset: '%s' is not a primitive locator",
             status, name_str);
@@ -115,10 +124,47 @@ datReset(const HDSLoc *locator, int *status) {
     goto CLEANUP;
   }
 
-  dat1SetAttrBool( locator->dataset_id, HDS__ATTR_DEFINED, HDS_FALSE, status );
+  /* Delete, and recreate empty with the same type and dims. Need the parent
+     to delete and recreate. */
+  parent_id = dat1GetParentID( locator->dataset_id, HDS_TRUE, status );
 
-  /* Could consider wiping the content of the data array as well */
+  /* Dimensions for the new dataspace */
+  CALLHDFE( int,
+            rank,
+            H5Sget_simple_extent_dims( locator->dataspace_id, h5dims, NULL ),
+            DAT__DIMIN,
+            emsRep("datReset_dims", "datReset: Error obtaining shape of object",
+                   status)
+            );
+
+  /* Data type that we need */
+  CALLHDF( h5type,
+           H5Dget_type( locator->dataset_id ),
+           DAT__HDF5E,
+           emsRep("dat1Type_1", "datType: Error obtaining data type of dataset", status)
+           );
+
+  /* Delete the current dataset */
+  CALLHDFQ( H5Ldelete( parent_id, name_str, H5P_DEFAULT ));
+
+  /* Create the brand new primitive */
+  /* Create the brand new primitive */
+  dat1NewPrim( parent_id, rank, h5dims, h5type, name_str, &new_dataset_id,
+               &new_dataspace_id, status );
+
+  if (*status == SAI__OK) {
+    H5Sclose(locator->dataspace_id);
+    locator->dataspace_id = new_dataspace_id;
+    H5Dclose(locator->dataset_id);
+    locator->dataset_id = new_dataset_id;
+  }
 
  CLEANUP:
+  if (h5type > 0) H5Tclose(h5type);
+  if (parent_id > 0) H5Gclose(parent_id);
+  if (*status != SAI__OK) {
+    if (new_dataspace_id > 0) H5Sclose(new_dataspace_id);
+    if (new_dataset_id > 0) H5Dclose(new_dataset_id);
+  }
   return *status;
 }
