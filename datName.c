@@ -35,6 +35,8 @@
 *  History:
 *     2014-08-26 (TIMJ):
 *        Initial version
+*     2014-11-22 (TIMJ):
+*        Support use of HDF5 root group as HDS root
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -140,10 +142,13 @@ datName(const HDSLoc *locator,
         break;
       }
     }
-
-    /* Now copy what we need */
-    one_strlcpy( name_str, &(cleanstr[startpos]), DAT__SZNAM+1, status );
-
+    /* Now copy what we need unless this is the  root group */
+    if (lenstr == 1) {
+      /* Must read the attribute */
+      dat1NeedsRootName( locator->group_id, HDS_FALSE, name_str, DAT__SZNAM+1, status );
+    } else {
+      one_strlcpy( name_str, &(cleanstr[startpos]), DAT__SZNAM+1, status );
+    }
   }
 
   if (tempstr != cleanstr) MEM_FREE(cleanstr);

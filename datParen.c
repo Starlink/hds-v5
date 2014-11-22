@@ -124,7 +124,7 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   objid = dat1RetrieveIdentifier( locator1, status );
 
   /* Get the parent group. Do not want the root group */
-  parent_id = dat1GetParentID( objid, 0, status );
+  parent_id = dat1GetParentID( objid, 1, status );
 
   thisloc = dat1AllocLoc( status );
 

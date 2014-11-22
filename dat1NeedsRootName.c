@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     datCopy
+*     dat1NeedsRootName
 
 *  Purpose:
-*     Copy object
+*     Retrieve the name of the root group
 
 *  Language:
 *     Starlink ANSI C
@@ -13,36 +13,39 @@
 *     Library routine
 
 *  Invocation:
-*     datCopy( const HDSLoc *locator1, const HDSLoc *locator2,
-*              const char *name, int *status);
+*     dat1NeedsRootName( hid_t objid, hdsbool_t wantprim, char * rootname,
+*                        size_t rootnamelen, int * status );
 
 *  Arguments:
-*     locator1 = const HDSLoc * (Given)
-*        Locator of object to copy.
-*     locator2 = const HDSLoc * (Given)
-*        Locator of structure to receive the copy.
-*     name = const char * (Given)
-*        Name of newly copied object.
+*     objid = hid_t (Given)
+*        Group or file identifier used to obtain the "/" group.
+*     wantprim = hdsbool_t (Given)
+*        If true the name of the root primitive should be returned
+*        if the HDS root is not a group. If false the rootname will only
+*        be filled in if the HDS root is a group.
+*     rootname = char * (Given & Returned)
+*        Name of the root group. Can be NULL.
+*     rootnamelen = size_t (Given)
+*        Allocated size of rootname.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-*     Recursively copy an object into a component. This means that the
-*     complete object (including its components and its components's
-*     components, etc.) is copied, not just the top level.
+*     Examines the root group to work out whether the HDS root is a
+*     primitive or a structure. Depending on the value of wantprim the
+*     name of the HDS root will be stored.
+
+*  Returned Value:
+*     needsroot = hdsbool_t
+*        True if the HDS root is a group. False if it is a primitive.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
 
-*  Notes:
-*     - Uses H5Ocopy to do a deep copy. This is not a hard link.
-
 *  History:
-*     2014-09-04 (TIMJ):
-*        Initial version
 *     2014-11-22 (TIMJ):
-*        Understand the possibility that we are copying the root group
+*        Initial version
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -90,7 +93,6 @@
 
 #include "ems.h"
 #include "sae_par.h"
-#include "star/util.h"
 
 #include "hds1.h"
 #include "dat1.h"
@@ -98,39 +100,38 @@
 
 #include "dat_err.h"
 
-int
-datCopy( const HDSLoc *locator1, const HDSLoc *locator2,
-         const char *name_str, int *status) {
+hdsbool_t
+dat1NeedsRootName( hid_t objid, hdsbool_t wantprim, char * rootname, size_t rootnamelen, int * status ) {
+  hdsbool_t needroot = HDS_FALSE;
+  hid_t group_id;
 
-  char sourcename[DAT__SZNAM+1];
-  char cleanname[DAT__SZNAM+1];
-  hid_t parent_id = -1;
-  hid_t objid = -1;
+  if (*status != SAI__OK) return needroot;
 
-  if (*status != SAI__OK) return *status;
+  CALLHDF( group_id,
+           H5Gopen2(objid, "/", H5P_DEFAULT),
+           DAT__HDF5E,
+           emsRepf("hdsOpen_2","Error opening root group to get name",
+                   status)
+           );
 
-  dau1CheckName( name_str, 1, cleanname, sizeof(cleanname), status );
-  if (*status != SAI__OK) return *status;
+  /* If the attribute indicating we have to use a primitive as the top
+     level is present we open that for the root locator */
+  if (H5Aexists( group_id, HDS__ATTR_ROOT_PRIMITIVE) ) {
 
-  /* Have to give the source name as "." doesn't seem to be allowed.
-     so get the name and the parent locator. */
-  objid = dat1RetrieveIdentifier( locator1, status );
-
-  /* If we are at the root group we can not get a parent so just use
-     the "/" name instead */
-  parent_id = dat1GetParentID( objid, 1, status );
-  if (*status == DAT__OBJIN) {
-    emsAnnul(status);
-    star_strlcpy( sourcename, "/", sizeof(sourcename));
-    parent_id = -1;
+    /* Primitive is the root locator. Retrieve the name if requested */
+    if (wantprim && rootname) {
+      dat1GetAttrString( group_id, HDS__ATTR_ROOT_PRIMITIVE, HDS_FALSE,
+                         NULL, rootname, sizeof(rootnamelen), status );
+    }
   } else {
-    datName( locator1, sourcename, status );
+
+    if (rootname) dat1GetAttrString( group_id, HDS__ATTR_ROOT_NAME, HDS_TRUE,
+                                     "HDF5ROOT", rootname, rootnamelen, status );
+
+    needroot = HDS_TRUE;
   }
-  CALLHDFQ(H5Ocopy( (parent_id == -1 ? objid : parent_id), sourcename,
-                    locator2->group_id, cleanname, H5P_DEFAULT, H5P_DEFAULT));
 
  CLEANUP:
-  if (parent_id) H5Gclose(parent_id);
-  return *status;
-
+  if (group_id) H5Gclose(group_id);
+  return needroot;
 }

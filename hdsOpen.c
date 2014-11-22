@@ -50,6 +50,8 @@
 *  History:
 *     2014-08-29 (TIMJ):
 *        Initial version
+*     2014-11-22 (TIMJ):
+*        Root HDF5 group is now the HDS root
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -114,8 +116,6 @@ hdsOpen( const char *file_str, const char *mode_str,
   unsigned int flags = 0;
   hid_t file_id = 0;
   hid_t group_id = 0;
-  hsize_t iposn;
-  char dataset_name[DAT__SZNAM+1];
   HDSLoc *temploc = NULL;
   htri_t filstat = 0;
 
@@ -167,8 +167,9 @@ hdsOpen( const char *file_str, const char *mode_str,
                    status, fname )
            );
 
-  /* Now we need to find a top-level object. For now just pick the
-     first */
+  /* Now we need to find a top-level object. This will usually simply
+     be the root group but for the special case where we have an HDS
+     primitive in the root group we have to open that one level down. */
   CALLHDF( group_id,
            H5Gopen2(file_id, "/", H5P_DEFAULT),
            DAT__HDF5E,
@@ -176,25 +177,45 @@ hdsOpen( const char *file_str, const char *mode_str,
                   status, fname)
            );
 
-  iposn = 0;
-  CALLHDFQ( H5Lget_name_by_idx(group_id, ".", H5_INDEX_NAME, H5_ITER_INC,
-                               iposn, dataset_name, sizeof(dataset_name), H5P_DEFAULT ) );
+  /* If the attribute indicating we have to use a primitive as the top
+     level is present we open that for the root locator */
+  if (H5Aexists( group_id, HDS__ATTR_ROOT_PRIMITIVE)) {
+    char primname[DAT__SZNAM+1];
+    dat1GetAttrString( group_id, HDS__ATTR_ROOT_PRIMITIVE, HDS_FALSE,
+                       NULL, primname, sizeof(primname), status );
 
-  /* Now that we have a name we can use datFind once we have a locator,
-     we create a temporary locator but must register it so that an error
-     in datFind will not close the file immediately before we close it ourselves later. */
-  temploc = dat1AllocLoc( status );
-  if (*status == SAI__OK) {
-    temploc->file_id = file_id;
-    file_id = 0; /* now owned by the locator system */
-    temploc->isprimary = HDS_TRUE;
-    temploc->group_id = group_id;
-    hds1RegLocator( temploc, status );
+    /* Now that we have a name we can use datFind once we have a locator,
+       we create a temporary locator but must register it so that an error
+       in datFind will not close the file immediately before we close it ourselves later. */
+    temploc = dat1AllocLoc( status );
+    if (*status == SAI__OK) {
+      temploc->file_id = file_id;
+      file_id = 0; /* now owned by the locator system */
+      temploc->isprimary = HDS_TRUE;
+      temploc->group_id = group_id;
+      hds1RegLocator( temploc, status );
+    }
+    datFind( temploc, primname, locator, status );
+
+    /* force the locator to be primary as we get rid of the parent locator */
+    if (*status == SAI__OK) (*locator)->isprimary = HDS_TRUE;
+
+  } else {
+    /* Turn the root group into a locator */
+    temploc = dat1AllocLoc( status );
+    if (*status == SAI__OK) {
+      temploc->group_id = group_id;
+      temploc->file_id = file_id;
+      group_id = file_id = 0; /* now owned by the locator system */
+      temploc->isprimary = HDS_TRUE;
+      hds1RegLocator( temploc, status );
+    }
+    if (*status == SAI__OK) {
+      /* Assign this locator to the caller */
+      *locator = temploc;
+      temploc = NULL;
+    }
   }
-  datFind( temploc, dataset_name, locator, status );
-
-  /* force the locator to be primary as we get rid of the parent locator */
-  if (*status == SAI__OK) (*locator)->isprimary = HDS_TRUE;
 
  CLEANUP:
   if (fname) MEM_FREE(fname);

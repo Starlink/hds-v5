@@ -63,6 +63,8 @@
 *     2014-11-14 (TIMJ):
 *        Add isprimary argument so that newly created objects can be
 *        created as secondary locators.
+*     2014-11-22 (TIMJ):
+*        Now the HDS root is the HDF5 root group "/"
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -161,18 +163,40 @@ dat1New( const HDSLoc    *locator,
   /* The above routine has allocated resources so from here we can not
      simply return on error but have to ensure we clean up */
 
-  /* Now create the group or dataset at the top level */
+  /* Now create the group or dataset */
   if (isprim) {
     dat1NewPrim( place, ndim, h5dims, h5type, cleanname,
                  &dataset_id, &dataspace_id, status );
-  } else {
-    /* Create a group */
 
-    CALLHDF( group_id,
-             H5Gcreate2(place, cleanname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
-             DAT__HDF5E,
-             emsRepf("dat1New_4", "Error creating structure/group '%s'", status, cleanname)
-             );
+    /* If this is intended to be a root locator we indicate this with an attribute
+       in the root group to indicate this -- we use an attribute to indicate an HDS
+       modification to a default behavior that would be to assume the file root
+       is the toplevel group for HDS */
+    if (!locator->group_id) {
+      dat1SetAttrString( locator->file_id, HDS__ATTR_ROOT_PRIMITIVE, cleanname, status );
+    }
+  } else {
+    /* Create a group -- if the supplied locator is a root locator
+     the group already exists and in HDF5 is "/". In that case
+     we open the group and write an attribute of the required name. */
+
+    if (!locator->group_id) {
+      CALLHDF( group_id,
+               H5Gopen2( locator->file_id, "/", H5P_DEFAULT ),
+               DAT__HDF5E,
+               emsRepf("dat1New_4a", "Error opening root group", status )
+               );
+
+      /* Special case -- we need to store the name somewhere */
+      dat1SetAttrString( group_id, HDS__ATTR_ROOT_NAME, cleanname, status );
+
+    } else {
+      CALLHDF( group_id,
+               H5Gcreate2(place, cleanname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
+               DAT__HDF5E,
+               emsRepf("dat1New_4", "Error creating structure/group '%s'", status, cleanname)
+               );
+    }
 
     /* Actual data type of the structure/group must be stored in an attribute */
     dat1SetAttrString( group_id, HDS__ATTR_STRUCT_TYPE, groupstr, status );

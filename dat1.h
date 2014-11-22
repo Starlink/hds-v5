@@ -135,6 +135,8 @@ typedef enum {
 /* Names of attributes */
 #define HDS__ATTR_STRUCT_TYPE "CLASS"
 #define HDS__ATTR_STRUCT_DIMS "HDS_STRUCTURE_DIMS"
+#define HDS__ATTR_ROOT_NAME "HDS_ROOT_NAME"
+#define HDS__ATTR_ROOT_PRIMITIVE "HDS_ROOT_IS_PRIMITIVE"
 
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
@@ -393,6 +395,9 @@ hid_t dat1GetParentID( hid_t objid, hdsbool_t allow_root, int *status );
 
 int
 dat1GetStructureDims( const HDSLoc * locator, int maxdims, hdsdim dims[], int *status );
+
+hdsbool_t
+dat1NeedsRootName( hid_t objid, hdsbool_t wantprim, char * rootname, size_t rootnamelen, int * status );
 
 /* DAT1_H_INCLUDED */
 #endif

@@ -50,6 +50,8 @@
 *  History:
 *     2014-09-02 (TIMJ):
 *        Initial version
+*     2014-11-22 (TIMJ):
+*        The HDS root group may not be in the HDF5 full name
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -171,6 +173,7 @@ static void objid_to_name ( hid_t objid, int asfile, char * buffer, size_t bufle
   char *tempstr = NULL;
   char *cleanstr = NULL;
   size_t iposn = 0;
+  hdsbool_t needroot = HDS_FALSE;
 
   if (*status != SAI__OK) return;
 
@@ -181,13 +184,23 @@ static void objid_to_name ( hid_t objid, int asfile, char * buffer, size_t bufle
   if (!asfile) cleanstr = dat1FixNameCell( tempstr, status );
   if (!cleanstr) cleanstr = tempstr;
 
-  /* and copy it into the supplied buffer.
-     For paths we start at the second character as we do not
-     want the leading "." (aka "/" root).
-   */
-  iposn = (asfile ? 0 : 1);
-  one_strlcpy( buffer, &(cleanstr[iposn]), buflen, status );
+  /* For paths we need to account for the root group "/" not
+     having a name in HDF5 but having a name in HDS */
+  if (!asfile) {
+    needroot = dat1NeedsRootName( objid, HDS_FALSE, buffer, buflen, status );
+    }
 
+  /* and copy it into the supplied buffer.
+     For paths we sometimes start at the second character as we do not
+     always want the leading "." (aka "/" root).
+   */
+  iposn = (asfile ? 0 : (needroot ? 0 : 1));
+
+  if (needroot) {
+    if (strlen( &cleanstr[iposn] ) > 1) one_strlcat( buffer, &(cleanstr[iposn]), buflen, status );
+  } else {
+    one_strlcpy( buffer, &(cleanstr[iposn]), buflen, status );
+  }
   if (cleanstr != tempstr) MEM_FREE(cleanstr);
   if (tempstr) MEM_FREE(tempstr);
 
