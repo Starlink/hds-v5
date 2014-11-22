@@ -103,7 +103,7 @@ datThere( const HDSLoc * locator, const char * name, hdsbool_t *there,
   /* containing locator must refer to a group */
   if (locator->group_id <= 0) {
     *status = DAT__OBJIN;
-    emsRep("datFind_1", "Input object is not a structure",
+    emsRep("datFind_1", "datThere: Input object is not a structure",
            status);
     return *status;
   }
