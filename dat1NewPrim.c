@@ -126,6 +126,13 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
        dataset, if we are to allow resizing we have to make it unlimited. */
     const hsize_t *maxdims = NULL;
 
+    CALLHDF( cparms,
+             H5Pcreate( H5P_DATASET_CREATE ),
+             DAT__HDF5E,
+             emsRepf("dat1New_1b", "Error creating parameters for data set %s",
+                     status, name_str)
+             );
+
     /* Create a primitive -- if we create it chunked we can not memory map
        but we can resize. If we create a fixed size then in theory we can
        memory map but resizes (datAlter) have to be done by copy and delete. */
@@ -144,12 +151,6 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
 
     /* We can not find out the optimum chunk size from HDS API so we choose
        the initial size. */
-    CALLHDF( cparms,
-             H5Pcreate( H5P_DATASET_CREATE ),
-             DAT__HDF5E,
-             emsRepf("dat1New_1b", "Error creating parameters for data space %s",
-                     status, name_str)
-             );
     CALLHDFQ( H5Pset_chunk( cparms, ndim, h5dims ) );
 
 #endif
