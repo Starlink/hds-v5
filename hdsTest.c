@@ -246,6 +246,7 @@ int main (void) {
     int struc;
     int prim;
     int ncomp;
+    int defined;
     /* Put a component of each type in test structure */
     datFind( loc1, "TESTSTRUCT", &loc2, &status );
 
@@ -277,13 +278,16 @@ int main (void) {
     datNew0R( loc2, "REAL", &status);
     datNew0D( loc2, "DOUBLE", &status);
     datNew0C( loc2, "CHAR", 12, &status );
+    datNew0D( loc2, "UNDEFINED", &status );
+    datNew0D( loc2, "NEVERWRITE", &status );
 
     datNcomp( loc2, &ncomp, &status );
     if (status == SAI__OK) {
-      if (ncomp != 8) {
+      const int nexpected = 10;
+      if (ncomp != nexpected) {
         status = DAT__FATAL;
         emsRepf("", "Got %d components in structure rather than %d\n",
-                &status, ncomp, 8 );
+                &status, ncomp, nexpected );
       }
     }
 
@@ -325,6 +329,34 @@ int main (void) {
     datPut0C( loc3, "-32", &status );
     datAnnul( &loc3, &status );
 
+    datFind( loc2, "UNDEFINED", &loc3, &status );
+    datState(loc3, &defined, &status );
+    if (status == SAI__OK && defined) {
+      status = SAI__ERROR;
+      emsRep("","Should not have been defined", &status );
+    }
+    datPut0C( loc3, "55.678", &status );
+    datState(loc3, &defined, &status );
+    if (status == SAI__OK && !defined) {
+      status = SAI__ERROR;
+      emsRep("","Should have been defined", &status );
+    }
+    datReset(loc3, &status);
+    datState(loc3, &defined, &status );
+    if (status == SAI__OK && defined) {
+      status = SAI__ERROR;
+      emsRep("","Should not have been defined after reset", &status );
+    }
+    datAnnul( &loc3, &status );
+
+    /* Now ask whether the component we never wrote to is defined */
+    datFind(loc2, "NEVERWRITE", &loc3, &status );
+    datState(loc3, &defined, &status );
+    if (status == SAI__OK && defined) {
+      status = SAI__ERROR;
+      emsRep("","Should not have been defined as we never wrote", &status );
+    }
+    datAnnul( &loc3, &status );
     datAnnul( &loc2, &status );
   }
 
