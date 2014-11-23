@@ -107,7 +107,9 @@ datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
 
   /* Query the dataset to determine whether it has been allocated yet */
   CALLHDFQ( H5Dget_space_status( locator->dataset_id, &dstatus) );
-  *state = ( dstatus == H5D_SPACE_STATUS_ALLOCATED ? HDS_TRUE : HDS_FALSE );
+  *state = ( (dstatus == H5D_SPACE_STATUS_ALLOCATED ||
+              dstatus == H5D_SPACE_STATUS_PART_ALLOCATED)
+             ? HDS_TRUE : HDS_FALSE );
 
  CLEANUP:
   return *status;
