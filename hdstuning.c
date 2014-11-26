@@ -12,16 +12,16 @@
 /* Variable storing tuned state */
 
 /* Indicates that we have looked at the environment */
-hdsbool_t HAVE_INITIALIZED_V5_TUNING = 0;
+static hdsbool_t HAVE_INITIALIZED_V5_TUNING = 0;
 
 /* These are all the parameters that can be tuned along
    with their defaults. */
 
-hds_shell_t HDS_SHELL = HDS__SHSHELL; /* Default to doing expansion */
+static hds_shell_t HDS_SHELL = HDS__SHSHELL; /* Default to doing expansion */
 
 /* Should memory mapping be enabled: 1 (yes), 0 (no) */
 
-hdsbool_t HDS_MAP = HDS_TRUE; /* Do mmap by default when possible */
+static hdsbool_t HDS_MAP = HDS_TRUE; /* Do mmap by default when possible */
 
 /* Parse tuning environment variables. Should only be called once the
    first time a tuning parameter is required */

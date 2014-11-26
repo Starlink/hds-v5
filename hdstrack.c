@@ -41,7 +41,7 @@
 typedef struct {
   HDSLoc * locator;    /* Actual HDS locator */
 } HDSelement;
-UT_icd all_locators_icd = { sizeof(HDSelement *), NULL, NULL, NULL };
+static UT_icd all_locators_icd = { sizeof(HDSelement *), NULL, NULL, NULL };
 
 typedef struct {
   hid_t file_id;              /* File id: the key */
@@ -50,7 +50,7 @@ typedef struct {
 } HDSregistry;
 
 /* Declare the hash */
-HDSregistry *all_locators = NULL;
+static HDSregistry *all_locators = NULL;
 
 /* Internal routines */
 static size_t hds1PrimaryCountByFileID( hid_t file_id, int * status );

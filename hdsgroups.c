@@ -32,7 +32,7 @@
 typedef struct {
   HDSLoc * locator;    /* Actual HDS locator */
 } HDSelement;
-UT_icd locators_icd = { sizeof(HDSelement *), NULL, NULL, NULL };
+static UT_icd locators_icd = { sizeof(HDSelement *), NULL, NULL, NULL };
 
 typedef struct {
   char grpname[DAT__SZGRP+1]; /* Group name: the key */
@@ -41,7 +41,7 @@ typedef struct {
 } HDSgroup;
 
 /* Declare the hash */
-HDSgroup *groups = NULL;
+static HDSgroup *groups = NULL;
 
 /*
 *+
