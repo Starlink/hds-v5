@@ -12,7 +12,7 @@
 /* Variable storing tuned state */
 
 /* Indicates that we have looked at the environment */
-hdsbool_t HAVE_INITIALIZED_TUNING = 0;
+hdsbool_t HAVE_INITIALIZED_V5_TUNING = 0;
 
 /* These are all the parameters that can be tuned along
    with their defaults. */
@@ -31,7 +31,7 @@ static void hds1SetUseMmap( hdsbool_t use_mmap );
 
 static void hds1ReadTuneEnvironment () {
   int itemp = 0;
-  if (HAVE_INITIALIZED_TUNING) return;
+  if (HAVE_INITIALIZED_V5_TUNING) return;
 
   /* dat1Getenv solely knows about environment variables
      with integers and not about range checking so we do the range check
@@ -45,7 +45,7 @@ static void hds1ReadTuneEnvironment () {
   dat1Getenv( "HDS_MAP", HDS_MAP, &itemp );
   hds1SetUseMmap( itemp ? HDS_TRUE : HDS_FALSE );
 
-  HAVE_INITIALIZED_TUNING = 1;
+  HAVE_INITIALIZED_V5_TUNING = 1;
 }
 
 
