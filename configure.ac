@@ -55,9 +55,9 @@ AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(size_t)
 
 dnl    Declare the build and use dependencies for this package
-STAR_DECLARE_DEPENDENCIES([build], [sae chr cnf ems one prm starmem])
-STAR_DECLARE_DEPENDENCIES([link],  [chr cnf ems one starmem one])
-STAR_DECLARE_DEPENDENCIES([test],  [chr cnf ems prm starmem])
+STAR_DECLARE_DEPENDENCIES([build], [sae chr cnf ems one prm starmem hdf5])
+STAR_DECLARE_DEPENDENCIES([link],  [chr cnf ems one starmem one hdf5])
+STAR_DECLARE_DEPENDENCIES([test],  [chr cnf ems prm starmem hdf5])
 
 dnl    There are two .msg files in this directory, so we need to specify
 dnl    the names of them explicitly, rather than them being defaulted from
