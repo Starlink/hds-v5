@@ -27,6 +27,8 @@
 *        - ALOCATORS: Returns the number of all active locators, including
 *                     scratch space.
 *        - FILES : Return the number of open files
+*        - VERSION : Return the HDS implementation version number for the
+*                    supplied HDS locator.
 *     extra = const char * (Given)
 *        Extra options to control behaviour. The content depends on
 *        the particular TOPIC. See NOTES for more information.
@@ -44,6 +46,7 @@
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
+*     DSB:  David S Berry (EAO):
 *     {enter_new_authors_here}
 
 *  Notes:
@@ -68,6 +71,8 @@
 *  History:
 *     2014-10-17 (TIMJ):
 *        Initial version
+*     2017-05-16 (DSB):
+*        Add topic VERSION.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -132,7 +137,9 @@ hdsInfoI(const HDSLoc* loc, const char *topic_str, const char *extra,
 
   if (*status != SAI__OK) return *status;
 
-  if (strncasecmp(topic_str, "FIL", 3) == 0) {
+  if (strncasecmp(topic_str, "VERSION", 7) == 0) {
+    *result = loc->hds_version;
+  } else if (strncasecmp(topic_str, "FIL", 3) == 0) {
     *result = hds1CountFiles();
   } else if (strncasecmp(topic_str, "ALOC", 4) == 0 ||
              strncasecmp(topic_str, "LOCA", 4) == 0 ) {
