@@ -35,6 +35,7 @@
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
+*     DSB: David S Berry (EAO)
 *     {enter_new_authors_here}
 
 *  Notes:
@@ -49,6 +50,9 @@
 *        If a long name has been supplied make sure we do not care
 *        by annulling the ONE__TRUNC error. This can happen when we
 *        are working on temporary structures hidden from HDS.
+*     2017-05-24 (DSB):
+*        Report an error if the supplied dimensions are different to the
+*        shape of the supplied object.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -107,15 +111,18 @@ int
 datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims[],
         const void *values, int *status) {
 
-  int isprim;
-  hid_t h5type = 0;
-  char normtypestr[DAT__SZTYP+1];
-  hsize_t h5dims[DAT__MXDIM];
-  hid_t mem_dataspace_id = 0;
   char namestr[DAT__SZNAM+1];
+  char normtypestr[DAT__SZTYP+1];
+  hdsdim locdims[DAT__MXDIM];
   hdstype_t doconv = HDSTYPE_NONE;
   hdstype_t intype = HDSTYPE_NONE;
   hdstype_t outtype = HDSTYPE_NONE;
+  hid_t h5type = 0;
+  hid_t mem_dataspace_id = 0;
+  hsize_t h5dims[DAT__MXDIM];
+  int actdim;
+  int i;
+  int isprim;
   void * tmpvalues = NULL;
 
   if (*status != SAI__OK) return *status;
@@ -146,6 +153,29 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
     }
     goto CLEANUP;
   }
+
+  /* Get the shape of the supplied object. */
+  datShape( locator, DAT__MXDIM, locdims, &actdim, status );
+
+  /* Check the supplied dimensions are correct. */
+  if( *status == SAI__OK ) {
+    if( ndim == actdim ) {
+      for( i = 0; i < ndim; i++ ) {
+        if( locdims[i] != dims[i] ) {
+          *status = DAT__DIMIN;
+          emsRepf("", "datPut: Supplied dimension (%d) on axis %d is "
+                  "incorrect - it should be %d.", status, dims[i], i+1,
+                  locdims[i] );
+          break;
+        }
+      }
+    } else {
+      *status = DAT__DIMIN;
+      emsRepf("", "datPut: Supplied no. of axes (%d) is incorrect - it "
+              "should be %d.", status, ndim, actdim );
+    }
+  }
+
 
   if (*status != SAI__OK) goto CLEANUP;
 

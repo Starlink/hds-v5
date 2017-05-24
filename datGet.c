@@ -37,14 +37,18 @@
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
+*     DSB: David S Berry (EAO)
 *     {enter_new_authors_here}
 
 *  Notes:
-*     
+*
 
 *  History:
 *     2014-08-28 (TIMJ):
 *        Initial version
+*     2017-05-24 (DSB):
+*        Report an error if the supplied dimensions are different to the
+*        shape of the supplied object.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -102,21 +106,24 @@ int
 datGet(const HDSLoc *locator, const char *type_str, int ndim,
        const hdsdim dims[], void *values, int *status) {
 
-  int isprim;
-  hid_t h5type = 0;
-  char normtypestr[DAT__SZTYP+1];
   char datatypestr[DAT__SZTYP+1];
-  hsize_t h5dims[DAT__MXDIM];
-  hid_t mem_dataspace_id = 0;
   char namestr[DAT__SZNAM+1];
+  char normtypestr[DAT__SZTYP+1];
+  hdsdim locdims[DAT__MXDIM];
   hdstype_t doconv = HDSTYPE_NONE;
   hdstype_t intype = HDSTYPE_NONE;
   hdstype_t outtype = HDSTYPE_NONE;
-  void * tmpvalues = NULL;
+  hid_t h5type = 0;
+  hid_t mem_dataspace_id = 0;
+  hsize_t h5dims[DAT__MXDIM];
+  int actdim;
+  int defined = 0;
+  int i;
+  int isprim;
   size_t nbin = 0;
   size_t nbout = 0;
   size_t nelem = 0;
-  int defined = 0;
+  void * tmpvalues = NULL;
 
   if (*status != SAI__OK) return *status;
 
@@ -135,6 +142,28 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
               status, normtypestr);
     }
     goto CLEANUP;
+  }
+
+  /* Get the shape of the supplied object. */
+  datShape( locator, DAT__MXDIM, locdims, &actdim, status );
+
+  /* Check the supplied dimensions are correct. */
+  if( *status == SAI__OK ) {
+    if( ndim == actdim ) {
+      for( i = 0; i < ndim; i++ ) {
+        if( locdims[i] != dims[i] ) {
+          *status = DAT__DIMIN;
+          emsRepf("", "datGet: Supplied dimension (%d) on axis %d is "
+                  "incorrect - it should be %d.", status, dims[i], i+1,
+                  locdims[i] );
+          break;
+        }
+      }
+    } else {
+      *status = DAT__DIMIN;
+      emsRepf("", "datGet: Supplied no. of axes (%d) is incorrect - it "
+              "should be %d.", status, ndim, actdim );
+    }
   }
 
   if (*status != SAI__OK) goto CLEANUP;
