@@ -36,6 +36,7 @@
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
+*     DSB: David S Berry (EAO)
 *     {enter_new_authors_here}
 
 *  History:
@@ -46,6 +47,12 @@
 *     2014-11-13 (TIMJ):
 *        Use hyperslabs even on vectorized locators.
 *        This is possible because of a change to datVec
+*     2017-05-24 (DSB):
+*        If locator1 is already a slice, the supplied lower and upper bounds
+*        will refer to the grid system of the slice, not of the associated
+*        dataset. So modify the supplied lower and upper bounds so that they
+*        refer to the grid space of the dataset by adding on the lower bounds
+*        of the existing slice (if any).
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -103,16 +110,21 @@
 int
 datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
          const hdsdim upper[], HDSLoc  **locator2, int *status ) {
+  HDSLoc * sliceloc = NULL;
   hdsdim loc1dims[DAT__MXDIM];
-  int loc1ndims = 0;
+  hdsdim loc1lower[DAT__MXDIM];
+  hdsdim loc1upper[DAT__MXDIM];
+  hdsdim loc2lower[DAT__MXDIM];
+  hdsdim loc2upper[DAT__MXDIM];
+  hsize_t *points = NULL;
+  hsize_t h5dims[DAT__MXDIM];
   hsize_t h5lower[DAT__MXDIM];
   hsize_t h5upper[DAT__MXDIM];
-  hsize_t h5dims[DAT__MXDIM];
-  hsize_t *points = NULL;
-  HDSLoc * sliceloc = NULL;
-  size_t nelem;
-  size_t loc1size;
   int i = 0;
+  int issubset;
+  int loc1ndims = 0;
+  size_t loc1size;
+  size_t nelem;
 
   if (*status != SAI__OK) return *status;
 
@@ -124,8 +136,13 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
     return *status;
   }
 
-  /* Get the shape of the input locator and validate dimensionality */
-  datShape( locator1, DAT__MXDIM, loc1dims, &loc1ndims, status );
+  /* Get the bounds of the input locator selection within its dataset. */
+  dat1GetBounds( locator1, loc1lower, loc1upper, &issubset, &loc1ndims, status );
+
+  /* Convert bounds to dims */
+  for (i=0; i<loc1ndims; i++) {
+    loc1dims[i] = loc1upper[i] - loc1lower[i] + 1;
+  }
 
   if (loc1ndims == 0) {
     if (*status == SAI__OK) {
@@ -145,9 +162,18 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
 
   if (*status != SAI__OK) return *status;
 
+  /* The supplied bounds refer to the grid system in which the lower
+     left corner of the input locator selection is at (1,1...). We need
+     to convert these to the grid system in which the lower left corner
+     of the associated dataset is at (1,1,1...). */
+  for (i=0; i<loc1ndims; i++) {
+    loc2lower[i] = lower[i] + loc1lower[i] - 1;
+    loc2upper[i] = upper[i] + loc1lower[i] - 1;
+  }
+
   /* import the bounds */
-  dat1ImportDims( ndim, lower, h5lower, status );
-  dat1ImportDims( ndim, upper, h5upper, status );
+  dat1ImportDims( ndim, loc2lower, h5lower, status );
+  dat1ImportDims( ndim, loc2upper, h5upper, status );
   dat1ImportDims( ndim, loc1dims, h5dims, status );
 
   /* Check that the upper bounds are greater than the lower
@@ -217,8 +243,8 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
      dataspaces as they result in many different blocks */
   sliceloc->isslice = HDS_TRUE;
   for (i=0; i<ndim; i++) {
-    (sliceloc->slicelower)[i] = lower[i];
-    (sliceloc->sliceupper)[i] = upper[i];
+    (sliceloc->slicelower)[i] = loc2lower[i];
+    (sliceloc->sliceupper)[i] = loc2upper[i];
   }
 
   /* Update vectorized size */
