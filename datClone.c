@@ -143,6 +143,7 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
 
   /* ...and slicing */
   clonedloc->isslice = locator1->isslice;
+  clonedloc->isdiscont = locator1->isdiscont;
   if (clonedloc->isslice) {
     memcpy( &(clonedloc->slicelower), &(locator1->slicelower), sizeof(clonedloc->slicelower));
     memcpy( &(clonedloc->sliceupper), &(locator1->sliceupper), sizeof(clonedloc->sliceupper));

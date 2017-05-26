@@ -100,6 +100,7 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
          (locator->uses_true_mmap ? "file" : "memory"));
   printf("- Is sliced: %d; Primary: %s; Group name: '%s'\n", locator->isslice,
          (locator->isprimary ? "yes" : "no"), locator->grpname);
+  printf("- Is a discontiguous slice: %d\n", (locator->isdiscont ? "yes" : "no") );
 
   if (locator->dataspace_id > 0) {
     if (locator->vectorized) {

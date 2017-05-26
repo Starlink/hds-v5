@@ -53,6 +53,10 @@
 *        dataset. So modify the supplied lower and upper bounds so that they
 *        refer to the grid space of the dataset by adding on the lower bounds
 *        of the existing slice (if any).
+*     2017-05-26 (DSB):
+*        Update the flag in the returned locator indicating if the
+*        returned object represents a discontiguous selection of array
+*        elements.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -249,6 +253,17 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
 
   /* Update vectorized size */
   if (sliceloc->vectorized) sliceloc->vectorized = nelem;
+
+  /* Update the flag indicating if the slice represents a discontiguous
+     selection in memory. This is the case if the selection on any of
+     the axes except for the last axis does not span the whole array. */
+  if( !sliceloc->isdiscont ) {
+    for (i=0; i<ndim-1; i++) {
+      if( h5lower[i] > 1 || h5upper[i] < h5dims[i] ) {
+         sliceloc->isdiscont = 1;
+      }
+    }
+  }
 
  CLEANUP:
   if (points) MEM_FREE( points );
