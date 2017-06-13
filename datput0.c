@@ -4,6 +4,7 @@
 
 #include <string.h>
 
+#include "ems.h"
 #include "hds1.h"
 #include "dat1.h"
 #include "hds_types.h"
@@ -99,44 +100,120 @@
  */
 
 int datPut0C ( const HDSLoc * loc, const char * value, int * status ) {
-
-  int ndims = 0;
-  hdsdim dim[] = { 0 };
+  hdsdim dim[DAT__MXDIM];
+  int i = 0;
+  int ndims;
+  int isscalar;
 
   if ( *status != SAI__OK ) return *status;
+
+  /* Get the rank and dimensions of the object */
+  datShape( loc, DAT__MXDIM, dim, &ndims, status );
+
+  /* Check it has only one element (a scalar). */
+  isscalar = 1;
+  for (i=0; i<ndims; i++) {
+    if( dim[i] != 1 ) {
+       isscalar = 0;
+       break;
+    }
+  }
+
+  /* Report an error if not. */
+  if( !isscalar && *status == SAI__OK ) {
+    *status = DAT__DIMIN;
+    emsRepf("datPut0C_1", "datPut0C: Data must be scalar.", status );
+  }
 
   datPutC( loc, ndims, dim, value, strlen(value), status );
   return *status;
 }
 
 int datPut0D ( const HDSLoc * loc, double value, int * status ) {
-
-  int ndims = 0;
-  hdsdim dim[] = { 0 };
+  hdsdim dim[DAT__MXDIM];
+  int i = 0;
+  int ndims;
+  int isscalar;
 
   if ( *status != SAI__OK ) return *status;
+
+  /* Get the rank and dimensions of the object */
+  datShape( loc, DAT__MXDIM, dim, &ndims, status );
+
+  /* Check it has only one element (a scalar). */
+  isscalar = 1;
+  for (i=0; i<ndims; i++) {
+    if( dim[i] != 1 ) {
+       isscalar = 0;
+       break;
+    }
+  }
+
+  /* Report an error if not. */
+  if( !isscalar && *status == SAI__OK ) {
+    *status = DAT__DIMIN;
+    emsRepf("datPut0D_1", "datPut0D: Data must be scalar.", status );
+  }
 
   datPutD( loc, ndims, dim, &value, status );
   return *status;
 }
 
 int datPut0R ( const HDSLoc * loc, float value, int * status ) {
-
-  int ndims = 0;
-  hdsdim dim[] = { 0 };
+  hdsdim dim[DAT__MXDIM];
+  int i = 0;
+  int ndims;
+  int isscalar;
 
   if ( *status != SAI__OK ) return *status;
+
+  /* Get the rank and dimensions of the object */
+  datShape( loc, DAT__MXDIM, dim, &ndims, status );
+
+  /* Check it has only one element (a scalar). */
+  isscalar = 1;
+  for (i=0; i<ndims; i++) {
+    if( dim[i] != 1 ) {
+       isscalar = 0;
+       break;
+    }
+  }
+
+  /* Report an error if not. */
+  if( !isscalar && *status == SAI__OK ) {
+    *status = DAT__DIMIN;
+    emsRepf("datPut0R_1", "datPut0R: Data must be scalar.", status );
+  }
 
   datPutR( loc, ndims, dim, &value, status );
   return *status;
 }
 
 int datPut0I ( const HDSLoc * loc, int value, int * status ) {
-
-  int ndims = 0;
-  hdsdim dim[] = { 0 };
+  hdsdim dim[DAT__MXDIM];
+  int i = 0;
+  int ndims;
+  int isscalar;
 
   if ( *status != SAI__OK ) return *status;
+
+  /* Get the rank and dimensions of the object */
+  datShape( loc, DAT__MXDIM, dim, &ndims, status );
+
+  /* Check it has only one element (a scalar). */
+  isscalar = 1;
+  for (i=0; i<ndims; i++) {
+    if( dim[i] != 1 ) {
+       isscalar = 0;
+       break;
+    }
+  }
+
+  /* Report an error if not. */
+  if( !isscalar && *status == SAI__OK ) {
+    *status = DAT__DIMIN;
+    emsRepf("datPut0I_1", "datPut0I: Data must be scalar.", status );
+  }
 
   datPutI( loc, ndims, dim, &value, status );
 
@@ -144,11 +221,30 @@ int datPut0I ( const HDSLoc * loc, int value, int * status ) {
 }
 
 int datPut0K ( const HDSLoc * loc, int64_t value, int * status ) {
-
-  int ndims = 0;
-  hdsdim dim[] = { 0 };
+  hdsdim dim[DAT__MXDIM];
+  int i = 0;
+  int ndims;
+  int isscalar;
 
   if ( *status != SAI__OK ) return *status;
+
+  /* Get the rank and dimensions of the object */
+  datShape( loc, DAT__MXDIM, dim, &ndims, status );
+
+  /* Check it has only one element (a scalar). */
+  isscalar = 1;
+  for (i=0; i<ndims; i++) {
+    if( dim[i] != 1 ) {
+       isscalar = 0;
+       break;
+    }
+  }
+
+  /* Report an error if not. */
+  if( !isscalar && *status == SAI__OK ) {
+    *status = DAT__DIMIN;
+    emsRepf("datPut0K_1", "datPut0K: Data must be scalar.", status );
+  }
 
   datPutK( loc, ndims, dim, &value, status );
 
@@ -156,11 +252,30 @@ int datPut0K ( const HDSLoc * loc, int64_t value, int * status ) {
 }
 
 int datPut0W ( const HDSLoc * loc, short value, int * status ) {
-
-  int ndims = 0;
-  hdsdim dim[] = { 0 };
+  hdsdim dim[DAT__MXDIM];
+  int i = 0;
+  int ndims;
+  int isscalar;
 
   if ( *status != SAI__OK ) return *status;
+
+  /* Get the rank and dimensions of the object */
+  datShape( loc, DAT__MXDIM, dim, &ndims, status );
+
+  /* Check it has only one element (a scalar). */
+  isscalar = 1;
+  for (i=0; i<ndims; i++) {
+    if( dim[i] != 1 ) {
+       isscalar = 0;
+       break;
+    }
+  }
+
+  /* Report an error if not. */
+  if( !isscalar && *status == SAI__OK ) {
+    *status = DAT__DIMIN;
+    emsRepf("datPut0W_1", "datPut0W: Data must be scalar.", status );
+  }
 
   datPutW( loc, ndims, dim, &value, status );
 
@@ -168,11 +283,30 @@ int datPut0W ( const HDSLoc * loc, short value, int * status ) {
 }
 
 int datPut0UW ( const HDSLoc * loc, unsigned short value, int * status ) {
-
-  int ndims = 0;
-  hdsdim dim[] = { 0 };
+  hdsdim dim[DAT__MXDIM];
+  int i = 0;
+  int ndims;
+  int isscalar;
 
   if ( *status != SAI__OK ) return *status;
+
+  /* Get the rank and dimensions of the object */
+  datShape( loc, DAT__MXDIM, dim, &ndims, status );
+
+  /* Check it has only one element (a scalar). */
+  isscalar = 1;
+  for (i=0; i<ndims; i++) {
+    if( dim[i] != 1 ) {
+       isscalar = 0;
+       break;
+    }
+  }
+
+  /* Report an error if not. */
+  if( !isscalar && *status == SAI__OK ) {
+    *status = DAT__DIMIN;
+    emsRepf("datPut0UW_1", "datPut0UW: Data must be scalar.", status );
+  }
 
   datPutUW( loc, ndims, dim, &value, status );
 
@@ -180,11 +314,30 @@ int datPut0UW ( const HDSLoc * loc, unsigned short value, int * status ) {
 }
 
 int datPut0L ( const HDSLoc * loc, hdsbool_t value, int * status ) {
-
-  int ndims = 0;
-  hdsdim dim[] = { 0 };
+  hdsdim dim[DAT__MXDIM];
+  int i = 0;
+  int ndims;
+  int isscalar;
 
   if ( *status != SAI__OK ) return *status;
+
+  /* Get the rank and dimensions of the object */
+  datShape( loc, DAT__MXDIM, dim, &ndims, status );
+
+  /* Check it has only one element (a scalar). */
+  isscalar = 1;
+  for (i=0; i<ndims; i++) {
+    if( dim[i] != 1 ) {
+       isscalar = 0;
+       break;
+    }
+  }
+
+  /* Report an error if not. */
+  if( !isscalar && *status == SAI__OK ) {
+    *status = DAT__DIMIN;
+    emsRepf("datPut0L_1", "datPut0L: Data must be scalar.", status );
+  }
 
   datPutL( loc, ndims, dim, &value, status );
   return *status;
