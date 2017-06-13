@@ -137,7 +137,7 @@ int datGet0C ( const HDSLoc * loc, char * value, size_t str_len, int * status ) 
   /* Report an error if not. */
   if( !isscalar && *status == SAI__OK ) {
     *status = DAT__DIMIN;
-    emsRepf("datGet0C_1", "datGet0I: Data must be scalar.", status );
+    emsRepf("datGet0C_1", "datGet0C: Data must be scalar.", status );
   }
 
   /* Obtain the unterminated string but pass in a size one less than
@@ -180,7 +180,7 @@ int datGet0D ( const HDSLoc * loc, double * value, int * status ) {
   /* Report an error if not. */
   if( !isscalar && *status == SAI__OK ) {
     *status = DAT__DIMIN;
-    emsRepf("datGet0D_1", "datGet0I: Data must be scalar.", status );
+    emsRepf("datGet0D_1", "datGet0D: Data must be scalar.", status );
   }
 
   /* Get the value. */
@@ -211,7 +211,7 @@ int datGet0R ( const HDSLoc * loc, float * value, int * status ) {
   /* Report an error if not. */
   if( !isscalar && *status == SAI__OK ) {
     *status = DAT__DIMIN;
-    emsRepf("datGet0R_1", "datGet0I: Data must be scalar.", status );
+    emsRepf("datGet0R_1", "datGet0R: Data must be scalar.", status );
   }
 
   /* Get the value. */
@@ -275,7 +275,7 @@ int datGet0K ( const HDSLoc * loc, int64_t * value, int * status ) {
   /* Report an error if not. */
   if( !isscalar && *status == SAI__OK ) {
     *status = DAT__DIMIN;
-    emsRepf("datGet0K_1", "datGet0I: Data must be scalar.", status );
+    emsRepf("datGet0K_1", "datGet0K: Data must be scalar.", status );
   }
 
   /* Get the value. */
@@ -306,7 +306,7 @@ int datGet0W ( const HDSLoc * loc, short * value, int * status ) {
   /* Report an error if not. */
   if( !isscalar && *status == SAI__OK ) {
     *status = DAT__DIMIN;
-    emsRepf("datGet0W_1", "datGet0I: Data must be scalar.", status );
+    emsRepf("datGet0W_1", "datGet0W: Data must be scalar.", status );
   }
 
   /* Get the value. */
@@ -337,7 +337,7 @@ int datGet0UW ( const HDSLoc * loc, unsigned short * value, int * status ) {
   /* Report an error if not. */
   if( !isscalar && *status == SAI__OK ) {
     *status = DAT__DIMIN;
-    emsRepf("datGet0UW_1", "datGet0I: Data must be scalar.", status );
+    emsRepf("datGet0UW_1", "datGet0UW: Data must be scalar.", status );
   }
 
   /* Get the value. */
@@ -368,7 +368,7 @@ int datGet0L ( const HDSLoc * loc, hdsbool_t * value, int * status ) {
   /* Report an error if not. */
   if( !isscalar && *status == SAI__OK ) {
     *status = DAT__DIMIN;
-    emsRepf("datGet0L_1", "datGet0I: Data must be scalar.", status );
+    emsRepf("datGet0L_1", "datGet0L: Data must be scalar.", status );
   }
 
   /* Get the value. */
