@@ -74,6 +74,7 @@ static void cmpszints( size_t result, size_t expected, int *status );
 static void cmpprec ( const HDSLoc * loc1, const char * name, int * status );
 static void cmpintarr( size_t nelem, const int result[],
                        const int expected[], int *status );
+static void testSliceVec();
 
 int main (void) {
 
@@ -752,6 +753,9 @@ int main (void) {
 
   datAnnul( &loc1, &status );
 
+/* Test slicing and vectorising. */
+  testSliceVec();
+
   if (status == SAI__OK) {
     printf("HDS C installation test succeeded\n");
     emsEnd(&status);
@@ -830,4 +834,142 @@ static void traceme (const HDSLoc * loc, const char * expected, int explev,
   }
   if (expected) cmpstrings( path_str, expected, status);
   if (explev > 0) cmpszints( nlev, explev, status);
+}
+
+
+
+
+
+
+
+
+#define SIZE 10
+
+static  void testSliceVec(){
+   int status_value = SAI__OK;
+   int *status = &status_value;
+   HDSLoc *loc1 = NULL;
+   HDSLoc *loc2 = NULL;
+   HDSLoc *loc3 = NULL;
+   HDSLoc *loc4 = NULL;
+   HDSLoc *loc5 = NULL;
+   int invals[SIZE*SIZE];
+   int outvals[SIZE*SIZE];
+   hdsdim dims[2];
+   hdsdim lo[2], hi[2];
+   int i;
+   size_t size;
+   int *ip;
+
+/* Create a 2-dimensional 10x10 int array. */
+   dims[0] = SIZE;
+   dims[1] = SIZE;
+   datTemp( "_INTEGER", 2, dims, &loc1, status );
+
+/* Set the value in each element of the array equal to the element's
+   one-based index. */
+   for( i = 0; i < SIZE*SIZE; i++ ) invals[ i ] = i + 1;
+   datPut( loc1, "_INTEGER", 2, dims, invals, status );
+
+/* Check the size is right. */
+   datSize( loc1, &size, status );
+   if( size != 100 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testSliceVec error 1: Got %zu but expected 100", status,
+              size );
+   }
+
+/* Extract a contiguous slice. */
+   lo[0] = 1;
+   hi[0] = 10;
+   lo[1] = 2;
+   hi[1] = 9;
+   datSlice( loc1, 2, lo, hi, &loc2, status );
+   datSize( loc2, &size, status );
+   if( size != 80 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testSliceVec error 2: Got %zu but expected 80", status,
+              size );
+   }
+
+/* Vectorise it. */
+   datVec( loc2, &loc3, status );
+   datSize( loc3, &size, status );
+   if( size != 80 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testSliceVec error 3: Got %zu but expected 80", status,
+              size );
+   }
+
+/* Check the values in the vectorised slice. */
+   dims[0] = 1;
+   datCell( loc3, 1, dims, &loc4, status );
+   datGet0I( loc4, outvals, status );
+   if( outvals[0] != 11 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testSliceVec error 4: Got %zu but expected 11", status,
+              outvals[0] );
+   }
+   datAnnul( &loc4, status );
+
+   dims[0] = 80;
+   datCell( loc3, 1, dims, &loc4, status );
+   datGet0I( loc4, outvals, status );
+   if( outvals[0] != 90 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testSliceVec error 5: Got %zu but expected 90", status,
+              outvals[0] );
+   }
+   datAnnul( &loc4, status );
+
+/* Try mapping the vectorised array. */
+   dims[ 0 ] = 80;
+   datMapI( loc3, "Read", 1, dims, &ip, status );
+   for( i = 0; i < dims[ 0 ]; i++ ) {
+      if( ip[ i ] != i + 11 && *status == SAI__OK ) {
+         *status = DAT__FATAL;
+         emsRepf("", "testSliceVec error 6: Got %zu but expected %zu for "
+                 "element %zu", status, ip[ i ], i + 11, i );
+         break;
+      }
+   }
+
+/* Take a 1D slice of the vectorised slice. */
+   lo[0] = 2;
+   hi[0] = 10;
+   datSlice( loc3, 2, lo, hi, &loc4, status );
+   datSize( loc4, &size, status );
+   if( size != 9 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testSliceVec error 7: Got %zu but expected 9", status,
+              size );
+   }
+
+/* Check the values. */
+   dims[0] = 1;
+   datCell( loc4, 1, dims, &loc5, status );
+   datGet0I( loc5, outvals, status );
+   if( outvals[0] != 12 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testSliceVec error 8: Got %zu but expected 12", status,
+              outvals[0] );
+   }
+   datAnnul( &loc5, status );
+
+   dims[0] = 9;
+   datCell( loc4, 1, dims, &loc5, status );
+   datGet0I( loc5, outvals, status );
+   if( outvals[0] != 20 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testSliceVec error 8: Got %zu but expected 20", status,
+              outvals[0] );
+   }
+   datAnnul( &loc5, status );
+
+
+/* Tidy up. */
+   datAnnul( &loc4, status );
+   datAnnul( &loc3, status );
+   datAnnul( &loc2, status );
+   datAnnul( &loc1, status );
 }

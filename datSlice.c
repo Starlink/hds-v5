@@ -57,6 +57,10 @@
 *        Update the flag in the returned locator indicating if the
 *        returned object represents a discontiguous selection of array
 *        elements.
+*     2017-06-14 (DSB):
+*        Remove explicit handling of vectorised arrays. Today's new version
+*        of datVec means that vectorised arrays can be treated like any
+*        other array.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -115,12 +119,12 @@ int
 datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
          const hdsdim upper[], HDSLoc  **locator2, int *status ) {
   HDSLoc * sliceloc = NULL;
+  hdsdim capupper[DAT__MXDIM];
   hdsdim loc1dims[DAT__MXDIM];
   hdsdim loc1lower[DAT__MXDIM];
   hdsdim loc1upper[DAT__MXDIM];
   hdsdim loc2lower[DAT__MXDIM];
   hdsdim loc2upper[DAT__MXDIM];
-  hsize_t *points = NULL;
   hsize_t h5dims[DAT__MXDIM];
   hsize_t h5lower[DAT__MXDIM];
   hsize_t h5upper[DAT__MXDIM];
@@ -142,16 +146,10 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
 
   /* Get the bounds of the input locator selection within its dataset. */
   dat1GetBounds( locator1, loc1lower, loc1upper, &issubset, &loc1ndims, status );
-
-  /* Convert bounds to dims */
-  for (i=0; i<loc1ndims; i++) {
-    loc1dims[i] = loc1upper[i] - loc1lower[i] + 1;
-  }
-
   if (loc1ndims == 0) {
     if (*status == SAI__OK) {
       *status = DAT__DIMIN;
-      emsRep("datSlice_2", "Can not use datSlice for scalar primitive "
+      emsRep("datSlice_2", "Cannot use datSlice for scalar primitive "
              "(possible programming error)", status);
     }
   }
@@ -164,6 +162,36 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
     }
   }
 
+  /* Convert bounds to dims, and get number of elements in supplied locator. */
+  loc1size = 1;
+  for (i=0; i<loc1ndims; i++) {
+    loc1dims[i] = loc1upper[i] - loc1lower[i] + 1;
+    loc1size *= loc1dims[i];
+  }
+
+  /* Check that the upper bounds are greater than the lower
+     bounds and within loc1dims. Cap at loc1dims if zero is given. */
+  for (i=0; i<ndim; i++) {
+    if (*status != SAI__OK) break;
+
+    if ( lower[i] < 1 || lower[i] > loc1dims[i] ) {
+      *status = DAT__DIMIN;
+      emsRepf("datSlice_4", "datSlice: lower bound %d is out of bounds 1 <= %llu <= %llu",
+              status, i + 1, (unsigned long long)lower[i], (unsigned long long)loc1dims[i] );
+      break;
+    }
+
+    capupper[i] = ( (upper[i] <= 0) ? loc1dims[i] : upper[i] );
+
+    if ( capupper[i] < lower[i] || capupper[i] > loc1dims[i] ) {
+      *status = DAT__DIMIN;
+      emsRepf("datSlice_4", "datSlice: upper bound %d is out of bounds %llu <= %llu <= %llu",
+              status, i + 1, (unsigned long long)lower[i],
+              (unsigned long long)capupper[i], (unsigned long long)loc1dims[i] );
+      break;
+    }
+  }
+
   if (*status != SAI__OK) return *status;
 
   /* The supplied bounds refer to the grid system in which the lower
@@ -172,36 +200,13 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
      of the associated dataset is at (1,1,1...). */
   for (i=0; i<loc1ndims; i++) {
     loc2lower[i] = lower[i] + loc1lower[i] - 1;
-    loc2upper[i] = upper[i] + loc1lower[i] - 1;
+    loc2upper[i] = capupper[i] + loc1lower[i] - 1;
   }
 
-  /* import the bounds */
+  /* Import the bounds. */
   dat1ImportDims( ndim, loc2lower, h5lower, status );
   dat1ImportDims( ndim, loc2upper, h5upper, status );
   dat1ImportDims( ndim, loc1dims, h5dims, status );
-
-  /* Check that the upper bounds are greater than the lower
-     bounds and within h5dims. Cap at h5dims if zero is given. */
-  for (i=0; i<ndim; i++) {
-    if (*status != SAI__OK) break;
-
-    if ( h5lower[i] < 1 || h5lower[i] > h5dims[i] ) {
-      *status = DAT__DIMIN;
-      emsRepf("datSlice_4", "datSlice: lower bound %d is out of bounds 1 <= %llu <= %llu",
-              status, i, (unsigned long long)h5lower[i], (unsigned long long)h5dims[i] );
-      break;
-    }
-
-    if (h5upper[i] <= 0) h5upper[i] = h5dims[i];
-
-    if ( h5upper[i] < h5lower[i] || h5upper[i] > h5dims[i] ) {
-      *status = DAT__DIMIN;
-      emsRepf("datSlice_4", "datSlice: upper bound %d is out of bounds %llu <= %llu <= %llu",
-              status, i, (unsigned long long)h5lower[i],
-              (unsigned long long)h5upper[i], (unsigned long long)h5dims[i] );
-      break;
-    }
-  }
 
   /* Clone the locator and modify its dataspace */
   datClone( locator1, &sliceloc, status );
@@ -214,13 +219,10 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
     datPrmry(1, &sliceloc, &isprimary, status );
   }
 
-  /* if the slice corresponds to all the elements (which can happen: see ARY)
-     then we do not need to create a hyperslab at all. */
+  /* If the slice corresponds to all the elements (which can happen: see ARY)
+     then we do not need to modify the supplied at all. */
 
-  /* First count the input locator */
-  datSize( locator1, &loc1size, status );
-
-  /* now we count the elements in the slice */
+  /* Count the elements in the requested slice. */
   nelem = 1;
   for (i=0; i<ndim; i++) {
     nelem *= h5upper[i] - h5lower[i] + 1;
@@ -243,30 +245,24 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
                                    NULL, h5count, h5blocksize ) );
   }
 
-  /* Store knowledge of slice in locator -- we have to do this for vectorized
-     dataspaces as they result in many different blocks */
   sliceloc->isslice = HDS_TRUE;
-  for (i=0; i<ndim; i++) {
-    (sliceloc->slicelower)[i] = loc2lower[i];
-    (sliceloc->sliceupper)[i] = loc2upper[i];
-  }
-
-  /* Update vectorized size */
-  if (sliceloc->vectorized) sliceloc->vectorized = nelem;
 
   /* Update the flag indicating if the slice represents a discontiguous
      selection in memory. This is the case if the selection on any of
-     the axes except for the last axis does not span the whole array. */
+     the axes except for the last HDS axis (i.e. the first HDF5 axis)
+     does not span the whole array. If the locator is not currently
+     discontiguous then we know that h5dims must be the dimensions of
+     the full array (at least on all axes except the first HDF5 axis). */
   if( !sliceloc->isdiscont ) {
-    for (i=0; i<ndim-1; i++) {
+    for (i=1; i<ndim; i++) {
       if( h5lower[i] > 1 || h5upper[i] < h5dims[i] ) {
          sliceloc->isdiscont = 1;
       }
     }
   }
 
+
  CLEANUP:
-  if (points) MEM_FREE( points );
   if (*status != SAI__OK) {
     if (sliceloc) datAnnul( &sliceloc, status );
   } else {

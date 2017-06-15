@@ -28,6 +28,7 @@
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
+*     DSB: David S Berry (EAO)
 *     {enter_new_authors_here}
 
 *  Notes:
@@ -38,6 +39,10 @@
 *        Initial version
 *     2014-11-13 (TIMJ):
 *        Create a 1D dataspace
+*     2017-06-14 (DSB):
+*        Re-written to allow contiguous slices to be vectorised. The
+*        new approach is to vectorise the dataspace in the locator
+*        structure.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -95,41 +100,104 @@
 int
 datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
 
-  size_t nelem;
+  hdsbool_t issubset;
+  hdsdim dims[DAT__MXDIM];
+  hdsdim lower[DAT__MXDIM];
+  hdsdim upper[DAT__MXDIM];
+  hsize_t block;
+  hsize_t count;
+  hsize_t h5max;
+  hsize_t *maxptr;
+  hsize_t ifirst;
+  hsize_t ilast;
+  hsize_t plane_size;
+  int actdims;
+  int i;
+
+  /* Initialise returned values. */
   *locator2 = NULL;
+
+  /* Check inherited status. */
   if (*status != SAI__OK) return *status;
 
-  if (locator1->vectorized) {
-    /* if it is already vectorized we just clone the locator and return
-       it directly */
-    datClone( locator1, locator2, status );
-    goto CLEANUP;
-  }
-
-  if (locator1->isslice) {
-    dat1DumpLoc(locator1,status);
+  /* We cannot vectorise a discontiguous slice of an array. */
+  if ( locator1->isdiscont ) {
     *status = DAT__OBJIN;
-    /* It can be done if the slice corresponds to a contiguous
-       chunk of memory but for now stay well away */
-    emsRep("datVec_1", "datVec: A sliced locator can not (yet) be vectorized",
+    emsRep("datVec_1", "datVec: Cannot vectorise a discontiguous slice",
            status );
-    return *status;
   }
 
-  /* Need the number of elements */
-  datSize( locator1, &nelem, status );
-
-  /* Clone to a new locator */
+  /* Create a new locator by cloning the supplied locator. */
   datClone(locator1, locator2, status);
 
-  /* and update the vectorized flag with the number of elements */
-  (*locator2)->vectorized = nelem;
+  /* Get the dimensions and rank of the full array - not just any slice
+     represented by the supplied locator. If it is already one-dimensional,
+     or if it has already been vectorised, there is nothing more to do. */
+  dat1GetDataDims( locator1, dims, &actdims, status );
+  if( actdims != 1 && !locator1->vectorized ) {
 
-  /* Create vectorized dataspace -- we do this to simplify datSlice */
-  if ( !dat1IsStructure(*locator2, status) ) {
-    hsize_t newsize[1];
-    newsize[0] = nelem;
-    CALLHDFQ(H5Sset_extent_simple( (*locator2)->dataspace_id, 1, newsize, newsize ));
+    /* The supplied locator may represent a slice of the full array. Find
+       the lower and upper bounds within the full array, of the supplied
+       locator. */
+    dat1GetBounds( locator1, lower, upper, &issubset, &actdims, status );
+
+    /* Find the zero-based 1-dimensional index within the full array, at the
+       first and last pixel of the supplied locator. Also get the total
+       number of pixels in the full array. Remember that the HDS bounds
+       are 1-based. */
+    ifirst = 0;
+    ilast = 0;
+    plane_size = 1;
+    for( i = 0; i < actdims; i++ ) {
+      ifirst += ( lower[ i ] - 1 )*plane_size;
+      ilast += ( upper[ i ] - 1 )*plane_size;
+      plane_size *= dims[ i ];
+    }
+
+#if HDS_USE_CHUNKED_DATASETS
+    h5max = H5S_UNLIMITED;
+    maxptr = &h5max;
+#else
+    maxptr = NULL;
+#endif
+
+
+    if( (*locator2)->dataspace_id ) {
+      H5Sclose((*locator2)->dataspace_id );
+      (*locator2)->dataspace_id = 0;
+    }
+
+    /* If the locator has an existing dataspace, modify its extent to
+       represent a 1-dimensional (i.e. vectorised) version of the full
+       array. */
+    if( (*locator2)->dataspace_id ) {
+      CALLHDFQ( H5Sselect_none( (*locator2)->dataspace_id ) );
+      CALLHDFQ( H5Sset_extent_simple( (*locator2)->dataspace_id, 1,
+                                       &plane_size, maxptr ) );
+
+    /* If the locator has no existing dataspace, create a new one
+       representing a 1-dimensional (i.e. vectorised) version of the full
+       array. */
+    } else {
+      CALLHDF( (*locator2)->dataspace_id,
+               H5Screate_simple( 1, &plane_size, maxptr ),
+               DAT__HDF5E,
+               emsRepf(" ", "Error allocating data space", status )
+             );
+    }
+
+    /* If the locator does not represent the full array, select a 1D
+       hyperslab of the vectorised dataset that contains the same pixels
+       as the supplied locator. */
+    count = 1;
+    block = ilast - ifirst + 1;
+    if( count < plane_size ) {
+      CALLHDFQ( H5Sselect_hyperslab( (*locator2)->dataspace_id, H5S_SELECT_SET,
+                                     &ifirst, NULL, &count, &block ) );
+    }
+
+    /* Indicate the object has been vectorised. */
+    (*locator2)->vectorized = 1;
   }
 
  CLEANUP:

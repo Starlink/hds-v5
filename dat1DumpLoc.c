@@ -75,12 +75,19 @@
 static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *status);
 
 void dat1DumpLoc( const HDSLoc* locator, int * status ) {
-  if (*status != SAI__OK) return;
   char * name_str = NULL;
   char * file_str = NULL;
   ssize_t ll;
   hid_t objid = 0;
   hid_t dspace_id = 0;
+  hdsdim lower[DAT__MXDIM];
+  hdsdim upper[DAT__MXDIM];
+  hdsbool_t issubset;
+  int actdim;
+  hssize_t nelem;
+  int i;
+
+  if (*status != SAI__OK) return;
 
   objid = dat1RetrieveIdentifier( locator, status );
   if (objid > 0) {
@@ -103,18 +110,6 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   printf("- Is a discontiguous slice: %d\n", (locator->isdiscont ? "yes" : "no") );
 
   if (locator->dataspace_id > 0) {
-    if (locator->vectorized) {
-      printf("- Locator is vectorized with bounds (1-based): %zu:%zu\n",
-             (size_t)1, (size_t)locator->vectorized );
-      if (locator->isslice) {
-        hssize_t nelem;
-        nelem = H5Sget_select_npoints(locator->dataspace_id);
-        printf("    and is sliced with bounds: %zu:%zu (%zu elements)\n",
-               (size_t)(locator->slicelower)[0],
-               (size_t)(locator->sliceupper)[0],
-               (nelem > 0 ? (size_t)nelem : 0) );
-      }
-    }
     dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
     dspace_id = H5Dget_space( locator->dataset_id );
     dump_dataspace_info( dspace_id, "Dataset associated", status );
@@ -173,11 +168,12 @@ static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *st
            ndim start coordinates, then ndim opposite corner coordinates
            and repeats for each block
         */
+        nelem = 1;
         printf("    Hyperslab #%d (0-based):", (int)n);
         for (i = 0; i<rank; i++) {
           hsize_t start;
           hsize_t opposite;
-          size_t offset = n * rank;
+          size_t offset = 2 * n * rank;
           start = blockbuf[offset+i];
           opposite = blockbuf[offset+i+rank];
           /* So update the shape to account for the slice: HDS is 1-based */

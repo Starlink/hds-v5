@@ -152,6 +152,7 @@ dat1GetAttrHdsdims.c \
 dat1GetAttrInt.c \
 dat1GetAttrString.c \
 dat1GetBounds.c \
+dat1GetDataDims.c \
 dat1Getenv.c \
 dat1GetFullName.c \
 dat1GetParentID.c \

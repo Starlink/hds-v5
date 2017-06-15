@@ -140,24 +140,22 @@ typedef enum {
 
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
-  int hds_version;  /* Implementation version number. Always 5 at the moment. */
-  void *pntr;       /* Pointer to memory mapped data array [datMap only] */
-  void *regpntr;    /* Pointer that was registered with CNF */
-  size_t bytesmapped; /* Number of bytes mapped into memory [datMap only] */
-  size_t vectorized;  /* if 0 not vectorized, else number of vectorized elements */
-  hid_t file_id;    /* Set if this locator is associated with a root file */
-  hid_t dataset_id; /* Set if this is a dataset "primitive type" */
-  hid_t dataspace_id; /* Set if this is a primitive with dimensions */
-  hid_t group_id;   /* Set if this locator is associated with a group */
-  hid_t dtype;      /* Set if a special data type was created for this locator */
+  int hds_version;   /* Implementation version number. Always 5 at the moment. */
+  void *pntr;        /* Pointer to memory mapped data array [datMap only] */
+  void *regpntr;     /* Pointer that was registered with CNF */
+  size_t bytesmapped;/* Number of bytes mapped into memory [datMap only] */
+  size_t vectorized; /* Non-zero if vectorized */
+  hid_t file_id;     /* Set if this locator is associated with a root file */
+  hid_t dataset_id;  /* Set if this is a dataset "primitive type" */
+  hid_t dataspace_id;/* Set if this is a primitive with dimensions */
+  hid_t group_id;    /* Set if this locator is associated with a group */
+  hid_t dtype;       /* Set if a special data type was created for this locator */
   hdsmode_t accmode; /* Access mode for memory mapped data [datMap only] */
   int ndims;         /* Number of dimensions in mapdims [datMap only] */
   hdsdim mapdims[DAT__MXDIM]; /* Dimensionality of mapped dims [datMap only] */
-  hdsbool_t isslice;          /* Is this a slice? */
-  hdsbool_t isprimary;        /* Is this a primary locator (and so owns its own file_id) */
-  hdsbool_t isdiscont;        /* Is this a discontiguous slice? */
-  hdsdim slicelower[DAT__MXDIM]; /* Lower bounds of slice */
-  hdsdim sliceupper[DAT__MXDIM]; /* Upper bounds of slice */
+  hdsbool_t isslice; /* Is this a slice? */
+  hdsbool_t isprimary;/* Is this a primary locator (and so owns its own file_id) */
+  hdsbool_t isdiscont;/* Is this a discontiguous slice? */
   hdsbool_t uses_true_mmap;  /* Indicates that we have true mmap [datMap only] */
   int fdmap;  /* File descriptor for mapped data (can free if >0) [datMap only] */
   char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */
@@ -304,6 +302,10 @@ int
 dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
                hdsdim upper[DAT__MXDIM], hdsbool_t * issubset,
                int *actdim, int * status );
+
+int
+dat1GetDataDims( const HDSLoc * locator, hdsdim dims[DAT__MXDIM],
+                 int *actdim, int * status );
 
 hid_t
 dau1Native2MemType( hid_t nativetype, int * status );

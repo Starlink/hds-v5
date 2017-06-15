@@ -111,37 +111,13 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
   *issubset = 0;
   if (*status != SAI__OK) return *status;
 
-  /* Special case -- locator overrides file -- short circuit */
-  if (locator->vectorized > 0) {
-    /* Vectorized dataspace is a collection of points so not amenable
-       to simply querying of hyperslab */
-    *actdim = 1;
 
-    if (locator->isslice) {
-      lower[0] = (locator->slicelower)[0];
-      upper[0] = (locator->sliceupper)[0];
-      *issubset = 1;
-    } else {
-      lower[0] = 1;
-      upper[0] = locator->vectorized;
-    }
-    return *status;
-  }
 
-  if (dat1IsStructure( locator, status ) ) {
-
-    /* Query the dimensions of the structure */
-    rank = dat1GetStructureDims( locator, DAT__MXDIM, upper, status );
-
-    if (rank > 0) {
-      int i;
-      for (i=0; i<rank; i++) {
-        lower[i] = 1;
-      }
-
-    }
-
-  } else {
+   /* If the supplied locator has a dataspace, then use the bounds of the
+      data space. This is done even if the object is a structure, since
+      vectorised structure arrays will have a dataspace describing their
+      vectorised extent. */
+  if( locator->dataspace_id ) {
     int i;
     hsize_t h5lower[DAT__MXDIM];
     hsize_t h5upper[DAT__MXDIM];
@@ -206,6 +182,26 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
    dat1ExportDims( rank, h5lower, lower, status );
    dat1ExportDims( rank, h5upper, upper, status );
 
+  /* If no dataspace ia available, and the locator is a structure
+     array... */
+  } else if (dat1IsStructure( locator, status ) ) {
+
+    /* Query the dimensions of the structure */
+    rank = dat1GetStructureDims( locator, DAT__MXDIM, upper, status );
+
+    if (rank > 0) {
+      int i;
+      for (i=0; i<rank; i++) {
+        lower[i] = 1;
+      }
+
+    }
+
+  } else if( *status == SAI__OK ) {
+    *status = DAT__WEIRD;
+    emsRepf(" ", "Unexpectedly got primitive array with no dataspace "
+            "(possible programming error)", status );
+    goto CLEANUP;
   }
 
   *actdim = rank;

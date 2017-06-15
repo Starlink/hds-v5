@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     datShape
+*     dat1GetDataDims
 
 *  Purpose:
-*     Enquire object shape
+*     Obtain the dimensions of the full array - not just the slice.
 
 *  Language:
 *     Starlink ANSI C
@@ -13,35 +13,39 @@
 *     Library routine
 
 *  Invocation:
-*     datShape( const HDSLoc *locator, int maxdim, hdsdim dims[],
-*               int *actdim, int * status );
+*     dat1GetDataDims( const HDSLoc * locator, hdsdim dims[DAT__MXDIM],
+*                      int *actdim, int * status );
 
 *  Arguments:
 *     locator = const HDSLoc * (Given)
-*        Object locator
-*     maxdim = int (Given)
-*        Allocated size of dims[]
-*     dims = hdsdim [] (Returned)
-*        Object dimensions.
+*        Locator for which dimensions are to be obtained.
+*     dims = hdsdim [DAT__MXDIM] (Returned)
+*        On exit, contains the required dimensions.
 *     actdim = int * (Returned)
-*        Number of dimensions filled in dims[].
+*        Number of dimensions in array.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-*     Enquire the shape of an object.
+*     Obtain the dimensions of the full array associated with the
+*     supplied locator, in HDS coordinate order. If the locator
+*     represents a slice of an array, the dimensions of the full array -
+*     not just the slice - are returned. If the locator has been
+*     vectorised using datVec, the total number of elements in the
+*     full array will be returned as the one and only dimensions
+*     ("*actdim" will be returned set to 1).
 
 *  Authors:
-*     TIMJ: Tim Jenness (Cornell)
+*     DSB: David S Berry (EAO)
 *     {enter_new_authors_here}
 
 *  History:
-*     2014-08-29 (TIMJ):
+*     2017-06-14 (DSB):
 *        Initial version
 *     {enter_further_changes_here}
 
 *  Copyright:
-*     Copyright (C) 2014 Cornell University
+*     Copyright (C) 2017 East Asian Observatory.
 *     All Rights Reserved.
 
 *  Licence:
@@ -93,37 +97,40 @@
 #include "dat_err.h"
 
 int
-datShape( const HDSLoc *locator, int maxdim, hdsdim dims[],
-          int *actdim, int * status ) {
-
-  int i = 0;
+dat1GetDataDims( const HDSLoc * locator, hdsdim dims[DAT__MXDIM],
+                 int *actdim, int * status ){
   int rank = 0;
-  hdsdim upper[DAT__MXDIM];
-  hdsdim lower[DAT__MXDIM];
-  hdsbool_t issubset = 0;
+  hsize_t h5dims[DAT__MXDIM];
 
+  /* Initialise returned values */
+  *actdim = 0;
+
+  /* Check inherited status */
   if (*status != SAI__OK) return *status;
 
-  dat1GetBounds( locator, lower, upper, &issubset, &rank, status );
+  /* First deal with structures. These cannot currently be sliced. */
+  if (dat1IsStructure( locator, status ) ) {
 
-  if (rank > maxdim) {
-    *status = DAT__DIMIN;
-    emsRepf("datshape_1b", "datShape: Dimensions of object exceed maximum allowed size of %d",
-            status, maxdim);
-    goto CLEANUP;
+    /* Query the dimensions of the structure. */
+    rank = dat1GetStructureDims( locator, DAT__MXDIM, dims, status );
+
+  /* Now deal with primitives. */
+  } else {
+
+    /* Get the HDF5 dimensions (i.e. the "extent") of the full dataspace
+       associated with the supplied locator. This will have rank 1 if the
+       locator has been vectorised by datVec. */
+    CALLHDFE( int,
+              rank,
+              H5Sget_simple_extent_dims( locator->dataspace_id, h5dims, NULL ),
+              DAT__DIMIN,
+              emsRep(" ", "Error obtaining shape of object", status) );
+
+    /* Convert the dimensions from HDF5 order to HDS order. */
+    dat1ExportDims( rank, h5dims, dims, status );
   }
 
-  /* Convert bounds to dims */
-  for (i=0; i<rank; i++) {
-    dims[i] = upper[i] - lower[i] + 1;
-  }
-
-  /* If a scalar is vectorised, it becomes a 1-element vector. */
-  if( rank == 0 && locator->vectorized ) {
-     rank = 1;
-     dims[0] = 1;
-  }
-
+  /* Return the number of dimensions. */
   *actdim = rank;
 
  CLEANUP:
