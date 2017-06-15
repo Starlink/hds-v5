@@ -196,8 +196,9 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
                                      &ifirst, NULL, &count, &block ) );
     }
 
-    /* Indicate the object has been vectorised. */
+    /* Indicate the object has been vectorised, and so cannot be a scalar cell. */
     (*locator2)->vectorized = 1;
+    (*locator2)->iscell = 0;
   }
 
  CLEANUP:

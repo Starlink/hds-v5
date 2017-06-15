@@ -214,6 +214,12 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
   }
 
+  /* A single cell is a scalar, and so is not discontiguous. */
+  if (*status == SAI__OK) {
+    thisloc->iscell = 1;
+    thisloc->isdiscont = 0;
+  }
+
  CLEANUP:
   if (*status != SAI__OK) {
     if (thisloc) datAnnul( &thisloc, status );

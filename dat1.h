@@ -153,6 +153,7 @@ typedef struct LOC {
   hdsmode_t accmode; /* Access mode for memory mapped data [datMap only] */
   int ndims;         /* Number of dimensions in mapdims [datMap only] */
   hdsdim mapdims[DAT__MXDIM]; /* Dimensionality of mapped dims [datMap only] */
+  hdsbool_t iscell;  /* Is this a single cell? */
   hdsbool_t isslice; /* Is this a slice? */
   hdsbool_t isprimary;/* Is this a primary locator (and so owns its own file_id) */
   hdsbool_t isdiscont;/* Is this a discontiguous slice? */

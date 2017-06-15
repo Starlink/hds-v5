@@ -141,6 +141,7 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
   /* Retain knowledge of vectorization, slicing, etc */
   clonedloc->vectorized = locator1->vectorized;
   clonedloc->isslice = locator1->isslice;
+  clonedloc->iscell = locator1->iscell;
   clonedloc->isdiscont = locator1->isdiscont;
 
  CLEANUP:

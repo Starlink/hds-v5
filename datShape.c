@@ -104,24 +104,34 @@ datShape( const HDSLoc *locator, int maxdim, hdsdim dims[],
 
   if (*status != SAI__OK) return *status;
 
-  dat1GetBounds( locator, lower, upper, &issubset, &rank, status );
+  /* Single cells should always be considered scalar. */
+  if( locator->iscell ){
+    for (i=0; i<maxdim; i++) {
+      dims[i] = 0;
+    }
+    rank = 0;
 
-  if (rank > maxdim) {
-    *status = DAT__DIMIN;
-    emsRepf("datshape_1b", "datShape: Dimensions of object exceed maximum allowed size of %d",
-            status, maxdim);
-    goto CLEANUP;
-  }
+  /* Otherwise return the full shape. */
+  } else {
+    dat1GetBounds( locator, lower, upper, &issubset, &rank, status );
 
-  /* Convert bounds to dims */
-  for (i=0; i<rank; i++) {
-    dims[i] = upper[i] - lower[i] + 1;
-  }
+    if (rank > maxdim) {
+      *status = DAT__DIMIN;
+      emsRepf("datshape_1b", "datShape: Dimensions of object exceed maximum allowed size of %d",
+              status, maxdim);
+      goto CLEANUP;
+    }
 
-  /* If a scalar is vectorised, it becomes a 1-element vector. */
-  if( rank == 0 && locator->vectorized ) {
-     rank = 1;
-     dims[0] = 1;
+    /* Convert bounds to dims */
+    for (i=0; i<rank; i++) {
+      dims[i] = upper[i] - lower[i] + 1;
+    }
+
+    /* If a scalar is vectorised, it becomes a 1-element vector. */
+    if( rank == 0 && locator->vectorized ) {
+       rank = 1;
+       dims[0] = 1;
+    }
   }
 
   *actdim = rank;
