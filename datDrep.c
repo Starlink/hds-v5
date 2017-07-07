@@ -106,6 +106,9 @@ datDrep(const HDSLoc *locator, char **format_str, char **order_str,
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   *status = DAT__FATAL;
   emsRep("datDrep", "datDrep: Not yet implemented for HDF5",
          status);

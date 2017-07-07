@@ -74,7 +74,8 @@ static void cmpszints( size_t result, size_t expected, int *status );
 static void cmpprec ( const HDSLoc * loc1, const char * name, int * status );
 static void cmpintarr( size_t nelem, const int result[],
                        const int expected[], int *status );
-static void testSliceVec();
+static void testSliceVec( int *status );
+static void testThreadSafety( const char *path, int *status );
 
 int main (void) {
 
@@ -224,6 +225,7 @@ int main (void) {
     datCell( loc2, 2, subs, &loc3, &status );
     datNew0I( loc3, "INTINCELL", &status );
     datFind( loc3, "INTINCELL", &loc4, &status );
+    datPut0I( loc4, -999, &status );
     datName( loc2, namestr, &status );
     cmpstrings( namestr, "RECORDS", &status );
     datName( loc3, namestr, &status );
@@ -754,7 +756,10 @@ int main (void) {
   datAnnul( &loc1, &status );
 
 /* Test slicing and vectorising. */
-  testSliceVec();
+  testSliceVec( &status );
+
+/* Test thread safety */
+  testThreadSafety( path, &status );
 
   if (status == SAI__OK) {
     printf("HDS C installation test succeeded\n");
@@ -840,14 +845,9 @@ static void traceme (const HDSLoc * loc, const char * expected, int explev,
 
 
 
-
-
-
 #define SIZE 10
 
-static  void testSliceVec(){
-   int status_value = SAI__OK;
-   int *status = &status_value;
+static  void testSliceVec( int *status ){
    HDSLoc *loc1 = NULL;
    HDSLoc *loc2 = NULL;
    HDSLoc *loc3 = NULL;
@@ -860,6 +860,9 @@ static  void testSliceVec(){
    int i;
    size_t size;
    int *ip;
+
+/* Check inherited status */
+   if( *status != SAI__OK ) return;
 
 /* Create a 2-dimensional 10x10 int array. */
    dims[0] = SIZE;
@@ -907,7 +910,7 @@ static  void testSliceVec(){
    datGet0I( loc4, outvals, status );
    if( outvals[0] != 11 && *status == SAI__OK ) {
       *status = DAT__FATAL;
-      emsRepf("", "testSliceVec error 4: Got %zu but expected 11", status,
+      emsRepf("", "testSliceVec error 4: Got %d but expected 11", status,
               outvals[0] );
    }
    datAnnul( &loc4, status );
@@ -917,7 +920,7 @@ static  void testSliceVec(){
    datGet0I( loc4, outvals, status );
    if( outvals[0] != 90 && *status == SAI__OK ) {
       *status = DAT__FATAL;
-      emsRepf("", "testSliceVec error 5: Got %zu but expected 90", status,
+      emsRepf("", "testSliceVec error 5: Got %d but expected 90", status,
               outvals[0] );
    }
    datAnnul( &loc4, status );
@@ -928,8 +931,8 @@ static  void testSliceVec(){
    for( i = 0; i < dims[ 0 ]; i++ ) {
       if( ip[ i ] != i + 11 && *status == SAI__OK ) {
          *status = DAT__FATAL;
-         emsRepf("", "testSliceVec error 6: Got %zu but expected %zu for "
-                 "element %zu", status, ip[ i ], i + 11, i );
+         emsRepf("", "testSliceVec error 6: Got %d but expected %d for "
+                 "element %d", status, ip[ i ], i + 11, i );
          break;
       }
    }
@@ -937,7 +940,7 @@ static  void testSliceVec(){
 /* Take a 1D slice of the vectorised slice. */
    lo[0] = 2;
    hi[0] = 10;
-   datSlice( loc3, 2, lo, hi, &loc4, status );
+   datSlice( loc3, 1, lo, hi, &loc4, status );
    datSize( loc4, &size, status );
    if( size != 9 && *status == SAI__OK ) {
       *status = DAT__FATAL;
@@ -951,7 +954,7 @@ static  void testSliceVec(){
    datGet0I( loc5, outvals, status );
    if( outvals[0] != 12 && *status == SAI__OK ) {
       *status = DAT__FATAL;
-      emsRepf("", "testSliceVec error 8: Got %zu but expected 12", status,
+      emsRepf("", "testSliceVec error 8: Got %d but expected 12", status,
               outvals[0] );
    }
    datAnnul( &loc5, status );
@@ -961,7 +964,7 @@ static  void testSliceVec(){
    datGet0I( loc5, outvals, status );
    if( outvals[0] != 20 && *status == SAI__OK ) {
       *status = DAT__FATAL;
-      emsRepf("", "testSliceVec error 8: Got %zu but expected 20", status,
+      emsRepf("", "testSliceVec error 8: Got %d but expected 20", status,
               outvals[0] );
    }
    datAnnul( &loc5, status );
@@ -972,4 +975,139 @@ static  void testSliceVec(){
    datAnnul( &loc3, status );
    datAnnul( &loc2, status );
    datAnnul( &loc1, status );
+
+   if( *status == SAI__OK ) {
+      printf( "TestSliceVec passed" );
+   } else {
+      emsRep( " ", "TestSliceVec failed", status );
+   }
 }
+
+
+
+
+
+
+
+
+
+
+
+static void testThreadSafety( const char *path, int *status ) {
+
+/* Local Variables; */
+   HDSLoc *loc1 = NULL;
+   HDSLoc *loc1b = NULL;
+   HDSLoc *loc2 = NULL;
+   HDSLoc *loc3 = NULL;
+   HDSLoc *loc4 = NULL;
+   HDSLoc *loc4b = NULL;
+   hdsdim dims[2];
+   int ival;
+
+/* Check inherited status */
+   if( *status != SAI__OK ) return;
+
+/* Open the HDS file created by the initial testing above. */
+   hdsOpen( path, "Read", &loc1, status );
+
+/* Get a locator for component "HDS_TEST.RECORDS(3,2).INTINCELL" */
+   datFind( loc1, "Records", &loc2, status );
+   dims[0] = 3;
+   dims[1] = 2;
+   datCell( loc2, 2, dims, &loc3, status );
+   datAnnul( &loc2, status );
+   datFind( loc3, "IntInCell", &loc4, status );
+   datAnnul( &loc3, status );
+
+/* Check it has the value -999. */
+   datGet0I( loc4, &ival, status );
+   if( ival != -999 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testThreadSafety error 1: Got %d but expected -999", status,
+              ival );
+   }
+
+/* Open the HDS file again. Note we have not yet closed it, so it is now
+   open twice. */
+   hdsOpen( path, "Read", &loc1b, status );
+
+/* Get a locator for the same component as before. */
+   datFind( loc1b, "Records", &loc2, status );
+   dims[0] = 3;
+   dims[1] = 2;
+   datCell( loc2, 2, dims, &loc3, status );
+   datAnnul( &loc2, status );
+   datFind( loc3, "IntInCell", &loc4b, status );
+   datAnnul( &loc3, status );
+
+/* Check it has the value -999. */
+   datGet0I( loc4b, &ival, status );
+   if( ival != -999 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testThreadSafety error 2: Got %d but expected -999", status,
+              ival );
+   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Annul the first primary locator for the file. */
+   datAnnul( &loc1, status );
+
+/* The file should still be open because of the second locator. So test
+   the integer value can still be accessed using "loc4b" and "loc4". */
+   datGet0I( loc4, &ival, status );
+   if( ival != -999 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf("", "testThreadSafety error 3: Got %d but expected -999", status,
+              ival );
+   }
+
+   datGet0I( loc4b, &ival, status );
+   if( ival != -999 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+       emsRepf("", "testThreadSafety error 4: Got %d but expected -999", status,
+              ival );
+  }
+
+
+/* Annul the second primary locator for the file. */
+   datAnnul( &loc1b, status );
+
+/* The file should now be closed, so check an error is reported if
+   loc4/loc4b is used. */
+   if( *status == SAI__OK ) {
+      datGet0I( loc4, &ival, status );
+      if( *status == DAT__LOCIN ) {
+         emsAnnul( status );
+      } else {
+         int oldstat = *status;
+         emsAnnul( status );
+         *status = SAI__ERROR;
+         emsRepf("", "testThreadSafety error 5: Expected a DAT__LOCIN "
+                 "error but got status=%d", status, oldstat );
+      }
+   }
+
+
+   if( *status == SAI__OK ) {
+      printf( "TestThreadSafety passed" );
+   } else {
+      emsRep( " ", "TestThreadSafety failed", status );
+   }
+
+}
+
+
+

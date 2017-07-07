@@ -125,6 +125,9 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   if (locator->vectorized) {
     *status = DAT__OBJIN;
     emsRep("datAlter_1", "Can not alter the size of a vectorized object",

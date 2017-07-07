@@ -104,6 +104,9 @@ datBasic(const HDSLoc *locator, const char *mode_c, unsigned char **pntr,
 
   if (*status == SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   *status = SAI__ERROR;
   emsRep("datBasic", "datBasic is not available in HDF5 interface",
          status);

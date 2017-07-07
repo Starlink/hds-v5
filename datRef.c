@@ -131,6 +131,9 @@ int datRef( const HDSLoc * locator, char * ref, size_t reflen, int * status ) {
   /* Check intial global status */
   if ( *status != SAI__OK ) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
 
   /*  Obtain the data object path and container file name. */
   /*  Lie about the size of the supplied buffer to account for quotes

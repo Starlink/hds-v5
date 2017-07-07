@@ -99,6 +99,9 @@ datLen( const HDSLoc * locator, size_t * clen, int * status ) {
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   if (locator->dataset_id <= 0) {
     *status = DAT__OBJIN;
     emsRep("datClen_1",

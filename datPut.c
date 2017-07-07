@@ -127,6 +127,9 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   datName(locator, namestr, status);
 
   /* we do not care because this must be a temporary component

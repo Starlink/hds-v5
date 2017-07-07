@@ -136,6 +136,9 @@ hdsLink(HDSLoc *locator, const char *group_str, int *status) {
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate supplied locator */
+  dat1ValidateLocator( locator, status );
+
   /* If we get a zero length string this either means we are trying to unlink
      the locator from the group or we have a bug in the calling code or else
      we mean that we don't want to link the locator at all. For now trigger

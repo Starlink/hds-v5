@@ -105,6 +105,9 @@ int datCoerc( const HDSLoc *locator1, int ndim, HDSLoc **locator2, int *status) 
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator1, status );
+
   *status = DAT__FATAL;
   emsRep("datCoerc", "datCoerc: Not yet implemented for HDF5",
          status);

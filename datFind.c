@@ -114,6 +114,9 @@ datFind( const HDSLoc   *locator1,
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator1, status );
+
   /* containing locator must refer to a group */
   if (!dat1IsStructure( locator1, status) ) {
     *status = DAT__OBJIN;

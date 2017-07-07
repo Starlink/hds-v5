@@ -101,6 +101,9 @@ datSize(const HDSLoc *locator,
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   /* Do not duplicate code from datShape -- just call it and we know then
      that it works for arrays of structures and for slices */
   datShape( locator, DAT__MXDIM, objdims, &ndims, status );

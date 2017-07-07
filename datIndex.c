@@ -105,6 +105,9 @@ datIndex(const HDSLoc *locator1, int index, HDSLoc **locator2, int *status ) {
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator1, status );
+
   datName( locator1, groupnam, status );
   if (*status != SAI__OK) return *status;
 

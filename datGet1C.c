@@ -145,6 +145,9 @@ datGet1C( const HDSLoc * locator,  size_t maxval, size_t bufsize, char *buffer,
   /* Do nothing if bad status */
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   /* Verify that we have the correct number of values */
   datSize( locator, actval, status );
 

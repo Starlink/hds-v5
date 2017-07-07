@@ -116,6 +116,9 @@ int datPrec( const HDSLoc * loc, size_t *nbytes, int *status ) {
   *nbytes = 0;
   if ( *status != SAI__OK ) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( loc, status );
+
   /* Get object type - assume this has to be nul-terminated */
   datType( loc, type, status );
 

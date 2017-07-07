@@ -111,6 +111,9 @@ int datMapN( HDSLoc* loc, const char * type, const char * mode,
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( loc, status );
+
   datShape( loc, ndim, dims, &actdim, status );
 
   if (*status == SAI__OK) {

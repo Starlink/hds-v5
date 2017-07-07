@@ -98,6 +98,9 @@ datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   if (dat1IsStructure(locator, status)) {
     *status = DAT__OBJIN;
     emsRep("datState_1", "datState can only be called on primitive locator",

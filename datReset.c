@@ -105,6 +105,9 @@ datReset(HDSLoc *locator, int *status) {
   int rank;
 
   if (*status != SAI__OK) return *status;
+
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
   datName( locator, name_str, status );
 
   if (dat1IsStructure(locator, status)) {

@@ -104,6 +104,10 @@ datCcopy(const HDSLoc *locator1, const HDSLoc *locator2, const char *name,
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locators. */
+  dat1ValidateLocator( locator1, status );
+  dat1ValidateLocator( locator2, status );
+
   if (dat1IsStructure(locator1, status)) {
 
     /* need the type and dimensionality of the structure to create

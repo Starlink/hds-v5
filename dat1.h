@@ -403,5 +403,7 @@ dat1GetStructureDims( const HDSLoc * locator, int maxdims, hdsdim dims[], int *s
 hdsbool_t
 dat1NeedsRootName( hid_t objid, hdsbool_t wantprim, char * rootname, size_t rootnamelen, int * status );
 
+int dat1ValidateLocator( const HDSLoc *loc, int *status );
+
 /* DAT1_H_INCLUDED */
 #endif

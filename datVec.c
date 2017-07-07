@@ -120,6 +120,9 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   /* Check inherited status. */
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator1, status );
+
   /* We cannot vectorise a discontiguous slice of an array. */
   if ( locator1->isdiscont ) {
     *status = DAT__OBJIN;

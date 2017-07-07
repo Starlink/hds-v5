@@ -141,6 +141,9 @@ datUnmap( HDSLoc * locator, int * status ) {
 
     if ( munmap( locator->pntr, locator->bytesmapped ) != 0 ) {
       if (*status == SAI__OK) {
+
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
         *status = DAT__FILMP;
         emsSyser( "MESSAGE", errno );
         emsRep("datUnMap_4", "datUnmap: Error unmapping mapped memory: ^MESSAGE", status);

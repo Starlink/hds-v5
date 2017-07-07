@@ -98,6 +98,9 @@ hdsFree(const HDSLoc *locator, int *status) {
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator, status );
+
   /* It seems that HDSv4 flushes buffers as well as unlocking
      the file. This despite no hdsLock ever having been called */
   H5Fflush( locator->file_id, H5F_SCOPE_LOCAL );

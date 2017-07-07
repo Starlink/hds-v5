@@ -105,6 +105,9 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
   *locator2 = NULL;
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator1, status );
+
   clonedloc = dat1AllocLoc( status );
   if (*status != SAI__OK) goto CLEANUP;
 

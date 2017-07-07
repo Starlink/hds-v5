@@ -111,6 +111,9 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
   if (*status != SAI__OK) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( locator1, status );
+
   datName(locator1, namestr, status );
 
   /* Copy dimensions if appropriate */
