@@ -133,7 +133,6 @@ hdsNew(const char *file_str,
   hid_t file_id = 0;
   hsize_t h5dims[DAT__MXDIM];
   HDSLoc * thisloc = NULL;
-  int isprim;
   hid_t h5type = 0;
   char *fname = NULL;
 
@@ -154,8 +153,8 @@ hdsNew(const char *file_str,
 
   /* Convert the HDS data type to HDF5 data type as an early sanity
      check. */
-  isprim = dau1CheckType( 0, type_str, &h5type, groupstr,
-                          sizeof(groupstr), status );
+  (void) dau1CheckType( 0, type_str, &h5type, groupstr,
+                        sizeof(groupstr), status );
   if (h5type) H5Tclose( h5type ); /* we are not using this type for real */
 
   /* The above routine has allocated resources so from here we can not

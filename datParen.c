@@ -139,7 +139,6 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
     if ( (locator1->grpname)[0] != '\0') hdsLink(thisloc, locator1->grpname, status);
   }
 
- CLEANUP:
   if (*status != SAI__OK) {
     datAnnul( &thisloc, status );
   } else {

@@ -206,7 +206,7 @@ dat1CvtChar( size_t nval, hdstype_t intype, size_t nbin,
         ((double *)exp)[n] = outdouble;
         break;
       case HDSTYPE_INT64:
-        nitem = sscanf(buffer, "%lld", &outint64);
+        nitem = sscanf(buffer, "%ld", &outint64);
         if (nitem == 0) {
           (*nbad)++;
           outint64 = typeinfo->BADK;
@@ -307,7 +307,7 @@ dat1CvtChar( size_t nval, hdstype_t intype, size_t nbin,
         nchar = snprintf( buffer, nbout+1, "%.*G", DBL_DIG, ((double *)imp)[n] );
         break;
       case HDSTYPE_INT64:
-        nchar = snprintf( buffer, nbout+1, "%lld", ((int64_t *)imp)[n] );
+        nchar = snprintf( buffer, nbout+1, "%ld", ((int64_t *)imp)[n] );
         break;
       case HDSTYPE_LOGICAL:
         inlogical = ((hdsbool_t *)imp)[n];

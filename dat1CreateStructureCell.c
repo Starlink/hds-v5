@@ -106,7 +106,6 @@ dat1CreateStructureCell( hid_t group_id, size_t index, const char * typestr, con
   hid_t cellgroup_id = 0;
   char cellname[128];
   hdsdim coords[DAT__MXDIM];
-  int scalardims = 0;
 
   if (*status != SAI__OK) return cellgroup_id;
 

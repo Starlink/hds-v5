@@ -111,7 +111,6 @@ dat1GetAttrString( hid_t objid, const char * attrname, hdsbool_t usedef,
                    const char * defval, char * attrval, size_t attrvallen,
                    int *status) {
 
-  hdsbool_t existed = HDS_FALSE;
   hid_t attrtype = 0;
   hid_t attribute_id = 0;
   size_t lenstr = 0;
@@ -166,8 +165,8 @@ dat1GetAttrString( hid_t objid, const char * attrname, hdsbool_t usedef,
   }
 
   /* Read the attribute */
-  existed = dat1GetAttr( objid, attrname, attrtype, 1, attrval, NULL,
-                         status );
+  (void) dat1GetAttr( objid, attrname, attrtype, 1, attrval, NULL,
+                      status );
 
   /* Terminate the string */
   attrval[lenstr] = '\0';
