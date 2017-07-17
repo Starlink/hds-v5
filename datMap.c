@@ -151,7 +151,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   /* Get the HDF5 type code and confirm this is a primitive type */
   isprim = dau1CheckType( 1, type_str, &h5type, normtypestr,

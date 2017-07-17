@@ -110,8 +110,8 @@ datCopy( const HDSLoc *locator1, const HDSLoc *locator2,
   if (*status != SAI__OK) return *status;
 
   /* Validate input locators. */
-  dat1ValidateLocator( locator1, status );
-  dat1ValidateLocator( locator2, status );
+  dat1ValidateLocator( 1, locator1, status );
+  dat1ValidateLocator( 1, locator2, status );
 
   dau1CheckName( name_str, 1, cleanname, sizeof(cleanname), status );
   if (*status != SAI__OK) return *status;

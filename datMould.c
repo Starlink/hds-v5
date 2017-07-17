@@ -100,7 +100,7 @@ datMould( HDSLoc *locator, int ndim, const hdsdim dims[], int *status ) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   *status = DAT__FATAL;
   emsRep("datMould", "datMould: Not yet implemented for HDF5",

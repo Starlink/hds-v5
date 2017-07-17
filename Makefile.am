@@ -106,6 +106,9 @@ datType.c \
 datUnmap.c \
 datValid.c \
 datVec.c \
+datLock.c \
+datLocked.c \
+datUnlock.c \
 hdsCopy.c \
 hdsErase.c \
 hdsEwild.c \
@@ -143,8 +146,10 @@ dat1CvtChar.c \
 dat1CvtLogical.c \
 dat1DumpLoc.c \
 dat1EncodeSubscript.c \
+dat1EraseHandle.c \
 dat1ExportDims.c \
 dat1FixNameCell.c \
+dat1FreeHandle.c \
 dat1FreeLoc.c \
 dat1GetAttr.c \
 dat1GetAttrBool.c \
@@ -157,6 +162,9 @@ dat1Getenv.c \
 dat1GetFullName.c \
 dat1GetParentID.c \
 dat1GetStructureDims.c \
+dat1Handle.c \
+dat1HandleLock.c \
+dat1HandleMsg.c \
 dat1H5EtoEMS.c \
 dat1ImportDims.c \
 dat1ImportFloc.c \

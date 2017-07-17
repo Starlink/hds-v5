@@ -116,7 +116,7 @@ datClen( const HDSLoc * locator, size_t * clen, int * status ) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   if (locator->dataset_id <= 0) {
     *status = DAT__OBJIN;

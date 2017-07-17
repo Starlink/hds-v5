@@ -112,12 +112,13 @@
 int
 hdsOpen( const char *file_str, const char *mode_str,
          HDSLoc **locator, int *status) {
+  HDSLoc *temploc = NULL;
+  Handle *handle = NULL;
   char * fname = NULL;
-  unsigned int flags = 0;
   hid_t file_id = 0;
   hid_t group_id = 0;
-  HDSLoc *temploc = NULL;
   htri_t filstat = 0;
+  unsigned int flags = 0;
 
   *locator = NULL;
   if (*status != SAI__OK) return *status;
@@ -194,6 +195,7 @@ hdsOpen( const char *file_str, const char *mode_str,
       temploc->isprimary = HDS_TRUE;
       temploc->group_id = group_id;
       hds1RegLocator( temploc, status );
+      handle = hds1FindHandle( temploc->file_id, status );
     }
     datFind( temploc, primname, locator, status );
 
@@ -209,12 +211,22 @@ hdsOpen( const char *file_str, const char *mode_str,
       group_id = file_id = 0; /* now owned by the locator system */
       temploc->isprimary = HDS_TRUE;
       hds1RegLocator( temploc, status );
+      handle = hds1FindHandle( temploc->file_id, status );
     }
     if (*status == SAI__OK) {
       /* Assign this locator to the caller */
       *locator = temploc;
       temploc = NULL;
     }
+  }
+
+  /* If the file was already open via another locator, store the
+     top-level handle associated with that locator. Otherwise,
+     create a new handle structure for the top level data object in the
+     file. Store the handle pointer in the locator. */
+  if( *locator ) {
+    if( !handle ) handle = dat1Handle( NULL, fname, status );
+    (*locator)->handle = handle;
   }
 
  CLEANUP:
@@ -225,7 +237,11 @@ hdsOpen( const char *file_str, const char *mode_str,
 
   if (*status != SAI__OK) {
     /* cleanup */
-    if (*locator) datAnnul( locator, status );
+    if (*locator) {
+       (*locator)->handle = dat1EraseHandle( (*locator)->handle, NULL, status );
+        datAnnul( locator, status );
+    }
+
     if (file_id > 0) H5Fclose( file_id );
   }
 

@@ -77,16 +77,26 @@
 */
 
 #include "hdf5.h"
+#include <pthread.h>
+
+static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 void dat1InitHDF5(void) {
   static int DONE = 0;
 
-  if (DONE) return;
+  /* Serialise entry to this function by locking a mutex. */
+  pthread_mutex_lock( &mutex1 );
+
+  /* Return immediately if HDF5 has already been initialised for use with HDS. */
+  if(! DONE ) {
 
   /* Disable automatic printing of HDF5 errors */
-  H5Eset_auto( H5P_DEFAULT, NULL, NULL );
+     H5Eset_auto( H5P_DEFAULT, NULL, NULL );
 
+     DONE = 1;
+  }
 
-  DONE = 1;
+  /* Unlock the mutex so that any waiting threads can call this function. */
+  pthread_mutex_unlock( &mutex1 );
 
 }

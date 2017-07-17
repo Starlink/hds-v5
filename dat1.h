@@ -138,8 +138,31 @@ typedef enum {
 #define HDS__ATTR_ROOT_NAME "HDS_ROOT_NAME"
 #define HDS__ATTR_ROOT_PRIMITIVE "HDS_ROOT_IS_PRIMITIVE"
 
+/* This structure  contains information about an HDF5 object (group or
+   dataset) that is common to all the locators that refer to the object. */
+typedef struct Handle {
+   char locked;           /* Non-zero if the HDF object is currently locked for
+                             access by a single thread. Zero if the object is
+                             unlocked.  */
+   pthread_t locker;      /* Id for the thread that has locked the object (if
+                             any) */
+   struct Handle *parent; /* Pointer to Handle describing the parent object */
+   struct Handle **children; /* Pointer to array holding pointers to Handles
+                                for any known child objects */
+   int nchild;            /* The length of the "children" array */
+   char *name;            /* Name (cleaned) of the HDF object within its parent */
+   pthread_mutex_t mutex2;   /* Guards access to the values in the handle */
+
+} Handle;
+
+/* Define functions to lock and unlock a Handle's mutex. */
+#define DAT_LOCK_MUTEX2(han) pthread_mutex_lock( &((han)->mutex2) )
+#define DAT_UNLOCK_MUTEX2(han) pthread_mutex_unlock( &((han)->mutex2) )
+
+
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
+  Handle *handle;    /* Structure holding fixed info for the HDF object */
   int hds_version;   /* Implementation version number. Always 5 at the moment. */
   void *pntr;        /* Pointer to memory mapped data array [datMap only] */
   void *regpntr;     /* Pointer that was registered with CNF */
@@ -345,6 +368,9 @@ hds1CountFiles();
 int
 hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int * status );
 
+Handle *
+hds1FindHandle( hid_t file_id, int *status );
+
 void
 dat1SetAttrString( hid_t obj_id, const char * attrname,
                    const char * value, int * status );
@@ -403,7 +429,12 @@ dat1GetStructureDims( const HDSLoc * locator, int maxdims, hdsdim dims[], int *s
 hdsbool_t
 dat1NeedsRootName( hid_t objid, hdsbool_t wantprim, char * rootname, size_t rootnamelen, int * status );
 
-int dat1ValidateLocator( const HDSLoc *loc, int *status );
+Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int * status );
+Handle *dat1EraseHandle( Handle *parent, const char *name, int * status );
+Handle *dat1FreeHandle( Handle *handle );
+int dat1ValidateLocator( int checklock, const HDSLoc *loc, int *status );
+int dat1HandleLock( Handle *handle, int oper, int recurs, int *status );
+void dat1HandleMsg( const char *token, const Handle *handle );
 
 /* DAT1_H_INCLUDED */
 #endif

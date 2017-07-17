@@ -120,8 +120,6 @@
 #include "dat_err.h"
 #include "hds_fortran.h"
 
-int hds_gl_status = 0;
-
 void datExportFloc ( HDSLoc **clocator, int free, int loc_length, char flocator[DAT__SZLOC], int * status) {
 
   /* Validate the locator length */

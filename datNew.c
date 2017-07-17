@@ -113,7 +113,7 @@ datNew( const HDSLoc    *locator,
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   newloc = dat1New( locator, 0, name_str, type_str, ndim, dims, status );
 

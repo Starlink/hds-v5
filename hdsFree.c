@@ -22,8 +22,11 @@
 *        Pointer to global status.
 
 *  Description:
-*     Release all explicit or implicit locks on a container file, thereby granting write-access
-*     to other processes.
+*     Release all explicit or implicit locks on a container file,
+*     thereby granting write-access to other processes.
+*
+*     This function is not yet implemented. See datLock for an
+*     alternative locking mechanism based on POSIX threads.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
@@ -99,7 +102,7 @@ hdsFree(const HDSLoc *locator, int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   /* It seems that HDSv4 flushes buffers as well as unlocking
      the file. This despite no hdsLock ever having been called */
@@ -107,6 +110,6 @@ hdsFree(const HDSLoc *locator, int *status) {
 
   /* Documented to do nothing if hdsLock has not been called
      so it is safe to do nothing here as we know that hdsLock
-     can not have been called */
+     can not have been called since it is not implemented yet. */
   return *status;
 }

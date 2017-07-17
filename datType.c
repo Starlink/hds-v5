@@ -99,7 +99,7 @@ datType( const HDSLoc *locator, char type_str[DAT__SZTYP+1], int * status ) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   hdstyp = dat1Type( locator, status );
   if (*status != SAI__OK) return *status;

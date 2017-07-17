@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <string.h>
 
 #include "ems.h"
@@ -22,6 +23,12 @@ static hds_shell_t HDS_SHELL = HDS__SHSHELL; /* Default to doing expansion */
 /* Should memory mapping be enabled: 1 (yes), 0 (no) */
 
 static hdsbool_t HDS_MAP = HDS_TRUE; /* Do mmap by default when possible */
+
+/* A mutex used to serialise access to the getters and setters so that
+   multiple threads do not try to access the global data simultaneously. */
+static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+#define LOCK_MUTEX pthread_mutex_lock( &mutex1 );
+#define UNLOCK_MUTEX pthread_mutex_unlock( &mutex1 );
 
 /* Parse tuning environment variables. Should only be called once the
    first time a tuning parameter is required */
@@ -286,28 +293,40 @@ hdsGtune(const char *param_str, int *value, int *status) {
 /* Getter and setter routines for internal use */
 
 hdsbool_t hds1GetUseMmap() {
+  hdsbool_t result;
   /* Ensure that defaults have been read */
   hds1ReadTuneEnvironment();
-  return HDS_MAP;
+  LOCK_MUTEX;
+  result = HDS_MAP;
+  UNLOCK_MUTEX;
+  return result;
 }
 
 static void hds1SetUseMmap( hdsbool_t use_mmap ) {
+  LOCK_MUTEX
   HDS_MAP = use_mmap;
+  UNLOCK_MUTEX
   return;
 }
 
 hds_shell_t hds1GetShell() {
+  hds_shell_t result;
   /* Ensure that defaults have been read */
   hds1ReadTuneEnvironment();
-  return HDS_SHELL;
+  LOCK_MUTEX;
+  result = HDS_SHELL;
+  UNLOCK_MUTEX;
+  return result;
 }
 
 static void hds1SetShell( hds_shell_t shell) {
   /* Range check -- revert to SHSHELL if out of range */
+  LOCK_MUTEX
   if (shell >= HDS__NOSHELL && shell < HDS__MAXSHELL) {
     HDS_SHELL = shell;
   } else {
     HDS_SHELL = HDS__SHSHELL;
   }
+  UNLOCK_MUTEX
   return;
 }

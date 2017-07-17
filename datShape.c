@@ -105,7 +105,7 @@ datShape( const HDSLoc *locator, int maxdim, hdsdim dims[],
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   /* Single cells should always be considered scalar. */
   if( locator->iscell ){

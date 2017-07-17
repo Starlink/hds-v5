@@ -239,6 +239,7 @@ dat1New( const HDSLoc    *locator,
   if (*status == SAI__OK) {
     HDSLoc *thisloc = dat1AllocLoc( status );
     if (*status == SAI__OK) {
+      thisloc->handle = dat1Handle( locator, cleanname, status );
       thisloc->dataset_id = dataset_id;
       thisloc->group_id = group_id;
       thisloc->dataspace_id = dataspace_id;

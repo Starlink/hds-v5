@@ -128,7 +128,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   /* For error messages */
   datName( locator, namestr, status);

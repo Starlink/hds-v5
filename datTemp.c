@@ -103,6 +103,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "ems.h"
 #include "sae_par.h"
@@ -114,8 +115,10 @@
 #include "dat_par.h"
 #include "dat_err.h"
 
-HDSLoc * tmploc = NULL;
-size_t tmpcount = 0;
+/* Mutex used to serialise access to the following global variables */
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static HDSLoc *tmploc = NULL;
+static size_t tmpcount = 0;
 
 int
 datTemp( const char *type_str, int ndim, const hdsdim dims[],
@@ -128,6 +131,10 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
   hdsbool_t there = 1;
 
   if (*status != SAI__OK) return *status;
+
+  /* Since this function uses global variables, we serialise access to it
+     by requiring each thread to acquire a mutex lock before proceeding. */
+  pthread_mutex_lock( &mutex );
 
   /* We create one temporary file per process. We create a top-level
      container object and for each call to datTemp we create a new
@@ -147,9 +154,13 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
     one_snprintf( fname, sizeof(fname), "%s/t%x", status,
                   (prefix ? prefix : "."), getpid() );
 
-    /* Open the temp file: type and name are the same */
+    /* Open the temp file: type and name are the same. The returned
+       locator is locked by the current thread. */
     hdsNew(fname, "HDS_SCRATCH", "HDS_SCRATCH", 0, dims, &tmploc, status );
   }
+
+  /* Lock the container file for use by the current thread. */
+  datLock( tmploc, 0, status );
 
   /* Create a structure inside the temporary file. Compatibility with HDS
      suggests we call these TEMP_nnnn (although we only have to use the
@@ -168,12 +179,19 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
   /* Now create the temporary object of the correct type and size */
   *locator = dat1New( tmploc, 0, tempname, type_str, ndim, dims, status );
 
+  /* Unlock the container file so that other threads can create temporary
+     objects in it. */
+   datUnlock( tmploc, 0, status );
+
   /* Usually at this point you should unlink the file and hope the
      operating system will keep the file handle open whilst deferring the delete.
      This will work on unix systems. On Windows not so well. */
   one_snprintf(fname_with_suffix, sizeof(fname_with_suffix),"%s%s", status,
                fname, DAT__FLEXT);
   if (*status == SAI__OK) unlink(fname_with_suffix);
+
+  /* Unlock the mutex. */
+  pthread_mutex_unlock( &mutex );
 
   return *status;
 }

@@ -103,7 +103,7 @@ datRenam( HDSLoc *locator, const char *name_str, int  *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   /* We need to get the locator of the parent as we need to be moving it
      within the current group. */

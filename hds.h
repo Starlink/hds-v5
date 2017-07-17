@@ -355,6 +355,23 @@ datIndex(const HDSLoc *locator1, int index, HDSLoc **locator2, int *status);
 int
 datLen(const HDSLoc *locator, size_t *len, int *status);
 
+
+/*=========================================================*/
+/* datLock - Lock an object for use by the current thread. */
+/*=========================================================*/
+
+int
+datLock( HDSLoc *locator, int recurs, int *status);
+
+
+/*=======================================================================*/
+/* datLocked - See of an object is locked for use by the current thread. */
+/*=======================================================================*/
+
+int
+datLocked( const HDSLoc *locator, int *status);
+
+
 /*===========================*/
 /* datMap - Map primitive(s) */
 /*===========================*/
@@ -935,6 +952,15 @@ datThere(const HDSLoc *locator, const char *name_c, hdsbool_t *there, int *statu
 int
 datType(const HDSLoc *locator, char type_str[DAT__SZTYP + 1], int *status);
 
+
+/*=============================================================*/
+/* datUnlock - Unlock an object so another thread can lock it. */
+/*=============================================================*/
+
+int
+datUnlock( HDSLoc *locator, int recurs, int *status);
+
+
 /*=========================*/
 /* datUnmap - Unmap object */
 /*=========================*/
@@ -1113,6 +1139,9 @@ hdsClose(HDSLoc **locator, int *status);
 
 int
 hdsFind(const HDSLoc *locator1, const char *name, const char *mode, HDSLoc **locator2, int *status);
+
+
+
 
 
 /* STAR_HDS_H_INCLUDED */

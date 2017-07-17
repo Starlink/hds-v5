@@ -143,7 +143,7 @@ datUnmap( HDSLoc * locator, int * status ) {
       if (*status == SAI__OK) {
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
         *status = DAT__FILMP;
         emsSyser( "MESSAGE", errno );
         emsRep("datUnMap_4", "datUnmap: Error unmapping mapped memory: ^MESSAGE", status);

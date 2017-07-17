@@ -26,6 +26,9 @@
 *     from being accessed by other writers. The file remains
 *     explicitly locked until hdsFree() is called or until the file is
 *     physically closed.
+*
+*     This function is not yet implemented. See datLock for an
+*     alternative locking mechanism based on POSIX threads.
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
@@ -97,7 +100,7 @@ hdsLock(const HDSLoc *locator, int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   *status = DAT__FATAL;
   emsRep("hdsLock", "hdsLock: Not yet implemented for HDF5",

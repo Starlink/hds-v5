@@ -126,7 +126,7 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   if (locator->vectorized) {
     *status = DAT__OBJIN;

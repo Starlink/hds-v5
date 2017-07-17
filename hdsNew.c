@@ -180,6 +180,10 @@ hdsNew(const char *file_str,
       hds1RegLocator( tmploc, status );
       if (*status == SAI__OK) file_id = 0; /* handed file to locator */
 
+      /* Create a new Handle structure describing the new object and store
+         it in the locator. */
+      tmploc->handle = dat1Handle( NULL, fname, status );
+
       /* We use dat1New instead of datNew so that we do not have to follow
          up immediately with a datFind */
       thisloc = dat1New( tmploc, 1, name_str, type_str, ndim, dims, status );
@@ -199,7 +203,10 @@ hdsNew(const char *file_str,
  CLEANUP:
   /* Free allocated resource */
   /* This includes attempting to delete the new file */
-  if (thisloc) datAnnul( &thisloc, status );
+  if (thisloc) {
+     thisloc->handle = dat1EraseHandle( thisloc->handle, NULL, status );
+     datAnnul( &thisloc, status );
+  }
   if (*status != SAI__OK) unlink(fname);
   if (file_id > 0) H5Fclose(file_id);
   if (fname) MEM_FREE(fname);

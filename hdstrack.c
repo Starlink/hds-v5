@@ -9,6 +9,7 @@
    as the key. */
 
 #include <string.h>
+#include <pthread.h>
 
 #include "hdf5.h"
 #include "ems.h"
@@ -41,6 +42,7 @@
 typedef struct {
   HDSLoc * locator;    /* Actual HDS locator */
 } HDSelement;
+
 static UT_icd all_locators_icd = { sizeof(HDSelement *), NULL, NULL, NULL };
 
 typedef struct {
@@ -52,12 +54,36 @@ typedef struct {
 /* Declare the hash */
 static HDSregistry *all_locators = NULL;
 
-/* Internal routines */
-static size_t hds1PrimaryCountByFileID( hid_t file_id, int * status );
+/* Private routines */
+static Handle *hds2FindHandle( hid_t file_id, int *status );
+static Handle *hds2TopHandle( Handle *handle );
+static hdsbool_t hds2UnregLocator( HDSLoc * locator, int *status );
+static hid_t *hds2GetFileIds( hid_t file_id, int *status );
+static int hds2CountFiles();
+static int hds2CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int * status );
+static int hds2FlushFile( hid_t file_id, int *status );
+static int hds2FlushFileID( hid_t file_id, int *status);
+static int hds2GetFileDescriptor( hid_t file_id );
+static int hds2RegLocator(HDSLoc *locator, int *status);
+static size_t hds2PrimaryCount( hid_t file_id, int *status );
+static size_t hds2PrimaryCountByFileID( hid_t file_id, int * status );
+static void hds2ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int *status );
+static void hds2ShowLocators( hid_t file_id, int * status );
 
-static hid_t * hds1GetFileIds( hid_t file_id, int *status );
 
-static int hds1FlushFileID( hid_t file_id, int *status);
+
+
+/* Public functions
+   -----------------------------------------------------------------------
+   These use a mutex to serialise calls so that the module variables used
+   within this module are not accessed by multiple threads at the same
+   time. There is a one-to-one correspondance between these public
+   functions and the corresponding private function. */
+
+static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+#define LOCK_MUTEX pthread_mutex_lock( &mutex1 );
+#define UNLOCK_MUTEX pthread_mutex_unlock( &mutex1 );
+
 
 /*
 *+
@@ -74,7 +100,7 @@ static int hds1FlushFileID( hid_t file_id, int *status);
 *     Library routine
 
 *  Invocation:
-*     hds1Reg(const HDSLoc *locator, int *status);
+*     hds1RegLocator(const HDSLoc *locator, int *status);
 
 *  Arguments:
 *     locator = const HDSLoc * (Given)
@@ -90,7 +116,7 @@ static int hds1FlushFileID( hid_t file_id, int *status);
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - See also hds1UnregLocator.
+*     - See also hds2UnregLocator.
 
 *  History:
 *     2014-11-10 (TIMJ):
@@ -138,39 +164,11 @@ static int hds1FlushFileID( hid_t file_id, int *status);
 *-
 */
 
-
-int
-hds1RegLocator(HDSLoc *locator, int *status) {
-  HDSregistry *entry = NULL;
-  HDSelement elt;
-  hid_t file_id = 0;
-  memset(&elt, 0, sizeof(elt));
-
-  if (*status != SAI__OK) return *status;
-
-  /* Sanity check */
-  if (locator->file_id <= 0) {
-    *status = DAT__FATAL;
-    emsRep("hds1RegLocator_1", "Can not register a locator that is not"
-           " associated with a file", status );
-    return *status;
-  }
-
-  /* See if this entry already exists in the hash */
-  file_id = locator->file_id;
-  HASH_FIND_FILE_ID( all_locators, &file_id, entry );
-  if (!entry) {
-    entry = calloc( 1, sizeof(HDSregistry) );
-    entry->file_id = locator->file_id;
-    utarray_new( entry->locators, &all_locators_icd);
-    HASH_ADD_FILE_ID( all_locators, file_id, entry );
-  }
-
-  /* Now we have the entry, we need to store the locator inside.
-     We do not clone the locator, the locator is now owned by the group. */
-  elt.locator = locator;
-  utarray_push_back( entry->locators, &elt );
-  return *status;
+int hds1RegLocator(HDSLoc *locator, int *status) {
+   LOCK_MUTEX;
+   int result = hds2RegLocator( locator, status );
+   UNLOCK_MUTEX
+   return result;
 }
 
 /*
@@ -256,16 +254,247 @@ hds1RegLocator(HDSLoc *locator, int *status) {
 */
 
 int hds1FlushFile( hid_t file_id, int *status ) {
+   LOCK_MUTEX;
+   int result = hds1FlushFile( file_id, status );
+   UNLOCK_MUTEX
+   return result;
+}
+
+/* Remove a locator from the master list.
+   Helper routine for datAnnul which can remove the locator
+   from the master list. If this was the last locator associated
+   with the file or if it is the last primary locator associated
+   with the file, the file will be closed and all other locators
+   associated with the file will be annulled.
+
+   Returns true if the locator was removed.
+
+*/
+hdsbool_t hds1UnregLocator( HDSLoc *locator, int *status ) {
+   LOCK_MUTEX;
+   hdsbool_t result = hds2UnregLocator( locator, status );
+   UNLOCK_MUTEX
+   return result;
+}
+
+/* Count how many primary locators are associated with a particular
+   file -- since a file can have multiple file_ids this routine
+   goes through them all. */
+size_t hds1PrimaryCount( hid_t file_id, int *status ) {
+   LOCK_MUTEX;
+   size_t result = hds2PrimaryCount( file_id, status );
+   UNLOCK_MUTEX
+   return result;
+}
+
+
+/* Version of hdsShow that uses the internal list of locators
+   rather than the HDF5 list of locators. This should duplicate
+   the HDF5 list. */
+
+void hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status ) {
+   LOCK_MUTEX;
+   hds2ShowFiles( listfiles, listlocs, status );
+   UNLOCK_MUTEX
+}
+
+void hds1ShowLocators( hid_t file_id, int * status ) {
+   LOCK_MUTEX;
+   hds2ShowLocators( file_id, status );
+   UNLOCK_MUTEX
+}
+
+int hds1CountFiles() {
+   LOCK_MUTEX;
+   int result = hds2CountFiles();
+   UNLOCK_MUTEX
+   return result;
+}
+
+
+
+/*
+  ncomp = number of components in search filter
+  comps = char ** - array of pointers to filter strings
+  skip_scratch_root = true, skip HDS_SCRATCH root locators
+*/
+
+int hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root,
+                       int * status ) {
+   LOCK_MUTEX;
+   int result = hds2CountLocators( ncomp, comps, skip_scratch_root, status );
+   UNLOCK_MUTEX
+   return result;
+}
+
+/*
+*+
+*  Name:
+*     hds1FindHandle
+
+*  Purpose:
+*     Find a Handle for the top-level object in a specified file.
+
+*  Language:
+*     Starlink ANSI C
+
+*  Type of Module:
+*     Library routine
+
+*  Invocation:
+*     Handle *hds1FindHandle( hid_t file_id, int *status )
+
+*  Arguments:
+*     file_id = hid_t (Given)
+*        HDF5 file identifier.
+*     status = int* (Given and Returned)
+*        Pointer to global status.
+
+*  Returned function value:
+*     Pointer to the existing Handle that describes the top level data
+*     object in the file specified by "file_id", or NULL if the file has
+*     not previously been opened and so has no top-level Handle as yet.
+*     Also returns NULL if an error occurs.
+
+*  Description:
+*     A Handle is a structure that contains ancillary information about
+*     each physical data object that is shared by all locators that
+*     refer to the object. Each locator contains a pointer to the Handle
+*     that describes the associated physical data object. In other words,
+*     if a change is made to the values in a Handle, then that change is
+*     immediately visible through all locators that refer to that data
+*     object. By comparison, a change made to the values in a single
+*     locator are not visible to other locators that refer to the same
+*     object.
+*
+*     Since files can be opened more than once in HDS and HDF5, we need
+*     to make sure that the same Handle structure is used each time a
+*     particular file is opened. This function facilitiates this by
+*     searching for an existing locator that refers to the file specified
+*     by argument "file_id". If the file has not previously been opened,
+*     no such locator will be found and NULL is returned as the function
+*     value. If the file has already been opened, a locator will be found
+*     and will contain a pointer to a Handle for the corresponding
+*     physical data object. Handle structures contain links that link
+*     them all together into a tree structure. If a locator is found,
+*     these links are navigated to find the top of the tree and a pointer
+*     to the associated Handle is returned as the function value.
+*
+*     This function should be called after opening a new HDS file, but
+*     before the top-level locator for that file is registered using
+*     hds1RegLocator.
+
+*  Authors:
+*     DSB: David S Berry (EAO)
+*     {enter_new_authors_here}
+
+*  History:
+*     6-JUL-2017 (DSB):
+*        Initial version
+*     {enter_further_changes_here}
+
+*  Copyright:
+*     Copyright (C) 2017 East Asian Observatory
+*     All Rights Reserved.
+
+*  Licence:
+*     Redistribution and use in source and binary forms, with or
+*     without modification, are permitted provided that the following
+*     conditions are met:
+*
+*     - Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*
+*     - Redistributions in binary form must reproduce the above
+*       copyright notice, this list of conditions and the following
+*       disclaimer in the documentation and/or other materials
+*       provided with the distribution.
+*
+*     - Neither the name of the {organization} nor the names of its
+*       contributors may be used to endorse or promote products
+*       derived from this software without specific prior written
+*       permission.
+*
+*     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+*     CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+*     INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+*     MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+*     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+*     CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+*     SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+*     LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+*     USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+*     AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+*     IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+*     THE POSSIBILITY OF SUCH DAMAGE.
+
+*  Bugs:
+*     {note_any_bugs_here}
+*-
+*/
+
+Handle *hds1FindHandle( hid_t file_id, int *status ){
+   LOCK_MUTEX;
+   Handle *result = hds2FindHandle( file_id, status );
+   UNLOCK_MUTEX
+   return result;
+}
+
+
+
+
+
+/* Private functions
+   -----------------------------------------------------------------------
+   These can only be called from the public functions called above and so
+   do not need to be serialised. The API for each function is the same as
+   that documented above for the corresponding public function. */
+
+static int hds2RegLocator(HDSLoc *locator, int *status) {
+  HDSregistry *entry = NULL;
+  HDSelement elt;
+  hid_t file_id = 0;
+  memset(&elt, 0, sizeof(elt));
+
+  if (*status != SAI__OK) return *status;
+
+  /* Sanity check */
+  if (locator->file_id <= 0) {
+    *status = DAT__FATAL;
+    emsRep("hds2RegLocator_1", "Can not register a locator that is not"
+           " associated with a file", status );
+    return *status;
+  }
+
+  /* See if this entry already exists in the hash */
+  file_id = locator->file_id;
+  HASH_FIND_FILE_ID( all_locators, &file_id, entry );
+  if (!entry) {
+    entry = calloc( 1, sizeof(HDSregistry) );
+    entry->file_id = locator->file_id;
+    utarray_new( entry->locators, &all_locators_icd);
+    HASH_ADD_FILE_ID( all_locators, file_id, entry );
+  }
+
+  /* Now we have the entry, we need to store the locator inside.
+     We do not clone the locator, the locator is now owned by the group. */
+  elt.locator = locator;
+  utarray_push_back( entry->locators, &elt );
+  return *status;
+}
+
+static int hds2FlushFile( hid_t file_id, int *status ) {
   hid_t *file_ids = 0;
   size_t i = 0;
   if (*status != SAI__OK) return *status;
 
   /* Get all the file ids associated with this individual file_id */
-  file_ids = hds1GetFileIds( file_id, status );
+  file_ids = hds2GetFileIds( file_id, status );
 
   /* Get count from each file_id */
   while (file_ids[i]) {
-    hds1FlushFileID( file_ids[i], status );
+    hds2FlushFileID( file_ids[i], status );
     i++;
   }
 
@@ -274,8 +503,7 @@ int hds1FlushFile( hid_t file_id, int *status ) {
 }
 
 
-static int
-hds1FlushFileID( hid_t file_id, int *status) {
+static int hds2FlushFileID( hid_t file_id, int *status) {
   HDSregistry * entry = NULL;
   HDSelement * elt = NULL;
 
@@ -332,8 +560,7 @@ hds1FlushFileID( hid_t file_id, int *status) {
 
 */
 
-hdsbool_t
-hds1UnregLocator( HDSLoc * locator, int *status ) {
+static hdsbool_t hds2UnregLocator( HDSLoc * locator, int *status ) {
   HDSregistry * entry = NULL;
   HDSelement * elt = NULL;
   hid_t file_id = -1;
@@ -347,7 +574,7 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
   /* Not associated with a file, should not happen */
   if (locator->file_id <= 0) {
     *status = DAT__FATAL;
-    emsRep("hds1RegLocator_1", "Can not unregister a locator that is not"
+    emsRep("hds2RegLocator_1", "Can not unregister a locator that is not"
            " associated with a file", status );
     return *status;
   }
@@ -361,7 +588,7 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
        were allocated */
     if (*status == SAI__OK) {
       *status = DAT__FATAL;
-      emsRepf("hds1UnregLocator_2", "Internal error with locator tracking"
+      emsRepf("hds2UnregLocator_2", "Internal error with locator tracking"
               " (Possible programming error)", status );
     }
     return removed;
@@ -397,14 +624,18 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
 
     /* Get the TOTAL count for this file (not just this file_id)
        (without this locator, which we just removed) */
-    nprimary = hds1PrimaryCount( file_id, status );
+    nprimary = hds2PrimaryCount( file_id, status );
 
     /* Trigger a cleanup if there are no more primary locators
        -- we call flush even if we know this is the
        only locator so that we do not duplicate the hash delete code */
     if (nprimary == 0) {
+
+      /* Get the handle at the top of the tree and erase the whole tree. */
+      dat1EraseHandle( hds2TopHandle( locator->handle ), NULL, status );
+
       /* Close all locators */
-      hds1FlushFile( file_id, status );
+      hds2FlushFile( file_id, status );
     }
 
     removed = 1;
@@ -412,7 +643,7 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
     /* Somehow we did not find the locator. This should not happen. */
     if (*status == SAI__OK) {
       *status = DAT__WEIRD;
-      emsRep("hds1UnregLocator", "Could not find locator associated with file"
+      emsRep("hds2UnregLocator", "Could not find locator associated with file"
              " (possible programming error)", status);
     }
   }
@@ -423,19 +654,18 @@ hds1UnregLocator( HDSLoc * locator, int *status ) {
 /* Count how many primary locators are associated with a particular
    file -- since a file can have multiple file_ids this routine
    goes through them all. */
-size_t
-hds1PrimaryCount( hid_t file_id, int *status ) {
+static size_t hds2PrimaryCount( hid_t file_id, int *status ) {
   size_t nprimary = 0;
   hid_t *file_ids = NULL;
   size_t i = 0;
   if (*status != SAI__OK) return nprimary;
 
   /* Get all the file ids associated with this individual file_id */
-  file_ids = hds1GetFileIds( file_id, status );
+  file_ids = hds2GetFileIds( file_id, status );
 
   /* Get count from each file_id */
   while (file_ids[i]) {
-    nprimary += hds1PrimaryCountByFileID(file_ids[i], status);
+    nprimary += hds2PrimaryCountByFileID(file_ids[i], status);
     i++;
   }
 
@@ -443,11 +673,12 @@ hds1PrimaryCount( hid_t file_id, int *status ) {
   return nprimary;
 }
 
+
+
 /* Count how many primary locators are associated with a particular
    file_id */
 
-static size_t
-hds1PrimaryCountByFileID( hid_t file_id, int * status ) {
+static size_t hds2PrimaryCountByFileID( hid_t file_id, int * status ) {
   HDSregistry * entry = NULL;
   HDSelement * elt = NULL;
   unsigned int len = 0;
@@ -481,8 +712,7 @@ hds1PrimaryCountByFileID( hid_t file_id, int * status ) {
    the HDF5 list.
 */
 
-void
-hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status ) {
+static void hds2ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status ) {
   HDSregistry *entry;
   unsigned int num_files;
   if (*status != SAI__OK) return;
@@ -506,17 +736,16 @@ hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status ) {
       intent_str = "Err";
     }
     len = utarray_len( entry->locators );
-    nprim = hds1PrimaryCountByFileID( file_id, status );
+    nprim = hds2PrimaryCountByFileID( file_id, status );
     name_str = dat1GetFullName( file_id, 1, NULL, status );
     if (listfiles) printf("File: %s [%s] (%d) (%u locator%s) (refcnt=%zu)\n", name_str, intent_str, file_id,
                           len, (len == 1 ? "" : "s"), nprim);
-    if (listlocs) hds1ShowLocators( file_id, status );
+    if (listlocs) hds2ShowLocators( file_id, status );
     if (name_str) MEM_FREE(name_str);
   }
 }
 
-void
-hds1ShowLocators( hid_t file_id, int * status ) {
+static void hds2ShowLocators( hid_t file_id, int * status ) {
   HDSregistry * entry = NULL;
   HDSelement * elt = NULL;
   unsigned int len = 0;
@@ -551,7 +780,7 @@ hds1ShowLocators( hid_t file_id, int * status ) {
 }
 
 /* Retrieve the file descriptor of the underlying file */
-static int hds1GetFileDescriptor( hid_t file_id ) {
+static int hds2GetFileDescriptor( hid_t file_id ) {
   int fd = 0;
   hid_t fapl_id;
   hid_t fdriv_id;
@@ -579,9 +808,7 @@ static int hds1GetFileDescriptor( hid_t file_id ) {
    and matching that. Might have issues if non-standard file drivers
    are used later on. */
 
-
-static hid_t *
-hds1GetFileIds( hid_t file_id, int *status ) {
+static hid_t *hds2GetFileIds( hid_t file_id, int *status ) {
   hid_t * file_ids = NULL;
   size_t num_files;
   size_t nfound = 0;
@@ -592,7 +819,7 @@ hds1GetFileIds( hid_t file_id, int *status ) {
 
   /* Inefficient: Allocate enough memory to hold all open file_ids plus
      one so we can end with a NULL. */
-  num_files = hds1CountFiles();
+  num_files = hds2CountFiles();
   file_ids = MEM_CALLOC( num_files + 1, sizeof(*file_ids) );
   if (!file_ids) {
     *status = DAT__NOMEM;
@@ -602,30 +829,49 @@ hds1GetFileIds( hid_t file_id, int *status ) {
   }
 
   /* Get this filename as the reference -- assume normalized */
-  ref_fd = hds1GetFileDescriptor( file_id );
+  ref_fd = hds2GetFileDescriptor( file_id );
   file_ids[0] = file_id;
   nfound++;
-  if (ref_fd == 0) goto CLEANUP;
+  if (ref_fd == 0) {
+     if( *status == SAI__OK ) {
+        *status = DAT__FATAL;
+        emsRepf( " ", "hds2GetFileIds: Unexpected null file reference for "
+                 "ID %d (internal HDS programming error)", status, file_id );
+     }
 
-  for (entry = all_locators; entry != NULL; entry = entry->hh.next) {
-    hid_t this_file_id = entry->file_id;
-    int fd;
-    /* We know this matches */
-    if (this_file_id == file_id) continue;
+  } else {
+     int file_id_found = 0;
 
-    fd = hds1GetFileDescriptor( this_file_id );
-    if (fd == ref_fd) {
-      file_ids[nfound] = this_file_id;
-      nfound++;
-    }
+     for (entry = all_locators; entry != NULL; entry = entry->hh.next) {
+       hid_t this_file_id = entry->file_id;
+       int fd;
+
+       /* We know this matches */
+       if (this_file_id == file_id) {
+          file_id_found = 1;
+          continue;
+       }
+
+       fd = hds2GetFileDescriptor( this_file_id );
+       if (fd == ref_fd) {
+         file_ids[nfound] = this_file_id;
+         nfound++;
+       }
+     }
+
+     if( !file_id_found && *status == SAI__OK ) {
+        *status = DAT__FATAL;
+        emsRepf( " ", "hds2GetFileIds: File ID %d not found - has the "
+                 "corresponding locator been registered? (internal HDS "
+                 "programming error).", status, file_id );
+     }
   }
 
  CLEANUP:
   return file_ids;
 }
 
-int
-hds1CountFiles() {
+static int hds2CountFiles() {
   int num_files;
   num_files = HASH_COUNT(all_locators);
   return num_files;
@@ -637,8 +883,8 @@ hds1CountFiles() {
   skip_scratch_root = true, skip HDS_SCRATCH root locators
 */
 
-int
-hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int * status ) {
+static int hds2CountLocators( size_t ncomp, char **comps,
+                              hdsbool_t skip_scratch_root, int * status ) {
 
   HDSregistry * entry = NULL;
   int nlocator = 0;
@@ -727,3 +973,178 @@ hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int 
 
   return nlocator;
 }
+
+
+
+/*
+*+
+*  Name:
+*     hds1FindHandle
+
+*  Purpose:
+*     Find a Handle for the top-level object in a specified file.
+
+*  Language:
+*     Starlink ANSI C
+
+*  Type of Module:
+*     Library routine
+
+*  Invocation:
+*     Handle *hds1FindHandle( hid_t file_id, int *status )
+
+*  Arguments:
+*     file_id = hid_t (Given)
+*        HDF5 file identifier.
+*     status = int* (Given and Returned)
+*        Pointer to global status.
+
+*  Returned function value:
+*     Pointer to the existing Handle that describes the top level data
+*     object in the file specified by "file_id", or NULL if the file has
+*     not previously been opened and so has no top-level Handle as yet.
+*     Also returns NULL if an error occurs.
+
+*  Description:
+*     A Handle is a structure that contains ancillary information about
+*     each physical data object that is shared by all locators that
+*     refer to the object. Each locator contains a pointer to the Handle
+*     that describes the associated physical data object. In other words,
+*     if a change is made to the values in a Handle, then that change is
+*     immediately visible through all locators that refer to that data
+*     object. By comparison, a change made to the values in a single
+*     locator are not visible to other locators that refer to the same
+*     object.
+*
+*     Since files can be opened more than once in HDS and HDF5, we need
+*     to make sure that the same Handle structure is used each time a
+*     particular file is opened. This function facilitiates this by
+*     searching for an existing locator that refers to the file specified
+*     by argument "file_id". If the file has not previously been opened,
+*     no such locator will be found and NULL is returned as the function
+*     value. If the file has already been opened, a locator will be found
+*     and will contain a pointer to a Handle for the corresponding
+*     physical data object. Handle structures contain links that link
+*     them all together into a tree structure. If a locator is found,
+*     these links are navigated to find the top of the tree and a pointer
+*     to the associated Handle is returned as the function value.
+*
+*     This function should be called after opening a new HDS file, but
+*     before the top-level locator for that file is registered using
+*     hds1RegLocator.
+
+*  Authors:
+*     DSB: David S Berry (EAO)
+*     {enter_new_authors_here}
+
+*  History:
+*     6-JUL-2017 (DSB):
+*        Initial version
+*     {enter_further_changes_here}
+
+*  Copyright:
+*     Copyright (C) 2017 East Asian Observatory
+*     All Rights Reserved.
+
+*  Licence:
+*     Redistribution and use in source and binary forms, with or
+*     without modification, are permitted provided that the following
+*     conditions are met:
+*
+*     - Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*
+*     - Redistributions in binary form must reproduce the above
+*       copyright notice, this list of conditions and the following
+*       disclaimer in the documentation and/or other materials
+*       provided with the distribution.
+*
+*     - Neither the name of the {organization} nor the names of its
+*       contributors may be used to endorse or promote products
+*       derived from this software without specific prior written
+*       permission.
+*
+*     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+*     CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+*     INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+*     MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+*     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+*     CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+*     SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+*     LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+*     USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+*     AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+*     IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+*     THE POSSIBILITY OF SUCH DAMAGE.
+
+*  Bugs:
+*     {note_any_bugs_here}
+*-
+*/
+
+static Handle *hds2FindHandle( hid_t file_id, int *status ){
+
+/* Local Variables: */
+   HDSelement *elt = NULL;
+   HDSregistry *entry = NULL;
+   Handle *result = NULL;
+   hid_t *file_ids = NULL;
+   int i;
+
+/* Check inherited status */
+   if( *status != SAI__OK ) return result;
+
+/* Get all the file ids that are associated with the same file as the
+   supplied file_id */
+   file_ids = hds2GetFileIds( file_id, status );
+
+/* All file ids for the same file should share the same Handle, so we
+   only need to look at the first file id - if any. */
+   i = 0;
+   while( file_ids[ i ] ) {
+
+/* Find the entry containing the locators that refer to the i'th file
+   id. */
+      HASH_FIND_FILE_ID( all_locators, file_ids + i, entry );
+
+/* Get a locator - any locator - that refers to the file, and get it's
+   Handle. */
+      if( entry ) {
+         elt = (HDSelement *) utarray_front( entry->locators );
+
+/* Work up the tree of handles to find the top level Handle. */
+         result = hds2TopHandle( elt->locator->handle );
+
+/* Leave the file id loop now if we have a Handle. */
+         if( result ) break;
+      }
+
+/* If we do not yet have a locator (e.g. because the file id does not yet
+   have any active locators), look at the next file id. */
+      i++;
+   }
+
+/* Free the array of file ids. */
+   if( file_ids ) MEM_FREE( file_ids );
+
+/* Return the top level Handle pointer. */
+   return result;
+}
+
+/* Get the handle at the top of the tree containing a specified handle. */
+static Handle *hds2TopHandle( Handle *handle ) {
+   Handle *parent = NULL;
+   Handle *result = handle;
+
+   if( !handle ) return result;
+
+   parent = result->parent;
+   while( parent ) {
+      result = parent;
+      parent = result->parent;
+   }
+
+   return result;
+}
+

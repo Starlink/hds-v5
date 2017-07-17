@@ -115,7 +115,8 @@ datFind( const HDSLoc   *locator1,
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator1, status );
+  dat1ValidateLocator( 1, locator1, status );
+  if (*status != SAI__OK) return *status;
 
   /* containing locator must refer to a group */
   if (!dat1IsStructure( locator1, status) ) {
@@ -203,8 +204,22 @@ datFind( const HDSLoc   *locator1,
     if (*status == SAI__OK) thisloc->group_id = group_id;
   }
 
+  /* Store a pointer to the handle for the returned HDF object */
+  thisloc->handle = dat1Handle( locator1, cleanname, status );
+
   /* We have to propagate groupness to the child */
   if ( (locator1->grpname)[0] != '\0') hdsLink(thisloc, locator1->grpname, status);
+
+  /* Attempt to lock the component object for use by the current thread.
+     Report an error if this fails because it is already locked by another
+     thread. */
+  if( !dat1HandleLock( thisloc->handle, 2, 0, status ) && *status == SAI__OK ) {
+     *status = DAT__THREAD;
+     emsSetc( "C", name_str );
+     datMsg( "O", locator1 );
+     emsRep( "","datFind: requested component ('^C') within HDS object '^O' "
+             "is locked by another thread.", status );
+  }
 
   if (*status != SAI__OK) goto CLEANUP;
   *locator2 = thisloc;

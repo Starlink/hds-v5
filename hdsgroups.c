@@ -4,6 +4,7 @@
  * to easily share a single data structure for group membership.
  */
 
+#include <pthread.h>
 #include "ems.h"
 #include "sae_par.h"
 #include "star/one.h"
@@ -42,6 +43,24 @@ typedef struct {
 
 /* Declare the hash */
 static HDSgroup *groups = NULL;
+
+/* Prototypes for private functions */
+static int hds2Link( HDSLoc *locator, const char *group_str, int *status );
+static int hds2Flush( const char *group_str, int *status );
+static hdsbool_t hds2RemoveLocator( const HDSLoc * loc, int *status );
+
+
+
+/* Public functions
+   -----------------------------------------------------------------------
+   These use a mutex to serialise calls so that the module variables used
+   within this module are not accessed by multiple threads at the same
+   time. There is a one-to-one correspondance between these public
+   functions and the corresponding private function. */
+
+static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+#define LOCK_MUTEX pthread_mutex_lock( &mutex1 );
+#define UNLOCK_MUTEX pthread_mutex_unlock( &mutex1 );
 
 /*
 *+
@@ -128,52 +147,15 @@ static HDSgroup *groups = NULL;
 */
 
 
-int
-hdsLink(HDSLoc *locator, const char *group_str, int *status) {
-  HDSgroup *entry = NULL;
-  HDSelement elt;
-  memset(&elt, 0, sizeof(elt));
-
-  if (*status != SAI__OK) return *status;
-
-  /* Validate supplied locator */
-  dat1ValidateLocator( locator, status );
-
-  /* If we get a zero length string this either means we are trying to unlink
-     the locator from the group or we have a bug in the calling code or else
-     we mean that we don't want to link the locator at all. For now trigger
-     an error */
-  if (!group_str || strlen(group_str) == 0) {
-    *status = DAT__GRPIN;
-    emsRep("hdsLink_2", "Supplied group name is empty or null", status );
-    return *status;
-  }
-
-  /* Check that a group name is not already set - we are allowed to
-     move a locator to a different group. We must unregister it though. */
-  if ( (locator->grpname)[0] != '\0') {
-    hds1RemoveLocator(locator, status);
-  }
-
-  /* Now copy the group name to the locator */
-  one_strlcpy( locator->grpname, group_str, sizeof(locator->grpname), status );
-
-  /* See if this entry already exists in the hash */
-  HASH_FIND_STR( groups, group_str, entry );
-  if (!entry) {
-    entry = calloc( 1, sizeof(HDSgroup) );
-    one_strlcpy( entry->grpname, group_str, sizeof(entry->grpname), status );
-    utarray_new( entry->locators, &locators_icd);
-    HASH_ADD_STR( groups, grpname, entry );
-  }
-
-  /* Now we have the entry, we need to store the locator inside.
-     We do not clone the locator, the locator is now owned by the group. */
-  elt.locator = locator;
-  utarray_push_back( entry->locators, &elt );
-
-  return *status;
+int hdsLink(HDSLoc *locator, const char *group_str, int *status) {
+   LOCK_MUTEX;
+   int result = hds2Link( locator, group_str, status );
+   UNLOCK_MUTEX
+   return result;
 }
+
+
+
 /*
 *+
 *  Name:
@@ -255,8 +237,104 @@ hdsLink(HDSLoc *locator, const char *group_str, int *status) {
 *-
 */
 
-int
-hdsFlush( const char *group_str, int *status) {
+int hdsFlush( const char *group_str, int *status) {
+   LOCK_MUTEX;
+   int result = hds2Flush( group_str, status );
+   UNLOCK_MUTEX
+   return result;
+}
+
+
+/* Remove a locator from a group. This is currently a private
+   routine to allow datAnnul to free a locator that has been
+   associated with a group outside of hdsFlush. This is quite
+   probably a bug but a bug that is currently prevalent in
+   SUBPAR which seems to store locators in groups and then
+   frees them anyhow. This removal will prevent hdsFlush
+   attempting to also free the locator.
+
+   Returns true if the locator was removed. Do nothing if the locator is
+   not part of a group.
+
+*/
+
+hdsbool_t hds1RemoveLocator( const HDSLoc * loc, int *status ) {
+   hdsbool_t result = 1;
+   if ( (loc->grpname)[0] != '\0') {
+      LOCK_MUTEX;
+      result = hds2RemoveLocator( loc, status );
+      UNLOCK_MUTEX
+   }
+   return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Private functions
+   -----------------------------------------------------------------------
+   These can only be called from the public functions called above and so
+   do not need to be serialised. The API for each function is the same as
+   that documented above for the corresponding public function. */
+
+static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
+  HDSgroup *entry = NULL;
+  HDSelement elt;
+  memset(&elt, 0, sizeof(elt));
+
+  if (*status != SAI__OK) return *status;
+
+  /* Validate supplied locator */
+  dat1ValidateLocator( 1, locator, status );
+
+  /* If we get a zero length string this either means we are trying to unlink
+     the locator from the group or we have a bug in the calling code or else
+     we mean that we don't want to link the locator at all. For now trigger
+     an error */
+  if (!group_str || strlen(group_str) == 0) {
+    *status = DAT__GRPIN;
+    emsRep("hdsLink_2", "Supplied group name is empty or null", status );
+    return *status;
+  }
+
+  /* Check that a group name is not already set - we are allowed to
+     move a locator to a different group. We must unregister it though. */
+  if ( (locator->grpname)[0] != '\0') {
+    hds2RemoveLocator(locator, status);
+  }
+
+  /* Now copy the group name to the locator */
+  one_strlcpy( locator->grpname, group_str, sizeof(locator->grpname), status );
+
+  /* See if this entry already exists in the hash */
+  HASH_FIND_STR( groups, group_str, entry );
+  if (!entry) {
+    entry = calloc( 1, sizeof(HDSgroup) );
+    one_strlcpy( entry->grpname, group_str, sizeof(entry->grpname), status );
+    utarray_new( entry->locators, &locators_icd);
+    HASH_ADD_STR( groups, grpname, entry );
+  }
+
+  /* Now we have the entry, we need to store the locator inside.
+     We do not clone the locator, the locator is now owned by the group. */
+  elt.locator = locator;
+  utarray_push_back( entry->locators, &elt );
+
+  return *status;
+}
+
+
+
+
+
+static int hds2Flush( const char *group_str, int *status) {
   HDSgroup * entry = NULL;
   HDSelement * elt = NULL;
 
@@ -289,20 +367,11 @@ hdsFlush( const char *group_str, int *status) {
   return *status;
 }
 
-/* Remove a locator from a group. This is currently a private
-   routine to allow datAnnul to free a locator that has been
-   associated with a group outside of hdsFlush. This is quite
-   probably a bug but a bug that is currently prevalent in
-   SUBPAR which seems to store locators in groups and then
-   frees them anyhow. This removal will prevent hdsFlush
-   attempting to also free the locator.
 
-   Returns true if the locator was removed.
 
-*/
 
-hdsbool_t
-hds1RemoveLocator( const HDSLoc * loc, int *status ) {
+
+static hdsbool_t hds2RemoveLocator( const HDSLoc * loc, int *status ) {
   HDSgroup * entry = NULL;
   HDSelement * elt = NULL;
   const char * grpname;
@@ -341,3 +410,7 @@ hds1RemoveLocator( const HDSLoc * loc, int *status ) {
 
   return removed;
 }
+
+
+
+

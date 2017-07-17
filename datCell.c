@@ -112,7 +112,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator1, status );
+  dat1ValidateLocator( 1, locator1, status );
 
   datName(locator1, namestr, status );
 
@@ -203,6 +203,9 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
     thisloc = dat1AllocLoc( status );
 
     if (*status == SAI__OK) {
+      /* Handle for cell's data object */
+      thisloc->handle = dat1Handle( locator1, cellname, status );
+
       thisloc->group_id = group_id;
       /* Secondary locator by definition */
       thisloc->file_id = locator1->file_id;

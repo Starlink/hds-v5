@@ -98,7 +98,7 @@ datErase(const HDSLoc   *locator, const char *name_str, int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
+  dat1ValidateLocator( 1, locator, status );
 
   /* containing locator must refer to a group */
   if (locator->group_id <= 0) {
@@ -115,6 +115,9 @@ datErase(const HDSLoc   *locator, const char *name_str, int *status) {
   dau1CheckName( name_str, 1, cleanname, sizeof(cleanname), status );
 
   CALLHDFQ( H5Ldelete( locator->group_id, cleanname, H5P_DEFAULT ));
+
+  /* Remove the handle for the erased component and all sub-components */
+  dat1EraseHandle( locator->handle, cleanname, status );
 
  CLEANUP:
   if (*status != SAI__OK) {

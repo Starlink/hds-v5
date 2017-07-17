@@ -76,6 +76,8 @@
 *-
 */
 
+#include <pthread.h>
+
 #include "hdf5.h"
 
 #include "ems.h"
@@ -86,12 +88,17 @@
 
 #include "prm_par.h"
 
+/* A mutex  used to serialis entry to this function so that multiple
+   threads do not try to acces the static data simultaneously. */
+static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+
 HdsTypeInfo *
 dat1TypeInfo( void ) {
 
   static int FILLED = 0;
   static HdsTypeInfo typeinfo;
 
+  pthread_mutex_lock( &mutex1 );
   if (!FILLED) {
     size_t i;
     unsigned char * ptr;
@@ -118,5 +125,7 @@ dat1TypeInfo( void ) {
 
     FILLED = 1;
   }
+  pthread_mutex_unlock( &mutex1 );
+
   return &typeinfo;
 }

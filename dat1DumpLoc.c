@@ -73,6 +73,7 @@
 #include "sae_par.h"
 
 static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *status);
+static void dump_handle( const HDSLoc *loc, int *status );
 
 void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   char * name_str = NULL;
@@ -80,12 +81,6 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   ssize_t ll;
   hid_t objid = 0;
   hid_t dspace_id = 0;
-  hdsdim lower[DAT__MXDIM];
-  hdsdim upper[DAT__MXDIM];
-  hdsbool_t issubset;
-  int actdim;
-  hssize_t nelem;
-  int i;
 
   if (*status != SAI__OK) return;
 
@@ -107,7 +102,7 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
          (locator->uses_true_mmap ? "file" : "memory"));
   printf("- Is sliced: %d; Primary: %s; Group name: '%s'\n", locator->isslice,
          (locator->isprimary ? "yes" : "no"), locator->grpname);
-  printf("- Is a discontiguous slice: %d\n", (locator->isdiscont ? "yes" : "no") );
+  printf("- Is a discontiguous slice: %s\n", (locator->isdiscont ? "yes" : "no") );
 
   if (locator->dataspace_id > 0) {
     dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
@@ -115,6 +110,8 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
     dump_dataspace_info( dspace_id, "Dataset associated", status );
     H5Sclose( dspace_id );
   }
+
+  dump_handle( locator, status );
 
   if (file_str) MEM_FREE(file_str);
   if (name_str) MEM_FREE(name_str);
@@ -189,3 +186,29 @@ static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *st
   if (blockbuf) MEM_FREE(blockbuf);
   return;
 }
+
+static void dump_handle( const HDSLoc *loc, int *status ){
+   Handle *handle;
+   const char *name;
+
+   if( *status != SAI__OK || !loc ) return;
+
+   printf("Handle: ");
+
+   handle = loc->handle;
+   while( handle ) {
+      name = handle->name ? handle->name : "<>";
+      printf("%s(%p)", name, handle );
+      handle = handle->parent;
+      if( handle ) printf("." );
+   }
+
+   printf("\n" );
+
+}
+
+
+
+
+
+

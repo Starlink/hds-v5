@@ -121,7 +121,7 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( locator1, status );
+  dat1ValidateLocator( 1, locator1, status );
 
   /* Need to get the relevant identfier */
   objid = dat1RetrieveIdentifier( locator1, status );
@@ -132,6 +132,7 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   thisloc = dat1AllocLoc( status );
 
   if (*status == SAI__OK) {
+    thisloc->handle = locator1->handle->parent;
     thisloc->group_id = parent_id;
     thisloc->isprimary = HDS_FALSE;
     thisloc->file_id = locator1->file_id;

@@ -56,6 +56,8 @@
 # include <config.h>
 #endif
 
+#include <pthread.h>
+
 #include "hds1.h"
 #include "dat1.h"
 #include "hds.h"
@@ -76,6 +78,14 @@ static void cmpintarr( size_t nelem, const int result[],
                        const int expected[], int *status );
 static void testSliceVec( int *status );
 static void testThreadSafety( const char *path, int *status );
+static void *test1ThreadSafety( void *data );
+static void *test2ThreadSafety( void *data );
+static void *test3ThreadSafety( void *data );
+
+typedef struct threadData {
+   HDSLoc *loc;
+   int failed;
+} threadData;
 
 int main (void) {
 
@@ -977,7 +987,7 @@ static  void testSliceVec( int *status ){
    datAnnul( &loc1, status );
 
    if( *status == SAI__OK ) {
-      printf( "TestSliceVec passed" );
+      printf( "TestSliceVec passed\n" );
    } else {
       emsRep( " ", "TestSliceVec failed", status );
    }
@@ -1004,6 +1014,13 @@ static void testThreadSafety( const char *path, int *status ) {
    HDSLoc *loc4b = NULL;
    hdsdim dims[2];
    int ival;
+   pthread_t t1, t2;
+   threadData threaddata1;
+   threadData threaddata2;
+   double *ip1;
+   double *ip2;
+   hdsdim dim;
+   hdsdim i;
 
 /* Check inherited status */
    if( *status != SAI__OK ) return;
@@ -1020,12 +1037,28 @@ static void testThreadSafety( const char *path, int *status ) {
    datFind( loc3, "IntInCell", &loc4, status );
    datAnnul( &loc3, status );
 
-/* Check it has the value -999. */
+/* Check it has the value -999 (assiged when it was created). */
    datGet0I( loc4, &ival, status );
    if( ival != -999 && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRepf("", "testThreadSafety error 1: Got %d but expected -999", status,
               ival );
+   }
+
+/* Check the top level object is locked by the current thread. */
+   ival = datLocked( loc1, status );
+   if( ival != 1 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRep( "", "testThreadSafety error 101: Top-level object not "
+              "locked by current thread.",  status );
+   }
+
+/* Check the bottom level object is also locked by the current thread. */
+   ival = datLocked( loc4, status );
+   if( ival != 1 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRep( "", "testThreadSafety error 102: Bottom-level object not "
+              "locked by current thread.",  status );
    }
 
 /* Open the HDS file again. Note we have not yet closed it, so it is now
@@ -1049,21 +1082,141 @@ static void testThreadSafety( const char *path, int *status ) {
               ival );
    }
 
+/* Check the top level object is locked by the current thread. */
+   ival = datLocked( loc1b, status );
+   if( ival != 1 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRep( "", "testThreadSafety error 201: Top-level object not "
+              "locked by current thread.",  status );
+   }
+
+/* Check the bottom level object is also locked by the current thread. */
+   ival = datLocked( loc4b, status );
+   if( ival != 1 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRep( "", "testThreadSafety error 202: Bottom-level object not "
+              "locked by current thread.",  status );
+   }
+
+/* Required for use of EMS within threads. */
+   emsMark();
+
+/* Create two threads, and pass a locator for the top-level object to each.
+   Note, these locators are still locked by the current thread, so we
+   should get DAT__THREAD errors when test1ThreadSafety tries to use them. */
+   pthread_create( &t1, NULL, test1ThreadSafety, loc1 );
+   pthread_create( &t2, NULL, test1ThreadSafety, loc1b );
+
+/* Wait for them to terminate. */
+   pthread_join( t1, NULL );
+   pthread_join( t2, NULL );
+   emsStat( status );
+
+/* Unlock the top level object using the first locator. Then check that
+   it is also unlocked using the second locator. */
+   datUnlock( loc1, 0, status );
+   ival = datLocked( loc1b, status );
+   if( ival != 0 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRep( "", "testThreadSafety error 203: Top-level object still "
+              "locked.",  status );
+   }
+
+/* The above unlock was non-recursive so check the bottom of the tree is
+   still locked. */
+   if( !datLocked( loc4b, status ) && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRep( "", "testThreadSafety error 204: Bottom-level object not "
+              "locked.",  status );
+   }
+
+/* Now unlock the top recursively and check the bottom is no longer locked. */
+   datUnlock( loc1b, 1, status );
+   if( datLocked( loc4, status ) && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRep( "", "testThreadSafety error 206: Bottom-level object still "
+              "locked.",  status );
+   }
 
 
+/* Attempt to access the two top-level objects in two separate threads.
+   Each thread attempt to lock the object, but only one can win. The other
+   should report an error. */
+   threaddata1.loc = loc1;
+   pthread_create( &t1, NULL, test2ThreadSafety, &threaddata1 );
+   threaddata2.loc = loc1b;
+   pthread_create( &t2, NULL, test2ThreadSafety, &threaddata2 );
 
+/* Wait for them to terminate. */
+   pthread_join( t1, NULL );
+   pthread_join( t2, NULL );
+   emsStat( status );
 
+/* Check one, and only one, failed. */
+   if( threaddata1.failed + threaddata2.failed != 1 && *status == SAI__OK ) {
+      *status = DAT__FATAL;
+      emsRepf( "", "testThreadSafety error 205: %d lock attempts succeeded "
+               "- expected 1 to succeed.",  status,
+               threaddata1.failed + threaddata2.failed );
+   }
 
-
-
-
-
-
-
-
+/* Lock both top level locators for use by the current thread. The second
+   of these calls will have no effect as the two locators refer to the same
+   object. These locks are recursive. */
+   datLock( loc1, 1, status );
+   datLock( loc1b, 1, status );
 
 /* Annul the first primary locator for the file. */
    datAnnul( &loc1, status );
+
+
+
+
+
+/* Each thread creates a temporary object holding a large array of doubles
+   and does some heavy work on it. */
+   pthread_create( &t1, NULL, test3ThreadSafety, &threaddata1 );
+   pthread_create( &t2, NULL, test3ThreadSafety, &threaddata2 );
+
+/* Wait for them to terminate. */
+   pthread_join( t1, NULL );
+   pthread_join( t2, NULL );
+   emsStat( status );
+
+/* Unlock the locators for the arrays so that the current thread can
+   access them. */
+   datLock( threaddata1.loc, 0, status );
+   datLock( threaddata2.loc, 0, status );
+
+/* Check the two threads created equal values. */
+   dim = 10000;
+   datMap( threaddata1.loc, "_DOUBLE", "Read", 1, &dim, (void **) &ip1, status );
+   datMap( threaddata2.loc, "_DOUBLE", "Read", 1, &dim, (void **) &ip2, status );
+   if( *status == SAI__OK ) {
+      for( i = 0; i < dim; i++ ) {
+         if( ip1[i] != ip2[i] ) {
+            *status = DAT__FATAL;
+            emsRepf( "", "testThreadSafety error 206: Threads created "
+                     "different values (%.20g anbd %.20g) at element %d",
+                     status, ip1[i], ip2[i], i );
+         }
+      }
+   }
+
+   datAnnul( &(threaddata1.loc), status );
+   datAnnul( &(threaddata2.loc), status );
+
+
+
+
+
+
+
+
+/* Check for the exit status */
+   emsStat( status );
+   emsRlse();
+
 
 /* The file should still be open because of the second locator. So test
    the integer value can still be accessed using "loc4b" and "loc4". */
@@ -1094,7 +1247,7 @@ static void testThreadSafety( const char *path, int *status ) {
       } else {
          int oldstat = *status;
          emsAnnul( status );
-         *status = SAI__ERROR;
+         *status = DAT__FATAL;
          emsRepf("", "testThreadSafety error 5: Expected a DAT__LOCIN "
                  "error but got status=%d", status, oldstat );
       }
@@ -1102,12 +1255,110 @@ static void testThreadSafety( const char *path, int *status ) {
 
 
    if( *status == SAI__OK ) {
-      printf( "TestThreadSafety passed" );
+      printf( "TestThreadSafety passed\n" );
    } else {
       emsRep( " ", "TestThreadSafety failed", status );
    }
 
 }
+
+
+
+void *test1ThreadSafety( void *data ) {
+   HDSLoc *loc1 = (HDSLoc *) data;
+   HDSLoc *loc2 = NULL;
+   int status = SAI__OK;
+
+
+   datFind( loc1, "Records", &loc2, &status );
+   datAnnul( &loc2, &status );
+
+   if( status == DAT__THREAD ) {
+      emsAnnul( &status );
+   } else {
+      int oldstat = status;
+      emsAnnul( &status );
+      status = DAT__THREAD;
+      emsRepf("", "testThreadSafety error A1: Expected a DAT__THREAD "
+              "error but got status=%d", &status, oldstat );
+   }
+
+   return NULL;
+}
+
+
+void *test2ThreadSafety( void *data ) {
+   threadData *tdata = (threadData *) data;
+   HDSLoc *loc1 = tdata->loc;
+   HDSLoc *loc2 = NULL;
+   int status = SAI__OK;
+
+   datLock( loc1, 1, &status );
+   if( status == DAT__THREAD ) {
+      emsAnnul( &status );
+      tdata->failed = 1;
+   } else {
+      tdata->failed = 0;
+      datFind( loc1, "Records", &loc2, &status );
+
+      /* Check the component locator is locked by the current thread. */
+      if( datLocked( loc2, &status ) != 1 && status == SAI__OK ) {
+         status = DAT__FATAL;
+         emsRepf("", "testThreadSafety error B1: loc2 is not locked by "
+                 "current thread.", &status );
+
+      }
+      datAnnul( &loc2, &status );
+      datUnlock( loc1, 1, &status );
+   }
+
+   return NULL;
+}
+
+void *test3ThreadSafety( void *data ) {
+   threadData *tdata = (threadData *) data;
+   HDSLoc *loc1 = NULL;
+   int status = SAI__OK;
+   hdsdim i,k,dim;
+   double *ip;
+   double alpha = 0.1;
+
+   dim = 10000;
+   datTemp( "_DOUBLE", 1, &dim, &loc1, &status );
+   datMap( loc1, "_DOUBLE", "Write", 1, &dim, (void **) &ip, &status );
+   if( status == SAI__OK ) {
+      memset( ip, 0, sizeof(*ip)*dim );
+      *ip = 1E6;
+      for( k = 0; k < 10000; k++ ) {
+
+         double delta2 = 2*alpha*( ip[0] - ip[1] );
+         ip[0] -= delta2;
+         ip[1] += delta2;
+
+         for( i = 1; i < dim-1; i++ ) {
+            double delta1 = alpha*( ip[i] - ip[i-1] );
+            double delta2 = alpha*( ip[i] - ip[i+1] );
+            ip[i] -= delta1 + delta2;
+            ip[i-1] += delta1;
+            ip[i+1] += delta2;
+         }
+
+         double delta1 = 2*alpha*( ip[i] - ip[i-1] );
+         ip[i] -= delta1;
+         ip[i-1] += delta1;
+      }
+   }
+
+   datUnmap( loc1, &status );
+   datUnlock( loc1, 0, &status );
+   tdata->loc = loc1;
+
+   return NULL;
+}
+
+
+
+
 
 
 

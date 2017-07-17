@@ -123,9 +123,6 @@ int hdsTrace(const HDSLoc *locator, int  *nlev, char *path_str,
   *nlev = 0;
   if (*status != SAI__OK) return *status;
 
-  /* Validate input locator. */
-  dat1ValidateLocator( locator, status );
-
   /* don't care whether this is group or dataset */
   objid = dat1RetrieveIdentifier( locator, status );
   if (*status != SAI__OK) return *status;
