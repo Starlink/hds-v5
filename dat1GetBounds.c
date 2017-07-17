@@ -133,8 +133,14 @@ dat1GetBounds( const HDSLoc * locator, hdsdim lower[DAT__MXDIM],
 
     /* If we are using datSlice then there should be one (and only one) hyperslab
        for the dataspace and we need to handle that. Should be same dimensionality
-       as above. Negative number indicates there were no hyperslabs. */
-    nblocks = H5Sget_select_hyper_nblocks( locator->dataspace_id );
+       as above. Negative number indicates there were no hyperslabs. We need to
+       check that there is a hyperslab first because H5Sget_select_hyper_nblocks 
+       will report an error if there is no hyperslab selection. */
+    if( H5Sget_select_type( locator->dataspace_id ) == H5S_SEL_HYPERSLABS ) {
+       nblocks = H5Sget_select_hyper_nblocks( locator->dataspace_id );
+    } else {
+       nblocks = 0;
+    }
 
     if (nblocks == 1) {
       herr_t h5err = 0;
