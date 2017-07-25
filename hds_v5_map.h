@@ -46,6 +46,8 @@
 #define datGetVL datGetVL_v5
 #define datIndex datIndex_v5
 #define datLen datLen_v5
+#define datLock datLock_v5
+#define datLocked datLocked_v5
 #define datMap datMap_v5
 #define datMapC datMapC_v5
 #define datMapD datMapD_v5
@@ -128,6 +130,7 @@
 #define datTemp datTemp_v5
 #define datThere datThere_v5
 #define datType datType_v5
+#define datUnlock datUnlock_v5
 #define datUnmap datUnmap_v5
 #define datValid datValid_v5
 #define datVec datVec_v5

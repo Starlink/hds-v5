@@ -128,6 +128,7 @@
 #include <pthread.h>
 #include "sae_par.h"
 #include "dat1.h"
+#include "hds.h"
 
 int datLocked( const HDSLoc *locator, int *status ) {
 
