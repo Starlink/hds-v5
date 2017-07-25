@@ -56,4 +56,5 @@ DTRNC   <Dimensions truncate in Fortran INTEGER*4>
 HDF5E   <Internal error from HDF5>
 FILFM   <File not in the expected format>
 THREAD  <Object not locked by current thread>
+MUTEX   <Failed to initialise mutex>
 .END

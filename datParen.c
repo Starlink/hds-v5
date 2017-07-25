@@ -121,7 +121,7 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator1, status );
+  dat1ValidateLocator( "datParen", 1, locator1, 1, status );
 
   /* Need to get the relevant identfier */
   objid = dat1RetrieveIdentifier( locator1, status );

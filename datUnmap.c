@@ -113,6 +113,9 @@ datUnmap( HDSLoc * locator, int * status ) {
   /* if there is no mapped pointer in this locator do nothing */
   if (!locator->regpntr) return *status;
 
+  /* Validate input locator. */
+  dat1ValidateLocator( "datUnmap", 1, locator, (locator->accmode & HDSMODE_READ), status );
+
   /* We only copy back explicitly if we did not do a native mmap on the file */
   if (!locator->uses_true_mmap) {
 
@@ -141,9 +144,6 @@ datUnmap( HDSLoc * locator, int * status ) {
 
     if ( munmap( locator->pntr, locator->bytesmapped ) != 0 ) {
       if (*status == SAI__OK) {
-
-  /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
         *status = DAT__FILMP;
         emsSyser( "MESSAGE", errno );
         emsRep("datUnMap_4", "datUnmap: Error unmapping mapped memory: ^MESSAGE", status);

@@ -113,7 +113,7 @@ datName(const HDSLoc *locator,
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datName", 1, locator, 1, status );
 
   objid = dat1RetrieveIdentifier( locator, status );
   if (*status != SAI__OK) return *status;

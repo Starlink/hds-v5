@@ -13,7 +13,7 @@
 *     Library routine
 
 *  Invocation:
-*     datLock( HDSLoc *locator, int recurs, int *status );
+*     datLock( HDSLoc *locator, int recurs, int readonly, int *status );
 
 *  Arguments:
 *     locator = HDSLoc * (Given)
@@ -26,14 +26,33 @@
 *        a different thread - such components are left unchanged. This
 *        operation is recursive - any children of the child components
 *        are also locked, etc.
+*     readonly = int (Given)
+*        If non-zero, the object (and child objects if "recurs" is non-zero)
+*        is locked for read-only access. Otherwise it is locked for
+*        read-write access.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-*     This function locks an HDS object for exclusive use by the current
-*     thread. An error will then be reported if any other thread
-*     subsequently attempts to use the object for any purpose, whether
-*     through the supplied locator or any other locator.
+*     This function locks an HDS object for use by the current thread.
+*     An object can be locked for read-only access or read-write access.
+*     Multiple threads can lock an object simultaneously for read-only
+*     access, but only one thread can lock an object for read-write access
+*     at any one time. Use of any HDS function that may modify the object
+*     will fail with an error unless the thread has locked the object for
+*     read-write access. Use of an HDS function that cannot modify the
+*     object will fail with an error unless the thread has locked the
+*     object (in this case the lock can be either for read-only or
+*     read-write access).
+*
+*     If "readonly" is zero (indicating the current thread wants to
+*     modify the object), this function will report an error if any
+*     other thread currently has a lock (read-only or read-write) on
+*     the object.
+*
+*     If "readonly" is non-zero (indicating the current thread wants
+*     read-only access to the object), this function will report an error
+*     only if another thread currently has a read-write lock on the object.
 *
 *     If the object is a structure, each component object will have its
 *     own lock, which is independent of the lock on the parent object. A
@@ -44,7 +63,12 @@
 *
 *     The current thread must unlock the object using datUnlock before it
 *     can be locked for use by another thread. All objects are initially
-*     locked by the current thread when they are created.
+*     locked by the current thread when they are created. The type of
+*     access available to the object ("Read", "Write" or "Update")
+*     determines the type of the initial lock. For pre-existing objects,
+*     this is determined by the access mode specified when calling hdsOpen.
+*     For new and temporary objects, the initial lock is always a read-write
+*     lock.
 
 *  Notes:
 *     - An error will be reported if the supplied object is currently
@@ -56,8 +80,9 @@
 *     thread. The exceptions are the functions that manage these locks -
 *     datLock, datUnlock and datLocked.
 *     - Attempting to lock an object that is already locked by the
-*     current thread has no effect.
-
+*     current thread will change the type of lock (read-only or
+*     read-write) if the lock types differ, but will otherwise have no
+*     effect.
 
 *  Authors:
 *     DSB: David S Berry (DSB)
@@ -115,13 +140,13 @@
 #include "hds.h"
 #include "dat_err.h"
 
-int datLock( HDSLoc *locator, int recurs, int *status ) {
+int datLock( HDSLoc *locator, int recurs, int readonly, int *status ) {
 
 /* Check inherited status. */
    if (*status != SAI__OK) return *status;
 
 /* Validate input locator. */
-   dat1ValidateLocator( 0, locator, status );
+   dat1ValidateLocator( "datLock", 0, locator, 0, status );
 
 /* Check we can de-reference "locator" safely. */
    if( *status == SAI__OK ) {
@@ -129,11 +154,12 @@ int datLock( HDSLoc *locator, int recurs, int *status ) {
 /* Attemp to lock the specified object, plus all its components. If the
    object could not be locked because it was already locked by another
    thread, report an error. */
-      if( !dat1HandleLock( locator->handle, 2, recurs, status ) ) {
+      if( !dat1HandleLock( locator->handle, 2, recurs, readonly, status ) ) {
          if( *status == SAI__OK ) {
             *status = DAT__THREAD;
+            emsSetc( "U", readonly ? "read-only" : "read-write" );
             datMsg( "O", locator );
-            emsRep( " ", "datLock: Cannot lock HDS object '^O' for use by "
+            emsRep( " ", "datLock: Cannot lock HDS object '^O' for ^U use by "
                     "the current thread:", status );
             emsRep( " ", "It is already locked by another thread.", status );
          }

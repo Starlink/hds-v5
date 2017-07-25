@@ -72,6 +72,7 @@
 *-
 */
 
+#include <pthread.h>
 #include "hdf5.h"
 #include "hdf5_hl.h"
 #include "hds1.h"
@@ -141,24 +142,20 @@ typedef enum {
 /* This structure  contains information about an HDF5 object (group or
    dataset) that is common to all the locators that refer to the object. */
 typedef struct Handle {
-   char locked;           /* Non-zero if the HDF object is currently locked for
-                             access by a single thread. Zero if the object is
-                             unlocked.  */
-   pthread_t locker;      /* Id for the thread that has locked the object (if
-                             any) */
-   struct Handle *parent; /* Pointer to Handle describing the parent object */
-   struct Handle **children; /* Pointer to array holding pointers to Handles
+   pthread_mutex_t mutex;   /* Guards access to the values in the handle */
+
+   int nwrite_lock;         /* Number of current write locks (0 or 1) */
+   pthread_t write_locker;  /* ID for thread holding write lock */
+   int nread_lock;          /* Number of current read locks (0 or more) */
+   pthread_t *read_lockers; /* Array of IDs for thread holding read locks */
+   int maxreaders;          /* Current size of "read_lockers" array */
+
+   struct Handle *parent;   /* Pointer to Handle describing the parent object */
+   struct Handle **children;/* Pointer to array holding pointers to Handles
                                 for any known child objects */
-   int nchild;            /* The length of the "children" array */
-   char *name;            /* Name (cleaned) of the HDF object within its parent */
-   pthread_mutex_t mutex2;   /* Guards access to the values in the handle */
-
+   int nchild;              /* The length of the "children" array */
+   char *name;              /* Name (cleaned) of the HDF object within its parent */
 } Handle;
-
-/* Define functions to lock and unlock a Handle's mutex. */
-#define DAT_LOCK_MUTEX2(han) pthread_mutex_lock( &((han)->mutex2) )
-#define DAT_UNLOCK_MUTEX2(han) pthread_mutex_unlock( &((han)->mutex2) )
-
 
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
@@ -429,11 +426,12 @@ dat1GetStructureDims( const HDSLoc * locator, int maxdims, hdsdim dims[], int *s
 hdsbool_t
 dat1NeedsRootName( hid_t objid, hdsbool_t wantprim, char * rootname, size_t rootnamelen, int * status );
 
-Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int * status );
+Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int
+rdonly, int * status );
 Handle *dat1EraseHandle( Handle *parent, const char *name, int * status );
 Handle *dat1FreeHandle( Handle *handle );
-int dat1ValidateLocator( int checklock, const HDSLoc *loc, int *status );
-int dat1HandleLock( Handle *handle, int oper, int recurs, int *status );
+int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc, int rdonly, int *status );
+int dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly, int *status );
 void dat1HandleMsg( const char *token, const Handle *handle );
 
 /* DAT1_H_INCLUDED */

@@ -121,7 +121,7 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator1, status );
+  dat1ValidateLocator( "datVec", 1, locator1, 1, status );
 
   /* We cannot vectorise a discontiguous slice of an array. */
   if ( locator1->isdiscont ) {

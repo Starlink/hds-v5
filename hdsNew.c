@@ -181,8 +181,9 @@ hdsNew(const char *file_str,
       if (*status == SAI__OK) file_id = 0; /* handed file to locator */
 
       /* Create a new Handle structure describing the new object and store
-         it in the locator. */
-      tmploc->handle = dat1Handle( NULL, fname, status );
+         it in the locator. Lock it for read-write access by the current
+         thread. */
+      tmploc->handle = dat1Handle( NULL, fname, 0, status );
 
       /* We use dat1New instead of datNew so that we do not have to follow
          up immediately with a datFind */

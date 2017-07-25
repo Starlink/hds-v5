@@ -99,9 +99,6 @@ hdsLock(const HDSLoc *locator, int *status) {
 
   if (*status != SAI__OK) return *status;
 
-  /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
-
   *status = DAT__FATAL;
   emsRep("hdsLock", "hdsLock: Not yet implemented for HDF5",
          status);

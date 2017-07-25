@@ -119,6 +119,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   hid_t group_id = 0;
   htri_t filstat = 0;
   unsigned int flags = 0;
+  int rdonly = 0;
 
   *locator = NULL;
   if (*status != SAI__OK) return *status;
@@ -138,6 +139,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   case 'R':
   case 'r':
     flags = H5F_ACC_RDONLY;
+    rdonly = 1;
     break;
   default:
     *status = DAT__MODIN;
@@ -225,7 +227,7 @@ hdsOpen( const char *file_str, const char *mode_str,
      create a new handle structure for the top level data object in the
      file. Store the handle pointer in the locator. */
   if( *locator ) {
-    if( !handle ) handle = dat1Handle( NULL, fname, status );
+    if( !handle ) handle = dat1Handle( NULL, fname, rdonly, status );
     (*locator)->handle = handle;
   }
 

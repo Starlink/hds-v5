@@ -102,7 +102,7 @@ datPutVC( const HDSLoc * locator, size_t nval, const char *values[], int * statu
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datPutVC", 1, locator, 0, status );
 
   /* Vectorize */
   datVec( locator, &vecloc, status );

@@ -132,7 +132,7 @@ int datRef( const HDSLoc * locator, char * ref, size_t reflen, int * status ) {
   if ( *status != SAI__OK ) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datRef", 1, locator, 1, status );
 
 
   /*  Obtain the data object path and container file name. */

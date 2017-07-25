@@ -133,7 +133,7 @@ datGetVC( const HDSLoc * locator,  size_t maxval, size_t bufsize, char *buffer,
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datGetVC", 1, locator, 1, status );
 
   datVec( locator, &vecLoc, status );
   datGet1C( vecLoc, maxval, bufsize, buffer, pntrs, actval, status );

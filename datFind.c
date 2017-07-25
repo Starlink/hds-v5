@@ -109,13 +109,14 @@ datFind( const HDSLoc   *locator1,
   char cleanname[DAT__SZNAM+1];
   HDSLoc * thisloc = NULL;
   H5O_info_t object_info;
+  int rdonly;
   int there = 0;
   int havegroup = 0;
 
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator1, status );
+  dat1ValidateLocator( "datFind", 1, locator1, 1, status );
   if (*status != SAI__OK) return *status;
 
   /* containing locator must refer to a group */
@@ -205,20 +206,27 @@ datFind( const HDSLoc   *locator1,
   }
 
   /* Store a pointer to the handle for the returned HDF object */
-  thisloc->handle = dat1Handle( locator1, cleanname, status );
+  thisloc->handle = dat1Handle( locator1, cleanname, 0, status );
 
   /* We have to propagate groupness to the child */
   if ( (locator1->grpname)[0] != '\0') hdsLink(thisloc, locator1->grpname, status);
 
-  /* Attempt to lock the component object for use by the current thread.
-     Report an error if this fails because it is already locked by another
-     thread. */
-  if( !dat1HandleLock( thisloc->handle, 2, 0, status ) && *status == SAI__OK ) {
+  /* Determine if the current thread has a read-only or read-write lock
+     on the parent object, referenced by the supplied locator. */
+  rdonly = ( dat1HandleLock( locator1->handle, 1, 0, 0, status ) == 3 );
+
+  /* Attempt to lock the component object for use by the current thread,
+     using the same sort of lock (read-only or read-write) as the
+     parent object. Report an error if this fails. */
+  if( !dat1HandleLock( thisloc->handle, 2, 0, rdonly, status )
+      && *status == SAI__OK ) {
      *status = DAT__THREAD;
      emsSetc( "C", name_str );
+     emsSetc( "A", rdonly ? "read-only" : "read-write" );
      datMsg( "O", locator1 );
      emsRep( "","datFind: requested component ('^C') within HDS object '^O' "
-             "is locked by another thread.", status );
+             "cannot be locked for ^A access - another thread already has "
+             "a conflicting lock on the same component.", status );
   }
 
   if (*status != SAI__OK) goto CLEANUP;

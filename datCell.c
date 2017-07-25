@@ -107,12 +107,13 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
   hsize_t h5subs[DAT__MXDIM];
   HDSLoc * thisloc = NULL;
   int isstruct = 0;
+  int rdonly;
   char namestr[DAT__SZNAM+1];
 
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator1, status );
+  dat1ValidateLocator( "datCell", 1, locator1, 1, status );
 
   datName(locator1, namestr, status );
 
@@ -204,7 +205,25 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
     if (*status == SAI__OK) {
       /* Handle for cell's data object */
-      thisloc->handle = dat1Handle( locator1, cellname, status );
+      thisloc->handle = dat1Handle( locator1, cellname, 0, status );
+
+      /* Determine if the current thread has a read-only or read-write lock
+         on the parent array, referenced by the supplied locator. */
+      rdonly = ( dat1HandleLock( locator1->handle, 1, 0, 0, status ) == 3 );
+
+      /* Attempt to lock the cell for use by the current thread, using the
+         same sort of lock (read-only or read-write) as the parent object.
+         Report an error if this fails. */
+      if( !dat1HandleLock( thisloc->handle, 2, 0, rdonly, status )
+          && *status == SAI__OK ) {
+         *status = DAT__THREAD;
+         emsSetc( "C", cellname );
+         emsSetc( "A", rdonly ? "read-only" : "read-write" );
+         datMsg( "O", locator1 );
+         emsRep( "","datCell: requested cell ^C within HDS object '^O' "
+                 "cannot be locked for ^A access - another thread already has "
+                 "a conflicting lock on the same component.", status );
+      }
 
       thisloc->group_id = group_id;
       /* Secondary locator by definition */

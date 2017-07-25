@@ -115,8 +115,9 @@ datMove( HDSLoc **locator1, const HDSLoc *locator2, const char *name_str,
 
   if (*status != SAI__OK) return *status;
 
-  /* Validate input locator. */
-  dat1ValidateLocator( 1, locator2, status );
+  /* Validate input locators. */
+  dat1ValidateLocator( "datMove", 1, *locator1, 0, status );
+  dat1ValidateLocator( "datMove", 1, locator2, 0, status );
 
   dau1CheckName( name_str, 1, cleanname, sizeof(cleanname), status );
   if (*status != SAI__OK) return *status;

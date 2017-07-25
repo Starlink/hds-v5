@@ -137,7 +137,7 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator1, status );
+  dat1ValidateLocator( "datSlice", 1, locator1, 1, status );
 
   /* We only work with primitives at the moment */
   if (dat1IsStructure( locator1, status ) ) {

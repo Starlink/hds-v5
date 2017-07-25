@@ -114,7 +114,7 @@ datPut1C( const HDSLoc * locator, size_t nval, const char *values[], int * statu
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datPut1C", 1, locator, 0, status );
 
   /* Verify that we have the correct number of values */
   datSize( locator, &actval, status );

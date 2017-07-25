@@ -128,7 +128,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datPut", 1, locator, 0, status );
 
   datName(locator, namestr, status);
 

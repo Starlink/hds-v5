@@ -94,9 +94,10 @@ Handle *dat1FreeHandle( Handle *handle ) {
 /* Free the memory used by components of the Handle structure. */
    if( handle->name ) MEM_FREE( handle->name );
    if( handle->children ) MEM_FREE( handle->children );
+   if( handle->read_lockers ) MEM_FREE( handle->read_lockers );
 
 /* Destroy the mutex */
-   pthread_mutex_destroy( &(handle->mutex2) );
+   pthread_mutex_destroy( &(handle->mutex) );
 
 /* Fill the handles with zeros in case any other points to the same
    handle exist. */

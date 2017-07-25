@@ -292,7 +292,7 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate supplied locator */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "hdsLink", 1, locator, 0, status );
 
   /* If we get a zero length string this either means we are trying to unlink
      the locator from the group or we have a bug in the calling code or else

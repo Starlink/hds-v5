@@ -361,7 +361,7 @@ datLen(const HDSLoc *locator, size_t *len, int *status);
 /*=========================================================*/
 
 int
-datLock( HDSLoc *locator, int recurs, int *status);
+datLock( HDSLoc *locator, int recurs, int readonly, int *status);
 
 
 /*=======================================================================*/

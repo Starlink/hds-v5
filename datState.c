@@ -99,7 +99,7 @@ datState( const HDSLoc *locator, hdsbool_t *state, int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datState", 1, locator, 1, status );
 
   if (dat1IsStructure(locator, status)) {
     *status = DAT__OBJIN;

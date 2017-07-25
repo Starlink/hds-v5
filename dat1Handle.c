@@ -13,7 +13,8 @@
 *     Library routine
 
 *  Invocation:
-*     Handle *dat1Handle( const HDSLoc *parent, const char *name, int *status );
+*     Handle *dat1Handle( const HDSLoc *parent, const char *name,
+*                         int rdonly, int *status );
 
 *  Arguments:
 *     parent = const HDSLoc * (Given)
@@ -26,6 +27,14 @@
 *        component does in fact exist within the parent object, although
 *        this is not checked. If "parent" is NULL, the path to the
 *        contained file should be supplied.
+*     rdonly = int (Given)
+*        If a new Handle is created as a result of calling this function,
+*        it is locked for use by the current thread. If "parent" is
+*        non-NULL, the type of lock (read-only or read-write) is copied
+*        from the parent. If "parent" is NULL, the type of lock is
+*        specified by the "rdonly" argument. The supplied "rdonly" value
+*        is ignored if "parent" is non-NULL or if a pointer to an existing
+*        handle is returned.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
@@ -103,7 +112,8 @@
 #include "dat1.h"
 #include "dat_err.h"
 
-Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int * status ){
+Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
+                    int * status ){
 
 
 /* Local Variables; */
@@ -112,6 +122,7 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int * status ){
    Handle *parent;
    Handle *result = NULL;
    int ichild;
+   int lock_status;
 
 /* Return immediately if an error has already occurred. */
    if( *status != SAI__OK ) return result;
@@ -121,7 +132,7 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int * status ){
       lname = MEM_CALLOC( strlen( name ) + 1, sizeof(char) );
       if( !lname ) {
          *status = DAT__NOMEM;
-         emsRep("dat1Handle", "Could not reallocate memory for the "
+         emsRep("dat1Handle", "Could not allocate memory for the "
                 "component name in an HDS Handle", status );
       } else {
          strcpy( lname, name );
@@ -175,9 +186,6 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int * status ){
                parent->children[ parent->nchild-1 ] = result;
             }
 
-/* Copy other information from the parent Handle. */
-            result->locked = parent->locked;
-            result->locker = parent->locker;
          }
 
 /* Store the component name. Nullify "lname" to indicate the memory is
@@ -188,14 +196,40 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int * status ){
 /* Initialise a mutex that is used to serialise access to the values
    stored in the handle. */
          if( *status == SAI__OK &&
-             pthread_mutex_init( &(result->mutex2), NULL ) != 0 ) {
-            emsRep( " ", "Failed to initialise POSIX mutex2 for a new Handle.",
+             pthread_mutex_init( &(result->mutex), NULL ) != 0 ) {
+            *status = DAT__MUTEX;
+            emsRep( " ", "Failed to initialise POSIX mutex for a new Handle.",
                     status );
          }
 
-/* Indicate the Handle is locked for use by the current thread. */
-         result->locked = 1;
-         result->locker = pthread_self();
+/* Initialise the Handle to indicate it is currently unlocked. */
+         result->nwrite_lock = 0;
+         result->nread_lock = 0;
+         result->read_lockers = NULL;
+         result->maxreaders = 0;
+
+/* If a parent was supplied, see if the current thread has a read or
+   write lock on the parent object. We give the same sort of lock to the
+   new Handle below (ignoring the supplied value for "rdonly"). */
+         if( parent ) {
+            lock_status = dat1HandleLock( parent, 1, 0, 0, status );
+            if( lock_status == 1 ) {
+               rdonly = 0;
+            } else if( lock_status == 3 ) {
+               rdonly = 1;
+            } else if( *status == SAI__OK ) {
+               *status = DAT__FATAL;
+               emsRepf( " ", "dat1Handle: Unexpected lock value (%d) for "
+                        "object '%s' - parent of '%s' (internal HDS "
+                        "programming error).", status, lock_status,
+                        parent->name, name );
+            }
+         }
+
+/* Lock the new Handle for use by the current thread. The type of lock
+   (read-only or read-write) is inherited from the parent (if there is a
+   parent) or supplied by the caller. */
+         dat1HandleLock( result, 2, 0, rdonly, status );
       }
    }
 

@@ -101,7 +101,7 @@ datThere( const HDSLoc * locator, const char * name, hdsbool_t *there,
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datThere", 1, locator, 1, status );
 
   /* containing locator must refer to a group */
   if (locator->group_id <= 0) {

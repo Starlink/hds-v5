@@ -13,15 +13,26 @@
 *     Library routine
 
 *  Invocation:
-*     dat1ValidateLocator( int checklock, const HDSLoc *loc, int * status );
+*     dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc,
+*                          int rdonly, int * status );
 
 *  Arguments:
+*     func = const char * (Given)
+*        Name of calling function. Used in error messages.
 *     checklock = int (Given)
 *        If non-zero, an error is reported if the supplied locator is not
 *        locked by the current thread (see datLock). This check is not
 *        performed if "checklock" is zero.
 *     loc = HDSLoc * (Given)
 *        Locator to validate.
+*     rdonly = int (Given)
+*        Indicates if the calling function may or may not make any
+*        changes to the HDF object or locator structure. If a non-zero
+*        value is supplied, it is assumed that the calling function will
+*        never make any changes to either the HDF object on disk or the
+*        locator structure. This determines the type of lock that the
+*        calling thread must have on the object (read-only or read-write)
+*        to avoid an error being reported by this function.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
@@ -29,7 +40,8 @@
 *     An error is reported if the supplied locator is not valid. This can
 *     occur for instance if the supplied locator is a secondary locator
 *     that has been annulled automatically as a result of the file being
-*     closed.
+*     closed. An error is also reported if the current thread does no
+*     have an appropriate lock on the supplied object.
 
 *  Authors:
 *     DSB: David Berry (EAO)
@@ -72,41 +84,66 @@
 #include "dat1.h"
 #include "dat_err.h"
 
-int dat1ValidateLocator( int checklock, const HDSLoc *loc, int * status ) {
+int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc,
+                         int rdonly, int * status ) {
 
 /* Local Variables; */
    int valid;
+   int lock_status;
 
 /* If the locator has been annulled (e.g. due to the container file being
    closed when the last primary locator was annulled), report an error. */
    datValid( loc, &valid, status );
    if( !valid && *status == SAI__OK ) {
       *status = DAT__LOCIN;
-      emsRep(" ", "The supplied HDS locator is invalid - it may have been "
+      emsRepf(" ", "%s: The supplied HDS locator is invalid - it may have been "
              "annulled as a result of the associated file being closed.",
-             status );
+             status, func );
    }
 
 /* Report an error if there is no handle in the locator. */
    if( loc && !loc->handle && *status == SAI__OK ) {
       *status = DAT__FATAL;
       datMsg( "O", loc );
-      emsRep( " ", "The supplied HDS locator for '^O' has no handle (programming error).",
-              status );
+      emsRepf( " ", "%s: The supplied HDS locator for '^O' has no handle (programming error).",
+              status, func );
    }
 
-/* If required, check that the object is locked by the current thread.
-   Do not check any child objects as these wil be checked if and when
-   accessed. */
+/* If required, check that the object is locked by the current thread for
+   the appropriate type of access. Do not check any child objects as these
+   will be checked if and when accessed. */
    if( checklock && *status == SAI__OK ) {
-      if( dat1HandleLock( loc->handle, 1, 0, status ) != 1 &&
-          *status == SAI__OK ) {
+      lock_status = dat1HandleLock( loc->handle, 1, 0, 0, status );
+
+/* Calling function will not make any change to the object. In this case
+   the current thread must have a lock but the type (read-only or
+   read-write) does not matter. */
+      if( rdonly ) {
+         if( lock_status != 1 && lock_status != 3 && *status == SAI__OK ) {
+            *status = DAT__THREAD;
+            datMsg( "O", loc );
+            emsRepf( " ", "%s: The supplied HDS locator for '^O' cannot be used.",
+                    status, func );
+            emsRep( " ", "It has not been locked for read-only or read-write "
+                    "access by the current thread (programming error).",
+                    status );
+         }
+
+/* Calling function may make changes to the object. In this case the
+   current thread must have a read-write lock. */
+      } else if( lock_status != 1 && *status == SAI__OK ) {
          *status = DAT__THREAD;
          datMsg( "O", loc );
-         emsRep( " ", "The supplied HDS locator for '^O' cannot be used.",
-                 status );
-         emsRep( " ", "It has not been locked for use by the current thread "
-                 "(programming error).", status );
+         emsRepf( " ", "%s: The supplied HDS locator for '^O' cannot be used.",
+                 status, func );
+         if( lock_status == 3 ) {
+            emsRep( " ", "Write-access is not allowed (the current thread "
+                    "has locked it for read-only access - programming error).",
+                    status );
+         } else {
+            emsRep( " ", "It has not been locked for read-write access by the "
+                    "current thread (programming error).", status );
+         }
       }
    }
 

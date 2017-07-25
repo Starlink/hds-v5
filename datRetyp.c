@@ -96,7 +96,7 @@ datRetyp( const HDSLoc *locator, const char *type_str, int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datRetyp", 1, locator, 0, status );
 
   *status = DAT__FATAL;
   emsRep("datRetyp", "datRetyp: Not yet implemented for HDF5",

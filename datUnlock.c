@@ -30,23 +30,24 @@
 *        Pointer to global status.
 
 *  Description:
-*     This function unlocks an HDS object. See datLock.
+*     This function ensures that the current thread does not have a lock
+*     of any type on the supplied HDS object. See datLock.
 *
 *     The object must be locked again, using datLock, before it can be
 *     used by any other HDS function. All objects are initially
 *     locked by the current thread when they are created.
 
 *  Notes:
-*     - An error will be reported if the supplied object is currently
-*     locked by another thread, but no error is reported if any component
-*     objects contained within the supplied object are locked by other
-*     threads (such objects are left unchanged).
+*     - No error is reported if the supplied object, or any child object,
+*     is current locked for read-only or read-write access by another thread.
 *     - The majority of HDS functions will report an error if the object
 *     supplied to the function has not been locked for use by the calling
 *     thread. The exceptions are the functions that manage these locks -
 *     datLock, datUnlock and datLocked.
-*     - Attempting to unlock an object that is already unlocked has no
-*     effect.
+*     - Attempting to unlock an object that is not locked by the current
+*     thread has no effect, and no error is reported. The datLocked
+*     function can be used to determine if the current thread has a lock
+*     on the object.
 
 *  Authors:
 *     DSB: David S Berry (DSB)
@@ -111,28 +112,17 @@
 
 int datUnlock( HDSLoc *locator, int recurs, int *status ) {
 
-/* Local Variables; */
-   int lstat;
-
 /* Check inherited status. */
    if (*status != SAI__OK) return *status;
 
 /* Validate input locator. */
-   dat1ValidateLocator( 0, locator, status );
+   dat1ValidateLocator( "datUnlock", 0, locator, 0, status );
 
 /* Check we can de-reference "locator" safely. */
    if( *status == SAI__OK ) {
 
-/* Attemp to unlock the specified object, plus all its components. If the
-   object could not be unlocked because it was already locked by another
-   thread, report an error. */
-      lstat = dat1HandleLock( locator->handle, 3, recurs, status );
-      if( *status == SAI__OK && lstat != 1 ) {
-         *status = DAT__THREAD;
-         datMsg( "O", locator );
-         emsRep( " ", "datUnlock: Cannot unlock HDS object '^O':", status );
-         emsRep( " ", "It is currently locked by another thread.", status );
-      }
+/* Attemp to unlock the specified object, plus all its components. */
+      (void) dat1HandleLock( locator->handle, 3, recurs, 0, status );
    }
 
    return *status;

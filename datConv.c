@@ -101,9 +101,6 @@ datConv(const HDSLoc *locator, const char *type_str, hdsbool_t *conv,
   *conv = 1;
   if (*status != SAI__OK) return *status;
 
-  /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
-
   *status = DAT__FATAL;
   emsRep("datConv", "datConv: Obsolete routine. Do not use",
          status);

@@ -150,22 +150,6 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 
   if (*status != SAI__OK) return *status;
 
-  /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
-
-  /* Get the HDF5 type code and confirm this is a primitive type */
-  isprim = dau1CheckType( 1, type_str, &h5type, normtypestr,
-                          sizeof(normtypestr), status );
-
-  if (!isprim) {
-    if (*status == SAI__OK) {
-      *status = DAT__TYPIN;
-      emsRepf("datMap_1", "datGet: Data type must be a primitive type and not '%s'",
-              status, normtypestr);
-    }
-    goto CLEANUP;
-  }
-
   /* First have to validate the access mode */
   switch (mode_str[0]) {
   case 'R':
@@ -184,6 +168,22 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     *status = DAT__MODIN;
     emsRepf("datMap_6", "Unrecognized mode string '%s' for datMap",
             status, mode_str);
+    goto CLEANUP;
+  }
+
+  /* Validate input locator. */
+  dat1ValidateLocator( "datMap", 1, locator, (accmode & HDSMODE_READ), status );
+
+  /* Get the HDF5 type code and confirm this is a primitive type */
+  isprim = dau1CheckType( 1, type_str, &h5type, normtypestr,
+                          sizeof(normtypestr), status );
+
+  if (!isprim) {
+    if (*status == SAI__OK) {
+      *status = DAT__TYPIN;
+      emsRepf("datMap_1", "datGet: Data type must be a primitive type and not '%s'",
+              status, normtypestr);
+    }
     goto CLEANUP;
   }
 

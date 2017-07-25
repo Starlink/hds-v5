@@ -100,7 +100,7 @@ hdsGroup(const HDSLoc *locator, char group_str[DAT__SZGRP+1],
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "hdsGroup", 1, locator, 1, status );
 
   one_strlcpy( group_str, locator->grpname, DAT__SZGRP+1, status );
   return *status;

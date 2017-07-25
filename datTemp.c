@@ -159,8 +159,8 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
     hdsNew(fname, "HDS_SCRATCH", "HDS_SCRATCH", 0, dims, &tmploc, status );
   }
 
-  /* Lock the container file for use by the current thread. */
-  datLock( tmploc, 0, status );
+  /* Lock the container file for read-write access by the current thread. */
+  datLock( tmploc, 0, 0, status );
 
   /* Create a structure inside the temporary file. Compatibility with HDS
      suggests we call these TEMP_nnnn (although we only have to use the

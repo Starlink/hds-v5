@@ -26,23 +26,46 @@
 *
 *     0: the supplied object is unlocked. This is the condition that must
 *        be met for the current thread to be able to lock the supplied
-*        object using function datLock. This condition can be achieved
-*        by calling datUnlock.
+*        object for read-write access using function datLock. This condition
+*        can be achieved by releasing any existing locks using datUnlock.
 *
-*     1: the supplied object is locked by the current thread. This is the
-*        condition that must be met for the current thread to be able to
-*        use the supplied object in any other HDS function (except for the
-*        locking and unlocking functions - see below). This condition can
-*        be achieved by calling datLock.
+*     1: the supplied object is locked for reading and writing by the current
+*        thread. This is the condition that must be met for the current
+*        thread to be able to use the supplied object in any HDS function
+*        that might modify the object (except for the locking and unlocking
+*        functions - see below). This condition can be achieved by calling
+*        datLock.
 *
-*     2: the supplied object is locked for use by a different thread. An
-*        error will be reported if the current thread attempts to use the
-*        object in any other HDS function.
+*     2: the supplied object is locked for reading and writing by a different
+*        thread. An error will be reported if the current thread attempts to
+*        use the object in any other HDS function.
+*
+*     3: the supplied object is locked read-only by the current thread
+*        (and maybe other threads as well). This is the condition that must
+*        be met for the current thread to be able to use the supplied object
+*        in any HDS function that cannot modify the object. An error will be
+*        reported if the current thread attempts to use the object in any HDS
+*        function that could modify the object. This condition can be achieved
+*        by calling datLock.
+*
+*     4: the supplied object is not locked by the current thread, but is
+*        locked read-only by one or more other threads. An error will be
+*        reported if the current thread attempts to use the object in any
+*        other HDS function.
 
 *  Description:
 *     This function returns a value that indicates if the object
-*     specified by the supplied locator has been locked for exclusive
-*     use by a call to datLock.
+*     specified by the supplied locator has been locked for use by one or
+*     more threads. A thread can lock an object either for read-only
+*     access or for read-write access. The lock management functions
+*     (datLock and datUnlock) will ensure that any thread that requests
+*     and is given a read-write lock will have exclusive access to the
+*     object - no other locks of either type will be issued to other
+*     threads until the first thread releases the read-write lock using
+*     datUnlock. If a thread requests and is given a read-only lock, the
+*     lock management functions may issue read-only locks to other
+*     threads, but it will also ensure that no other thread is granted
+*     a read-write lock until all read-only locks have been released.
 
 *  Notes:
 *     - The locking performed by datLock, datUnlock and datLocked is
@@ -117,12 +140,12 @@ int datLocked( const HDSLoc *locator, int *status ) {
 /* Validate input locator, but do not include the usual check that the
    object is locked by the current thread since we'll be performing that
    test as part of this function. */
-   dat1ValidateLocator( 0, locator, status );
+   dat1ValidateLocator( "datLocked", 0, locator, 1, status );
 
 /* Get the value to return. Test status first so that we know it is safe
    to deference "locator". */
    if( *status == SAI__OK ) {
-      result = dat1HandleLock( locator->handle, 1, 0, status );
+      result = dat1HandleLock( locator->handle, 1, 0, 0, status );
    }
 
 /* Return the result. */

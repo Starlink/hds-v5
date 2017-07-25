@@ -98,7 +98,7 @@ datErase(const HDSLoc   *locator, const char *name_str, int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datErase", 1, locator, 0, status );
 
   /* containing locator must refer to a group */
   if (locator->group_id <= 0) {

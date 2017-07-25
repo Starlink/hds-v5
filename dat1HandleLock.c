@@ -13,7 +13,8 @@
 *     Library routine
 
 *  Invocation:
-*     int dat1HandleLock( Handle *handle, int oper, int recurs, int *status );
+*     int dat1HandleLock( Handle *handle, int oper, int recurs,
+*                         int rdonly, int *status );
 
 *  Arguments:
 *     handle = Handle * (Given)
@@ -21,21 +22,28 @@
 *     oper = int (Given)
 *        Operation to be performed:
 *
-*        1 - Return information about the current lock on the supplied Handle.
-*            Returns 0 if the supplied Handle is unlocked; 1 if the supplied
-*            Handle is locked by the current thread; 2 if the supplied Handle
-*            is locked by a different thread. Any child Handles are always
-*            ignored.
-*        2 - Lock the handle for use by the current thread. Returns 0 if the
-*            handle is already locked by a different thread (in which case
-*            the request to lock the supplied Handle is ignored) and +1
-*            otherwise. Any child Handles within the supplied Handle are
-*            left unchanged unless "recurs" is non-zero.
-*        3 - Unlock the handle. Returns 0 if the handle is already locked
-*            by a different thread (in which case the request to unlock the
-*            supplied Handle is ignored) and +1 otherwise. Any child Handles
+*        1 - Return information about the current locks on the supplied Handle.
+*
+*            0: unlocked;
+*            1: locked for writing by the current thread;
+*            2: locked for writing by another thread;
+*            3: locked for reading by the current thread (other threads
+*               may also have a read lock on the Handle);
+*            4: locked for reading by one or more other threads (the
+*               current thread does not have a read lock on the Handle);
+*
+*            Any child Handles are always ignored.
+*        2 - Lock the handle for read-write or read-only use by the current
+*            thread. Returns 0 if the requested lock conflicts with an
+*            existing lock (in which case the request to lock the supplied
+*            Handle is ignored) and +1 otherwise. Any child Handles within
+*            the supplied Handle are left unchanged unless "recurs" is
+*            non-zero.
+*        3 - Unlock the handle. If the current thread has a lock - either
+*            read-write or read-only - on the Handle, it is removed.
+*            Otherwise the Handle is left unchanged. Any child Handles
 *            within the supplied Handle are left unchanged unless "recurs"
-*            is non-zero.
+*            is non-zero. A value of +1 is always returned.
 *
 *     recurs = int (Given)
 *        Only used if "oper" is 2 or 3, and the returned value is non-zero
@@ -43,10 +51,13 @@
 *        is zero, the supplied Handle is the only Handle to be modified -
 *        any child Handles are left unchanged. If "recurs" is non-zero, any
 *        child Handles contained within the supplied Handle are locked or
-*        unlocked recursively, in addition to locking or unclocking the
-*        supplied Handle. Any child Handles that are already locked by
-*        another thread are ignored and left unchanged. The returned value
-*        is not affected by the value of "recurs".
+*        unlocked recursively, in addition to locking or unlocking the
+*        supplied Handle. Any child Handles that cannot be locked or
+*        unlocked and left unchanged. The returned value is not affected
+*        by the value of "recurs".
+*     rdonly = int (Given)
+*        Only used if "oper" is 2. It indicates if the new lock is for
+*        read-only or read-write access.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
@@ -55,11 +66,32 @@
 *     description of the "oper" argument above.
 
 *  Description:
-*     This function locks or unlocks the supplied Handle. When locked,
-*     the locking thread has exclusive access to the object (but not
-*     necessarily any component objects) attached to the supplied handle.
+*     This function locks or unlocks the supplied Handle for read-only or
+*     read-write access. The Handle is always in one of the following
+*     three mutually exclusive states:
+*
+*     - Unlocked
+*     - Locked for read-write access by one and only one thread.
+*     - Locked for read-only access by one or more threads.
+*
+*     When locked for read-write access, the locking thread has exclusive
+*     read-write access to the object attached to the supplied handle. When
+*     locked for read-only access, the locking thread shares read-only
+*     access with zero or more other threads.
+*
+*     A request to lock or unlock an object can be propagated recursively
+*     to all child objects by setting "recurs" non-zero. However, if the
+*     attempt to lock or unlock a child fails, no error will be reported
+*     and the child will be left unchanged.
 
 *  Notes:
+*     - If a thread gets a read-write lock on the handle, and
+*     subsequently attempts to get a read-only lock, the existing
+*     read-write lock will be demoted to a read-only lock.
+*     - If a thread gets a read-only lock on the handle, and
+*     subsequently attempts to get a read-write lock, the existing
+*     read-only lock will be promoted to a read-write lock only if
+*     there are no other locks on the Handle.
 *     - "oper" values of -2 and -3 are used in place of 2 and 3 when
 *     calling this function recursively from within itself.
 *     - A value of zero is returned if an error has already ocurred, or
@@ -72,6 +104,8 @@
 *  History:
 *     10-JUL-2017 (DSB):
 *        Initial version
+*     19-JUL-2017 (DSB):
+*        Added argument rdonly.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -122,12 +156,22 @@
 #include "ems.h"
 #include "dat_err.h"
 
-int dat1HandleLock( Handle *handle, int oper, int recurs, int *status ){
+/* The initial size for the array holding the identifiers for the threads
+   that have a read lock on a handle. It is also the incremement in size
+   when the array needs to be extended. */
+#define NTHREAD 10
+
+int dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
+                    int *status ){
 
 /* Local Variables; */
    int ichild;
    int result = 0;
    int top_level;
+   pthread_t *locker;
+   pthread_t *rlocker;
+   int i;
+   int j;
 
 /* Check inherited status. */
    if( *status != SAI__OK ) return result;
@@ -145,79 +189,201 @@ int dat1HandleLock( Handle *handle, int oper, int recurs, int *status ){
 /* For top-level entries to this function, we need to ensure no other thread
    is modifying the details in the handle, so attempt to lock the handle's
    mutex. */
-   if( top_level ) DAT_LOCK_MUTEX2( handle );
-
+   if( top_level ) pthread_mutex_lock( &(handle->mutex) );
 
 /* Return information about the current lock on the supplied Handle.
-   Returns 0 if the Handle is unlocked; 1 if the Handle is locked by
-   the current thread; 2 if the Handle is locked by a different thread.
    ------------------------------------------------------------------ */
    if( oper == 1 ) {
 
-/* Check the lock on the supplied handle, and set "result" accordingly. */
-      if( !handle->locked ) {
-         result = 0; /* Supplied Handle unlocked */
+/* Default: unlocked */
 
-      } else if( pthread_equal( handle->locker, pthread_self() )) {
-         result = 1; /* Supplied Handle locked by current thread */
+      if( handle->nwrite_lock ) {
+         if( pthread_equal( handle->write_locker, pthread_self() )) {
 
-      } else {
-         result = 2; /* Supplied Handle locked by other thread */
-      }
+/* Locked for writing by the current thread. */
+            result = 1;
+         } else {
 
+/* Locked for writing by another thread. */
+            result = 2;
+         }
 
+      } else if( handle->nread_lock ){
 
+/* Locked for reading by one or more other threads (the current thread does
+   not have a read lock on the Handle). */
+         result = 4;
 
-/* Lock the handle for use by the current thread. Returns 0 if the handle
-   is already locked by a different thread (in which case the request to lock
-   the supplied Handle is ignored) and 1 otherwise.
-   ------------------------------------------------------------------ */
-   } else if( oper == 2 ) {
+/* Now check to see if the current thread has a read lock, changing the
+   above result value if it does. */
+         locker = handle->read_lockers;
+         for( i = 0; i < handle->nread_lock;i++,locker++ ) {
+            if( pthread_equal( *locker, pthread_self() )) {
 
-/* If the supplied Handle is unlocked, lock it for use by the current
-   thread, and return 1. */
-      if( !handle->locked ){
-         handle->locked = 1;
-         handle->locker = pthread_self();
-         result = 1;
-
-/* If the supplied Handle is already locked for use by the current
-   thread, just return 1. */
-      } else if( pthread_equal( handle->locker, pthread_self() )) {
-         result = 1;
-      }
-
-/* If required, and if the above lock operation was successful, lock any
-   child handles that are not currently locked by another thread. */
-      if( result && recurs ){
-         for( ichild = 0; ichild < handle->nchild; ichild++ ) {
-            (void) dat1HandleLock( handle->children[ichild], -2, 1,
-                                   status );
+/* Locked for reading by the current thread (other threads may also have
+   a read lock on the Handle). */
+               result = 3;
+               break;
+            }
          }
       }
 
-/* Unlock the handle. Returns 0 if the handle is already locked by a
-   different thread - in  which case the request to unlock the Handle
-   is ignored, and 1 otherwise.
+
+
+
+/* Lock the handle for use by the current thread.
    ------------------------------------------------------------------ */
+   } else if( oper == 2 ) {
+
+/* A read-only lock requested.... */
+      if( rdonly ) {
+
+/* If the current thread has a read-write lock on the Handle, demote it
+   to a read-only lock and return 1 (success). In this case, we know
+   there will be no other read-locks. Otherwise if any other thread has
+   read-write lock, return zero (failure). */
+         if( handle->nwrite_lock ) {
+            if( pthread_equal( handle->write_locker, pthread_self() )) {
+
+/* If we do not have an array in which to store read lock thread IDs,
+   allocate one now with room for NTHREAD locks. It will be extended as
+   needed. */
+               if( !handle->read_lockers ) {
+                  handle->read_lockers = MEM_CALLOC(NTHREAD,sizeof(pthread_t));
+                  if( !handle->read_lockers ) {
+                     *status = DAT__NOMEM;
+                     emsRep( "", "Could not allocate memory for HDS "
+                             "Handle read locks list.", status );
+                  }
+               }
+
+/* If we now have an array, store the current thread in the first element. */
+               if( handle->read_lockers ) {
+                  handle->read_lockers[ 0 ] = pthread_self();
+                  handle->nread_lock = 1;
+                  handle->nwrite_lock = 0;
+                  result = 1;
+               }
+            }
+
+/* If there is no read-write lock on the Handle, add the current thread
+   to the list of threads that currently have a read-only lock, but only
+   if it is not already there. */
+         } else {
+
+/* Set "result" to 1 if the current thread already has a read-only lock. */
+            locker = handle->read_lockers;
+            for( i = 0; i < handle->nread_lock;i++ ) {
+               if( pthread_equal( *locker, pthread_self() )) {
+                  result = 1;
+                  break;
+               }
+            }
+
+/* If not, extend the read lock thread ID array if necessary, and append
+   the current thread ID to the end. */
+            if( result == 0 ) {
+               handle->nread_lock++;
+               if( handle->maxreaders < handle->nread_lock ) {
+                  handle->maxreaders += NTHREAD;
+                  handle->read_lockers = MEM_REALLOC( handle->read_lockers,
+                                                    handle->maxreaders*sizeof(pthread_t));
+                  if( !handle->read_lockers ) {
+                     *status = DAT__NOMEM;
+                     emsRep( "", "Could not reallocate memory for HDS "
+                             "Handle read locks list.", status );
+                  }
+               }
+
+               if( handle->read_lockers ) {
+                  handle->read_lockers[ handle->nread_lock - 1 ] = pthread_self();
+
+/* Indicate the read-only lock was applied successfully. */
+                  result = 1;
+               }
+            }
+         }
+
+/* A read-write lock requested. */
+      } else {
+
+/* If there are currently no locks of any kind, apply the lock. */
+         if( handle->nread_lock == 0 ) {
+            if( handle->nwrite_lock == 0 ) {
+               handle->write_locker = pthread_self();
+               handle->nwrite_lock = 1;
+               result = 1;
+
+/* If the current thread already has a read-write lock, indicate success. */
+            } else if( pthread_equal( handle->write_locker, pthread_self() )) {
+               result = 1;
+            }
+
+/* If there is currently only one read-only lock, and it is owned by the
+   current thread, then promote it to a read-write lock. */
+         } else if( handle->nread_lock == 1 &&
+                    pthread_equal( handle->read_lockers[0], pthread_self() )) {
+            handle->nread_lock = 0;
+            handle->write_locker = pthread_self();
+            handle->nwrite_lock = 1;
+            result = 1;
+         }
+      }
+
+/* If required, and if the above lock operation was successful, lock any
+   child handles that can be locked. */
+      if( result && recurs ){
+         for( ichild = 0; ichild < handle->nchild; ichild++ ) {
+            (void) dat1HandleLock( handle->children[ichild], -2, 1,
+                                   rdonly, status );
+         }
+      }
+
+
+
+
+
+/* Unlock the handle.
+   ----------------- */
    } else if( oper == 3 ) {
 
-/* If the supplied Handle is already unlocked, just return 1. */
-      if( !handle->locked ){
-         result = 1;
+/* Always indicate success because we should always be able to guarantee
+   that the current thread does not have a lock on exit. */
+      result = 1;
 
-/* If the supplied Handle is locked for use by the current thread,
-   unlock it and return 1. */
-      } else if( pthread_equal( handle->locker, pthread_self() )) {
-         handle->locked = 0;
-         result = 1;
+/* If the current thread has a read-write lock, remove it. */
+      if( handle->nwrite_lock ) {
+         if( pthread_equal( handle->write_locker, pthread_self() )) {
+            handle->nwrite_lock = 0;
+         }
+
+/* Otherwise, if the current thread has a read-only lock, remove it. */
+      } else {
+
+/* Loop through all the threads that have read-only locks. */
+         locker = handle->read_lockers;
+         for( i = 0; i < handle->nread_lock; i++,locker++ ) {
+
+/* If the current thread is found, shuffle any remaining threads down one
+   slot to fill the gap left by removing the current thread from the list. */
+            if( pthread_equal( *locker, pthread_self() )) {
+               rlocker = locker + 1;
+               for( j = i + 1; j < handle->nread_lock; j++,locker++ ) {
+                  *(locker++) = *(rlocker++);
+               }
+
+/* Reduce the number of read-only locks. */
+               handle->nread_lock--;
+               break;
+            }
+         }
       }
 
 /* If required, and if the above unlock operation was successful, unlock any
    child handles that are not currently locked by another thread. */
       if( result && recurs ){
          for( ichild = 0; ichild < handle->nchild; ichild++ ) {
-            (void) dat1HandleLock( handle->children[ichild], -3, 1,
+            (void) dat1HandleLock( handle->children[ichild], -3, 1, 0,
                                    status );
          }
       }
@@ -233,7 +399,7 @@ int dat1HandleLock( Handle *handle, int oper, int recurs, int *status ){
 
 /* If this is a top-level entry, unlock the Handle's mutex so that other
    threads can access the values in the Handle. */
-   if( top_level ) DAT_UNLOCK_MUTEX2( handle );
+   if( top_level ) pthread_mutex_unlock( &(handle->mutex) );
 
 /* Return the result. */
    return result;

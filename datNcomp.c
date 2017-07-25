@@ -99,7 +99,7 @@ datNcomp( const HDSLoc *locator, int *ncomp, int *status) {
   if (*status != SAI__OK) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
+  dat1ValidateLocator( "datNcomp", 1, locator, 1, status );
 
   if (!dat1IsStructure( locator, status)) {
     *status = DAT__OBJIN;

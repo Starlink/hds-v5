@@ -105,9 +105,6 @@ hdsCopy( const HDSLoc *locator, const char *file_str,
 
   if (*status != SAI__OK) return *status;
 
-  /* Validate input locator. */
-  dat1ValidateLocator( 1, locator, status );
-
   *status = DAT__FATAL;
   emsRep("hdsCopy", "hdsCopy: Not yet implemented for HDF5",
          status);
