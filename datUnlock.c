@@ -39,7 +39,7 @@
 
 *  Notes:
 *     - No error is reported if the supplied object, or any child object,
-*     is current locked for read-only or read-write access by another thread.
+*     is currently locked for read-only or read-write access by another thread.
 *     - The majority of HDS functions will report an error if the object
 *     supplied to the function has not been locked for use by the calling
 *     thread. The exceptions are the functions that manage these locks -
@@ -99,16 +99,9 @@
 *-
 */
 
-#include "hdf5.h"
-
-#include "ems.h"
 #include "sae_par.h"
-
-#include "hds1.h"
 #include "dat1.h"
 #include "hds.h"
-
-#include "dat_err.h"
 
 int datUnlock( HDSLoc *locator, int recurs, int *status ) {
 
