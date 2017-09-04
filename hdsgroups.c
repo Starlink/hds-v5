@@ -288,11 +288,49 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
   HDSgroup *entry = NULL;
   HDSelement elt;
   memset(&elt, 0, sizeof(elt));
+  int lock_status;
+  int ok;
+  int promoted;
 
   if (*status != SAI__OK) return *status;
 
-  /* Validate supplied locator */
-  dat1ValidateLocator( "hdsLink", 1, locator, 0, status );
+  /* Validate supplied locator, but do not check that the current thread
+     is locked by the current thread. */
+  dat1ValidateLocator( "hdsLink", 0, locator, 0, status );
+
+  /* The group name is stored inside the locator, so changing the group modifies
+     the locator structure. Therefore, we need to ensure that the current
+     thread has a read/write lock on the locator. If it does, continue.
+     If it does not, but it has the only read lock on the locator, we
+     temporarily promote the read lock to a read/write lock. First get
+     the lock status of the locator. */
+  lock_status = dat1HandleLock( locator->handle, 1, 0, 0, status );
+
+  /* If it is locked by the current thread for reading but not writing, we
+     attempt to promote the read lock to a read/write lock. Report an error if
+     the promotion fails (i.e. because another thread also has a read-lock). */
+  ok = 0;
+  promoted = 0;
+  if( lock_status == 3 && dat1HandleLock( locator->handle, 2, 0, 0, status ) == 1 ) {
+     ok = 1;
+     promoted = 1;
+
+  /* If it is locked by the current thread for reading and writing, we
+     can continue withotu changing anything. */
+  } else if( lock_status == 1 ){
+     ok = 1;
+  }
+
+  /* If we cannot get a write-lock report an error and return. */
+  if( !ok && *status == SAI__OK ){
+     *status = DAT__THREAD;
+     datMsg( "O", locator );
+     emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
+              status );
+     emsRep( " ", "It cannot be locked for read-write access by the current "
+             "thread (programming error).", status );
+     return *status;
+  }
 
   /* If we get a zero length string this either means we are trying to unlink
      the locator from the group or we have a bug in the calling code or else
@@ -326,6 +364,19 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
      We do not clone the locator, the locator is now owned by the group. */
   elt.locator = locator;
   utarray_push_back( entry->locators, &elt );
+
+  /* If the locator was originally promoted from a read lock to a
+     read/write lock, demote it back to a read lock. */
+  if( promoted && dat1HandleLock( locator->handle, 2, 0, 1, status ) != 1 ) {
+    if( *status == SAI__OK ) {
+        *status = DAT__THREAD;
+        datMsg( "O", locator );
+        emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
+                 status );
+        emsRep( " ", "The read-write lock cannot be demoted to a "
+                "read-only lock(programming error).", status );
+    }
+  }
 
   return *status;
 }
