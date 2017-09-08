@@ -58,6 +58,10 @@
 *        Now create a root HDS_SCRATCH locator and for each call to the
 *        routine create a TEMP_nnn object for the caller. This is how
 *        HDSv4 implemented things.
+*     2017-9-8 (DSB):
+*        Keep the file name (with suffix) in a static variable so that we
+*        can use it to unlick the file on subsequent invocations of this
+*        function.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -115,10 +119,11 @@
 #include "dat_par.h"
 #include "dat_err.h"
 
-/* Mutex used to serialise access to the following global variables */
+/* Mutex used to serialise access to the following static variables */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static HDSLoc *tmploc = NULL;
 static size_t tmpcount = 0;
+static char fname_with_suffix[256+DAT__SZFLX];
 
 int
 datTemp( const char *type_str, int ndim, const hdsdim dims[],
@@ -126,9 +131,9 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
 
   char * prefix = NULL;
   char fname[256];
-  char fname_with_suffix[256+DAT__SZFLX];
   char tempname[DAT__SZNAM+1];
   hdsbool_t there = 1;
+  int init;
 
   if (*status != SAI__OK) return *status;
 
@@ -157,6 +162,12 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
     /* Open the temp file: type and name are the same. The returned
        locator is locked by the current thread. */
     hdsNew(fname, "HDS_SCRATCH", "HDS_SCRATCH", 0, dims, &tmploc, status );
+
+    /* Get the name of the file with suffix. Store in a static variable so
+       that we can access it later in this function on subseuqnent
+       invocations. */
+    one_snprintf(fname_with_suffix, sizeof(fname_with_suffix),"%s%s", status,
+                 fname, DAT__FLEXT);
   }
 
   /* Lock the container file for read-write access by the current thread. */
@@ -186,8 +197,6 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
   /* Usually at this point you should unlink the file and hope the
      operating system will keep the file handle open whilst deferring the delete.
      This will work on unix systems. On Windows not so well. */
-  one_snprintf(fname_with_suffix, sizeof(fname_with_suffix),"%s%s", status,
-               fname, DAT__FLEXT);
   if (*status == SAI__OK) unlink(fname_with_suffix);
 
   /* Unlock the mutex. */
