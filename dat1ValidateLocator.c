@@ -80,8 +80,9 @@
 #include <pthread.h>
 #include "sae_par.h"
 #include "ems.h"
-#include "hds.h"
 #include "dat1.h"
+#include "hds1.h"
+#include "hds.h"
 #include "dat_err.h"
 
 int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc,
