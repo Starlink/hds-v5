@@ -44,6 +44,10 @@
  *        Use inttypes.h in preference to stdint.h.
  *     2006-Jul-25 (PWD):
  *        More fixes for MINGW handling of "long long" printfs.
+ *     2017-Sep-12 (DSB):
+ *        Switch HDS dimensiosn to signed 64 bit integers. They need to be 
+ *        signed since they will also be used for ARY/NDF array bounds, which 
+ *        can be nagative.
 
  *  Copyright:
  *     Copyright (C) 2005 Particle Physics and Astronomy Research Council.
@@ -138,12 +142,12 @@ error unable to find an 8 byte integer type
 /* We also state whether this is unsigned so that we can compare with
    the fortran type and also define the size. The last bit is a bit of
    a kluge to prevent sizeof("uint64_t") coming up with  9 */
-#define BIGDIM 0   /* set to 1 if testing 64 bit dims */
+#define BIGDIM 1   /* set to 1 if testing 64 bit dims */
 #if BIGDIM
-#define DIM_TYPE UINT_BIG
+#define DIM_TYPE INT_BIG
 #define SIZEOF_DIM 8
-#define DIM_FORMAT INT_BIG_U
-#define DIM_IS_UNSIGNED 1
+#define DIM_FORMAT INT_BIG_S
+#define DIM_IS_UNSIGNED 0
 #else
 #define DIM_TYPE STD_INT
 #define SIZEOF_DIM 4

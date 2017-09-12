@@ -20,7 +20,7 @@
 *    len = int (Given)
 *       Size of Fortran character buffer. Sanity check.
 *    status = int * (Given and Returned)
-*       Inherited status. Attempts to execute even if status is not DAT__OK
+*       Inherited status. Attempts to execute even if status is not SAI__OK
 *       on entry.
 
 *  Returned Value:

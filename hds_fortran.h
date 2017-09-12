@@ -85,7 +85,7 @@ hdsDimF2C( int ndim, const F77_INTEGER_TYPE fdims[],
 #define HDSDIM2INT( subname, cint, fint, status )			\
   if ( cint > (hdsdim)INT_MAX ) {					\
     fint = 0;								\
-    if (*status == DAT__OK) {						\
+    if (*status == SAI__OK) {						\
       *status = DAT__DTRNC;						\
       dat1emsSetHdsdim( "DIM", cint );					\
       emsRep( " ",							\

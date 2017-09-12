@@ -145,6 +145,7 @@ dat1CreateStructureCell.c \
 dat1CvtChar.c \
 dat1CvtLogical.c \
 dat1DumpLoc.c \
+dat1emsSetHdsdim.c \
 dat1EncodeSubscript.c \
 dat1EraseHandle.c \
 dat1ExportDims.c \

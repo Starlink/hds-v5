@@ -13,4 +13,12 @@
 #define MEM_REALLOC starRealloc
 #define MEM_CALLOC  starCalloc
 
+/* EMS wrapper routines:*/
+/* =====================*/
+#include "hds_types.h"
+void dat1emsSetHdsdim( const char * token, hdsdim value );
+
+
+
+
 #endif
