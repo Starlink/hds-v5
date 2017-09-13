@@ -319,17 +319,21 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
         /* And map the output */
         datMapV( temploc, type_str, "WRITE", &outpntr, &numout, status );
 
-        /* Copy up to numin elements */
-        nbytes = nbperel * (numin > numout ? numout : numin);
-        memcpy( outpntr, inpntr, nbytes );
+        /* Check we can use outpntr safely. */
+        if( *status == SAI__OK ) {
 
-        /* Then set the remaining elements to 0 (or bad). We could
-           get around this need by specifying the fill value on object creation */
-        if ( numout > numin) {
-          size_t nextra = nbperel * (numout - numin);
-          unsigned char * offpntr = NULL;
-          offpntr = &((unsigned char *)outpntr)[nbytes];
-          memset( offpntr, 0, nextra );
+           /* Copy up to numin elements */
+           nbytes = nbperel * (numin > numout ? numout : numin);
+           memcpy( outpntr, inpntr, nbytes );
+
+           /* Then set the remaining elements to 0 (or bad). We could
+              get around this need by specifying the fill value on object creation */
+           if ( numout > numin) {
+             size_t nextra = nbperel * (numout - numin);
+             unsigned char * offpntr = NULL;
+             offpntr = &((unsigned char *)outpntr)[nbytes];
+             memset( offpntr, 0, nextra );
+           }
         }
 
         /* Unmap and free the temporary locator */
