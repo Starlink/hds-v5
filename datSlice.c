@@ -158,7 +158,7 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
   }
 
   if (loc1ndims != ndim) {
-    if (*status != SAI__OK) {
+    if (*status == SAI__OK ) {
       *status = DAT__DIMIN;
       emsRepf("datSlice_3", "datSlice: Arguments have %d axes but locator refers to %d axes",
               status, ndim, loc1ndims);
