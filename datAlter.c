@@ -122,6 +122,7 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
   HDSLoc * temploc = NULL;
   hid_t new_dataset_id = 0;
   hid_t new_dataspace_id = 0;
+  int rdonly;
 
   if (*status != SAI__OK) return *status;
 
@@ -315,6 +316,7 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
         temploc->dataset_id = new_dataset_id;
         temploc->dataspace_id = new_dataspace_id;
         temploc->file_id = locator->file_id;
+        temploc->handle = locator->handle;
 
         /* And map the output */
         datMapV( temploc, type_str, "WRITE", &outpntr, &numout, status );
@@ -342,6 +344,10 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
         temploc = dat1FreeLoc( temploc, status );
       }
 
+      /* Determine if the current thread has a read-only or read-write lock
+         on the supplied object referenced by the supplied locator. */
+      rdonly = ( dat1HandleLock( locator->handle, 1, 0, 0, status ) == 3 );
+
       /* Delete the source dataset -- free resources in supplied locator */
       H5Sclose( locator->dataspace_id );
       H5Dclose( locator->dataset_id );
@@ -354,6 +360,21 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
       /* Update the locator */
       locator->dataspace_id = new_dataspace_id;
       locator->dataset_id = new_dataset_id;
+
+      /* Give it a new handle (the old one will have been modified or
+         erased within datErase above). */
+      locator->handle = dat1Handle( parloc, primname, rdonly, status );
+
+      /* Attempt to lock the locator again for use by the current thread,
+         using the same sort of lock (read-only or read-write) as the
+         supplied locator. Report an error if this fails. */
+      if( !dat1HandleLock( locator->handle, 2, 0, rdonly, status )
+          && *status == SAI__OK ) {
+         *status = DAT__THREAD;
+         emsSetc( "A", rdonly ? "read-only" : "read-write" );
+         emsRep( " ","datAlter: altered object cannot be locked for ^A "
+                 "access.", status );
+      }
 
     }
   }
