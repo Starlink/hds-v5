@@ -17,7 +17,7 @@
 
 *  Arguments:
 *     parent = Handle * (Given)
-*        Pointer to a Handle that 1) contains the Handle to be erase
+*        Pointer to a Handle that 1) contains the Handle to be erased
 *        (if "name" is not NULL), or 2) is the Handle to be erased (if
 *        "name" is NULL).
 *     name = const char * (Given)
