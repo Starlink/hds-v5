@@ -39,8 +39,8 @@ typedef int hdsi32_t;
 /* Standard HDS 64 bit integer (internal) */
 typedef int64_t hdsi64_t;
 typedef uint64_t hdsu64_t;
-#define HDS_INT_BIG_S "lld"
-#define HDS_INT_BIG_U "llu"
+#define HDS_INT_BIG_S "ld"
+#define HDS_INT_BIG_U "lu"
 
 /* Private types and sizes relating to dimensions */
 typedef int FORTRAN_INDEX_TYPE;

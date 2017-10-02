@@ -167,7 +167,8 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
   for (i=0; i< (ndim-2); i++) {
     if ( dims[i] != curdims[i] ) {
       *status = DAT__DIMIN;
-      emsRepf("datAlter_5", "datAlter: Dimension %d (1-based) does not match (%d != %d)",
+      emsRepf("datAlter_5", "datAlter: Dimension %d (1-based) does not match "
+              "(%" HDS_DIM_FORMAT " != %" HDS_DIM_FORMAT ")",
               status, i+1, dims[i], curdims[i]);
       return *status;
     }

@@ -45,9 +45,9 @@
  *     2006-Jul-25 (PWD):
  *        More fixes for MINGW handling of "long long" printfs.
  *     2017-Sep-12 (DSB):
- *        Switch HDS dimensiosn to signed 64 bit integers. They need to be 
- *        signed since they will also be used for ARY/NDF array bounds, which 
- *        can be nagative.
+ *        Switch HDS dimensions to signed 64 bit integers. They need to be
+ *        signed since they will also be used for ARY/NDF array bounds, which
+ *        can be negative.
 
  *  Copyright:
  *     Copyright (C) 2005 Particle Physics and Astronomy Research Council.
@@ -81,6 +81,7 @@
 #endif
 
 #include <limits.h>
+#include <inttypes.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -109,13 +110,8 @@
 #if HAVE_INT64_T && HAVE_UINT64_T
 #define INT_BIG "int64_t"
 #define UINT_BIG "uint64_t"
-#if __MINGW32__
-#define INT_BIG_S "I64d"
-#define INT_BIG_U "I64u"
-#else
-#define INT_BIG_S "lld"
-#define INT_BIG_U "llu"
-#endif
+#define INT_BIG_S PRId64
+#define INT_BIG_U PRIu64
 #elif SIZEOF_LONG == 8
 #define INT_BIG "long int"
 #define UINT_BIG "unsigned long int"

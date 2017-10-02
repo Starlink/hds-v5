@@ -156,9 +156,9 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
       for( i = 0; i < ndim; i++ ) {
         if( locdims[i] != dims[i] ) {
           *status = DAT__DIMIN;
-          emsRepf("", "datGet: Supplied dimension (%d) on axis %d is "
-                  "incorrect - it should be %d.", status, dims[i], i+1,
-                  locdims[i] );
+          emsRepf("", "datGet: Supplied dimension (%" HDS_DIM_FORMAT
+                  ") on axis %d is incorrect - it should be %"
+                  HDS_DIM_FORMAT ".", status, dims[i], i+1, locdims[i] );
           break;
         }
       }

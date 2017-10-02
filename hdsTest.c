@@ -1241,8 +1241,8 @@ static void testThreadSafety( const char *path, int *status ) {
             if( ip1[i] != ip2[i] ) {
                *status = DAT__FATAL;
                emsRepf( "", "testThreadSafety error 206: Threads created "
-                        "different values (%.20g anbd %.20g) at element %d",
-                        status, ip1[i], ip2[i], i );
+                        "different values (%.20g anbd %.20g) at element %"
+                        HDS_DIM_FORMAT, status, ip1[i], ip2[i], i );
             }
          }
       }
