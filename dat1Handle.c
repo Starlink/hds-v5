@@ -119,10 +119,12 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
 /* Local Variables; */
    char *ext;
    char *lname = NULL;
+   Handle *child;
    Handle *parent;
    Handle *result = NULL;
    int ichild;
    int lock_status;
+   int ichild_unused;
 
 /* Return immediately if an error has already occurred. */
    if( *status != SAI__OK ) return result;
@@ -148,11 +150,17 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
    known child objects to see if the requested component within the parent
    (identified by 'name') is already known and therefore already has an
    associated Handle structure. If it does, return a pointer to the child
-   Handle structure. */
+   Handle structure. Note "nchild" is the size of the "children" array -
+   this is not necessarily the same as the actual number of active
+   children since this array may contain some NULL pointers. */
+   ichild_unused = -1;
    if( parent && lname ) {
       for( ichild = 0; ichild < parent->nchild; ichild++ ) {
-         if( !strcmp( parent->children[ichild]->name, lname ) ) {
-            result =  parent->children[ichild];
+         child = parent->children[ichild];
+         if( !child ){
+            ichild_unused = ichild;
+         } else if( !strcmp( child->name, lname ) ) {
+            result = child;
             break;
          }
       }
@@ -175,15 +183,21 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
 /* Create links between the new Handle and any supplied parent. */
          result->parent = parent;
          if( parent ) {
-            parent->nchild++;
-            parent->children = MEM_REALLOC( parent->children,
-                                            parent->nchild*sizeof(Handle *) );
+
+/* If an used slot in the children array was found, we re-used it.
+   Otherwise we extend the children array. */
+            if( ichild_unused == - 1) {
+               ichild_unused = parent->nchild++;
+               parent->children = MEM_REALLOC( parent->children,
+                                               parent->nchild*sizeof(Handle *) );
+            }
+
             if( !parent->children ) {
                *status = DAT__NOMEM;
                emsRep("dat1Handle", "Could not reallocate memory for "
                       "child links in an HDS Handle", status );
             } else {
-               parent->children[ parent->nchild-1 ] = result;
+               parent->children[ ichild_unused ] = result;
             }
 
          }

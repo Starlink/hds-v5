@@ -165,6 +165,7 @@ int dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
                     int *status ){
 
 /* Local Variables; */
+   Handle *child;
    int ichild;
    int result = 0;
    int top_level;
@@ -334,8 +335,8 @@ int dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
    child handles that can be locked. */
       if( result && recurs ){
          for( ichild = 0; ichild < handle->nchild; ichild++ ) {
-            (void) dat1HandleLock( handle->children[ichild], -2, 1,
-                                   rdonly, status );
+            child = handle->children[ichild];
+            if( child ) (void) dat1HandleLock( child, -2, 1, rdonly, status );
          }
       }
 
@@ -383,8 +384,8 @@ int dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
    child handles that are not currently locked by another thread. */
       if( result && recurs ){
          for( ichild = 0; ichild < handle->nchild; ichild++ ) {
-            (void) dat1HandleLock( handle->children[ichild], -3, 1, 0,
-                                   status );
+            child = handle->children[ichild];
+            if( child ) (void) dat1HandleLock( child, -3, 1, 0, status );
          }
       }
 
