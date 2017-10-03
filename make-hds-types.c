@@ -52,6 +52,11 @@
  *        HDS does not provide a "UK" (unsigned 64 bit int) data type, and
  *        so there would be no way to store unsigned dimension values in an
  *        HDS data file.
+*     2017-Oct-3 (DSB):
+ *        - Add a macro (HDS_DIM_TYPE) that gives the HDS data type to use
+ *        for storing HDS dimensions.
+ *        - Add a macro (HDSDIM_TYPE) that appends HDS_DIM_TYPE to the 
+ *        end of a given function name.
 
  *  Copyright:
  *     Copyright (C) 2005 Particle Physics and Astronomy Research Council.
@@ -335,8 +340,15 @@ int main (int argc, char ** argv ) {
            "/* Public type for specifying HDS dimensions */\n"
            "typedef %s hdsdim;\n"
            "#define HDS_DIM_FORMAT \"%s\"\n"
-           "#define HDS_DIM_TYPE \"%s\"\n\n",
+           "#define HDS_DIM_TYPE %s\n\n",
            DIM_TYPE, DIM_FORMAT, HDS_DIM_TYPE );
+
+  fprintf( OutputFile,
+           "/* Helper macros for HDS dimensions. For instance HDSDIM_TYPE(datFred)\n"
+           "   expands to datFredK or datFredI, as required. */\n"
+           "#define HDS_GLUE_HELPER(a,b) a##b\n"
+           "#define HDS_GLUE(a,b) HDS_GLUE_HELPER(a,b)\n"
+           "#define HDSDIM_TYPE(a) HDS_GLUE(a,HDS_DIM_TYPE)\n\n");
 
   fprintf( POutputFile,
 	   "/* Private types and sizes relating to dimensions */\n"
