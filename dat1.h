@@ -159,8 +159,9 @@ typedef struct Handle {
 
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
+  int hds_version;   /* Implementation version number. Always 5 at the moment.
+                        Note, this MUST be the first field in the structure. */
   Handle *handle;    /* Structure holding fixed info for the HDF object */
-  int hds_version;   /* Implementation version number. Always 5 at the moment. */
   void *pntr;        /* Pointer to memory mapped data array [datMap only] */
   void *regpntr;     /* Pointer that was registered with CNF */
   size_t bytesmapped;/* Number of bytes mapped into memory [datMap only] */
