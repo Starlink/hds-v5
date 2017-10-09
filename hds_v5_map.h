@@ -130,6 +130,7 @@
 #define datTemp datTemp_v5
 #define datThere datThere_v5
 #define datType datType_v5
+#define datNolock datNolock_v5
 #define datUnlock datUnlock_v5
 #define datUnmap datUnmap_v5
 #define datValid datValid_v5

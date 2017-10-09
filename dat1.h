@@ -155,6 +155,8 @@ typedef struct Handle {
                                 for any known child objects */
    int nchild;              /* The length of the "children" array */
    char *name;              /* Name (cleaned) of the HDF object within its parent */
+   char docheck;            /* If non-zero, check any lock is appropriate
+                               before using the locator */
 } Handle;
 
 /* Private definition of the HDS locator struct */

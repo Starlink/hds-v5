@@ -960,6 +960,13 @@ datType(const HDSLoc *locator, char type_str[DAT__SZTYP + 1], int *status);
 int
 datUnlock( HDSLoc *locator, int recurs, int *status);
 
+/*=============================================================*/
+/* datNolock - Prevent lock checks being performed on an object. */
+/*=============================================================*/
+
+int
+datNolock( HDSLoc *locator, int *status);
+
 
 /*=========================*/
 /* datUnmap - Unmap object */

@@ -217,6 +217,7 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
          }
 
 /* Initialise the Handle to indicate it is currently unlocked. */
+         result->docheck = 1;
          result->nwrite_lock = 0;
          result->nread_lock = 0;
          result->read_lockers = NULL;
@@ -225,7 +226,7 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
 /* If a parent was supplied, see if the current thread has a read or
    write lock on the parent object. We give the same sort of lock to the
    new Handle below (ignoring the supplied value for "rdonly"). */
-         if( parent ) {
+         if( parent && parent->docheck ) {
             lock_status = dat1HandleLock( parent, 1, 0, 0, status );
             if( lock_status == 1 ) {
                rdonly = 0;

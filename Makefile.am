@@ -108,6 +108,7 @@ datValid.c \
 datVec.c \
 datLock.c \
 datLocked.c \
+datNolock.c \
 datUnlock.c \
 hdsCopy.c \
 hdsErase.c \
