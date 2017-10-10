@@ -126,22 +126,9 @@ Handle *dat1EraseHandle( Handle *parent, const char *name, int * status ){
       comp = parent;
    }
 
-/* Report an error if the named component was not found. */
-   if( !comp ) {
-      if( *status == SAI__OK ) {
-         *status = DAT__FATAL;
-         if( parent->name ) {
-            emsRepf( " ", "Failed to find handle for component '%s' within "
-                     "parent '%s' (programming error).", status, name,
-                     parent->name );
-         } else {
-            emsRepf( " ", "Failed to find handle for component '%s' within "
-                     "top-level parent (programming error).", status, name );
-         }
-      }
-
-/* Otherwise, attempt to erase all children in the component. */
-   } else {
+/* If the component was found, attempt to erase all children in the
+   component. */
+   if( comp ){
       for( ichild = 0; ichild < comp->nchild; ichild++ ) {
          child = comp->children[ ichild ];
          if( child ) {
