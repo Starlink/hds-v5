@@ -24,6 +24,9 @@
 *  Returned function value:
 *     A value indicating the status of the supplied Object:
 *
+*    -1: The application is is linked with a version of HDS that does
+*        not support object locking.
+*
 *     0: the supplied object is unlocked. This is the condition that must
 *        be met for the current thread to be able to lock the supplied
 *        object for read-write access using function datLock. This condition
