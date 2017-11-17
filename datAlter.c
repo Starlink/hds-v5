@@ -123,6 +123,7 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
   hid_t new_dataset_id = 0;
   hid_t new_dataspace_id = 0;
   int rdonly;
+  int lockinfo;
 
   if (*status != SAI__OK) return *status;
 
@@ -347,7 +348,8 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
 
       /* Determine if the current thread has a read-only or read-write lock
          on the supplied object referenced by the supplied locator. */
-      rdonly = ( dat1HandleLock( locator->handle, 1, 0, 0, status ) == 3 );
+      dat1HandleLock( locator->handle, 1, 0, 0, &lockinfo, status );
+      rdonly = ( lockinfo == 3 );
 
       /* Delete the source dataset -- free resources in supplied locator */
       H5Sclose( locator->dataspace_id );
@@ -369,8 +371,9 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
       /* Attempt to lock the locator again for use by the current thread,
          using the same sort of lock (read-only or read-write) as the
          supplied locator. Report an error if this fails. */
-      if( !dat1HandleLock( locator->handle, 2, 0, rdonly, status )
-          && *status == SAI__OK ) {
+
+      dat1HandleLock( locator->handle, 2, 0, rdonly, &lockinfo, status );
+      if( !lockinfo && *status == SAI__OK ) {
          *status = DAT__THREAD;
          emsSetc( "A", rdonly ? "read-only" : "read-write" );
          emsRep( " ","datAlter: altered object cannot be locked for ^A "

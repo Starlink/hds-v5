@@ -364,7 +364,7 @@ datLock_v5( HDSLoc *locator, int recurs, int readonly, int *status);
 /*=======================================================================*/
 
 int
-datLocked_v5( const HDSLoc *locator, int *status);
+datLocked_v5( const HDSLoc *locator, int recursive, int *status);
 
 /*===========================*/
 /* datMap - Map primitive(s) */

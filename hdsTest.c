@@ -87,6 +87,7 @@ typedef struct threadData {
    int failed;
    int rdonly;
    int id;
+   int status;
 } threadData;
 
 int main (void) {
@@ -1049,7 +1050,7 @@ static void testThreadSafety( const char *path, int *status ) {
 
 /* Check the top level object is locked for read-only access by the current
    thread. */
-   ival = datLocked( loc1, status );
+   ival = datLocked( loc1, 0, status );
    if( ival != 3 && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRep( "", "testThreadSafety error 101: Top-level object not "
@@ -1057,7 +1058,7 @@ static void testThreadSafety( const char *path, int *status ) {
    }
 
 /* Check the bottom level object is also locked by the current thread. */
-   ival = datLocked( loc4, status );
+   ival = datLocked( loc4, 1, status );
    if( ival != 3 && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRep( "", "testThreadSafety error 102: Bottom-level object not "
@@ -1086,7 +1087,7 @@ static void testThreadSafety( const char *path, int *status ) {
    }
 
 /* Check the top level object is locked by the current thread. */
-   ival = datLocked( loc1b, status );
+   ival = datLocked( loc1b, 0, status );
    if( ival != 3 && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRep( "", "testThreadSafety error 201: Top-level object not "
@@ -1094,7 +1095,7 @@ static void testThreadSafety( const char *path, int *status ) {
    }
 
 /* Check the bottom level object is also locked by the current thread. */
-   ival = datLocked( loc4b, status );
+   ival = datLocked( loc4b, 1, status );
    if( ival != 3 && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRep( "", "testThreadSafety error 202: Bottom-level object not "
@@ -1105,7 +1106,7 @@ static void testThreadSafety( const char *path, int *status ) {
    datLock( loc1, 1, 0, status );
 
 /* Check the other locator now also has a read/write lock. */
-   ival = datLocked( loc1b, status );
+   ival = datLocked( loc1b, 0, status );
    if( ival != 1 && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRep( "", "testThreadSafety error 2021: Top-level object not "
@@ -1120,8 +1121,10 @@ static void testThreadSafety( const char *path, int *status ) {
    so we should get DAT__THREAD errors when test1ThreadSafety tries to use
    them. */
    if( *status == SAI__OK ) {
-      pthread_create( &t1, NULL, test1ThreadSafety, loc1 );
-      pthread_create( &t2, NULL, test1ThreadSafety, loc1b );
+      threaddata1.loc = loc1;
+      pthread_create( &t1, NULL, test1ThreadSafety, &threaddata1 );
+      threaddata2.loc = loc1b;
+      pthread_create( &t2, NULL, test1ThreadSafety, &threaddata2 );
 
 /* Wait for them to terminate. */
       pthread_join( t1, NULL );
@@ -1132,7 +1135,7 @@ static void testThreadSafety( const char *path, int *status ) {
 /* Unlock the top level object using the first locator. Then check that
    it is also unlocked using the second locator. */
    datUnlock( loc1, 0, status );
-   ival = datLocked( loc1b, status );
+   ival = datLocked( loc1b, 0, status );
    if( ival != 0 && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRep( "", "testThreadSafety error 203: Top-level object still "
@@ -1141,15 +1144,17 @@ static void testThreadSafety( const char *path, int *status ) {
 
 /* The above unlock was non-recursive so check the bottom of the tree is
    still locked. */
-   if( !datLocked( loc4b, status ) && *status == SAI__OK ) {
+   if( !datLocked( loc4b, 1, status ) && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRep( "", "testThreadSafety error 204: Bottom-level object not "
               "locked.",  status );
    }
 
-/* Now unlock the top recursively and check the bottom is no longer locked. */
+/* Now lock it again and then unlock the top recursively. Then check the
+   bottom is no longer locked. */
+   datLock( loc1b, 1, 1, status );
    datUnlock( loc1b, 1, status );
-   if( datLocked( loc4, status ) && *status == SAI__OK ) {
+   if( datLocked( loc4, 1, status ) && *status == SAI__OK ) {
       *status = DAT__FATAL;
       emsRep( "", "testThreadSafety error 206: Bottom-level object still "
               "locked.",  status );
@@ -1173,13 +1178,28 @@ static void testThreadSafety( const char *path, int *status ) {
       pthread_join( t2, NULL );
       emsStat( status );
 
+/* Sanity check: if either of the threads failed, check that the status
+   value reflects this. */
+      if( threaddata1.status != SAI__OK || threaddata2.status != SAI__OK ) {
+         if( *status == SAI__OK ) {
+            *status = DAT__FATAL;
+            emsRepf( "", "ems failed to detect an error that occurred "
+                     "within a thread (test2, error code %d or %d)", status,
+                     threaddata1.status, threaddata2.status );
+         }
+      }
+
 /* Check one, and only one, failed. */
       if( threaddata1.failed + threaddata2.failed != 1 && *status == SAI__OK ) {
          *status = DAT__FATAL;
          emsRepf( "", "testThreadSafety error 205: %d read-write lock attempts "
-                  "succeeded - expected 1 to succeed.",  status,
+                  "failed - expected exactly 1 to fail.",  status,
                   threaddata1.failed + threaddata2.failed );
       }
+
+/* Unlock them now that the test has completed. */
+      datUnlock( loc1, 1, status );
+      datUnlock( loc1b, 1, status );
    }
 
 /* Attempt to access the two top-level objects in two separate threads.
@@ -1198,6 +1218,17 @@ static void testThreadSafety( const char *path, int *status ) {
       pthread_join( t2, NULL );
       emsStat( status );
 
+/* Sanity check: if either of the threads failed, check that the status
+   value reflects this. */
+      if( threaddata1.status != SAI__OK || threaddata2.status != SAI__OK ) {
+         if( *status == SAI__OK ) {
+            *status = DAT__FATAL;
+            emsRepf( "", "ems failed to detect an error that occurred "
+                     "within a thread (test3, error code %d or %d)", status,
+                     threaddata1.status, threaddata2.status );
+         }
+      }
+
 /* Check neither failed. */
       if( threaddata1.failed + threaddata2.failed > 0 && *status == SAI__OK ) {
          *status = DAT__FATAL;
@@ -1205,6 +1236,10 @@ static void testThreadSafety( const char *path, int *status ) {
                   "- expected 0 to fail.",  status,
                   threaddata1.failed + threaddata2.failed );
       }
+
+/* Unlock them now that the test has completed. */
+      datUnlock( loc1, 1, status );
+      datUnlock( loc1b, 1, status );
    }
 
 /* Lock both top level locators for read-only use by the current thread. The
@@ -1339,7 +1374,8 @@ static void testThreadSafety( const char *path, int *status ) {
 
 
 void *test1ThreadSafety( void *data ) {
-   HDSLoc *loc1 = (HDSLoc *) data;
+   threadData *tdata = (threadData *) data;
+   HDSLoc *loc1 = tdata->loc;
    HDSLoc *loc2 = NULL;
    int status = SAI__OK;
 
@@ -1363,6 +1399,7 @@ void *test1ThreadSafety( void *data ) {
               "error but got status=%d", &status, oldstat );
    }
 
+   tdata->status = status;
    return NULL;
 }
 
@@ -1383,15 +1420,16 @@ void *test2ThreadSafety( void *data ) {
       datFind( loc1, "Records", &loc2, &status );
 
       /* Check the component locator is locked by the current thread. */
-      if( datLocked( loc2, &status ) != expect && status == SAI__OK ) {
+      if( datLocked( loc2, 1, &status ) != expect && status == SAI__OK ) {
          status = DAT__FATAL;
          emsRepf("", "testThreadSafety error B1: loc2 is not locked by "
                  "current thread.", &status );
 
       }
       datAnnul( &loc2, &status );
-      datUnlock( loc1, 1, &status );
    }
+
+   tdata->status = status;
 
    return NULL;
 }

@@ -142,6 +142,10 @@
 
 int datLock( HDSLoc *locator, int recurs, int readonly, int *status ) {
 
+/* Local variables: */
+   Handle *error_handle = NULL;
+   int lstat;
+
 /* Check inherited status. */
    if (*status != SAI__OK) return *status;
 
@@ -154,14 +158,19 @@ int datLock( HDSLoc *locator, int recurs, int readonly, int *status ) {
 /* Attemp to lock the specified object, plus all its components. If the
    object could not be locked because it was already locked by another
    thread, report an error. */
-      if( !dat1HandleLock( locator->handle, 2, recurs, readonly, status ) ) {
-         if( *status == SAI__OK ) {
-            *status = DAT__THREAD;
-            emsSetc( "U", readonly ? "read-only" : "read-write" );
-            datMsg( "O", locator );
-            emsRep( " ", "datLock: Cannot lock HDS object '^O' for ^U use by "
-                    "the current thread:", status );
-            emsRep( " ", "It is already locked by another thread.", status );
+      error_handle = dat1HandleLock( locator->handle, 2, recurs, readonly, &lstat,
+                               status );
+      if( error_handle && *status == SAI__OK ) {
+         *status = DAT__THREAD;
+         emsSetc( "U", readonly ? "read-only" : "read-write" );
+         datMsg( "O", locator );
+         emsRep( " ", "datLock: Cannot lock HDS object '^O' for ^U use by "
+                 "the current thread:", status );
+         dat1HandleMsg( "E", error_handle );
+         if( error_handle != locator->handle ) {
+            emsRep( " ", "A component within it (^E) is locked for writing by another thread.", status );
+         } else {
+            emsRep( " ", "It is locked for writing by another thread.", status );
          }
       }
    }

@@ -112,6 +112,7 @@ datFind( const HDSLoc   *locator1,
   int rdonly;
   int there = 0;
   int havegroup = 0;
+  int lockinfo;
 
   if (*status != SAI__OK) return *status;
 
@@ -213,13 +214,16 @@ datFind( const HDSLoc   *locator1,
 
   /* Determine if the current thread has a read-only or read-write lock
      on the parent object, referenced by the supplied locator. */
-  rdonly = ( dat1HandleLock( locator1->handle, 1, 0, 0, status ) == 3 );
+  dat1HandleLock( locator1->handle, 1, 0, 0, &lockinfo, status );
+  rdonly = ( lockinfo == 3 );
+
 
   /* Attempt to lock the component object for use by the current thread,
      using the same sort of lock (read-only or read-write) as the
      parent object. Report an error if this fails. */
-  if( !dat1HandleLock( thisloc->handle, 2, 0, rdonly, status )
-      && *status == SAI__OK ) {
+
+  dat1HandleLock( thisloc->handle, 2, 0, rdonly, &lockinfo, status );
+  if( !lockinfo && *status == SAI__OK ) {
      *status = DAT__THREAD;
      emsSetc( "C", name_str );
      emsSetc( "A", rdonly ? "read-only" : "read-write" );

@@ -109,6 +109,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
   int isstruct = 0;
   int rdonly;
   char namestr[DAT__SZNAM+1];
+  int lockinfo;
 
   if (*status != SAI__OK) return *status;
 
@@ -209,13 +210,14 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
       /* Determine if the current thread has a read-only or read-write lock
          on the parent array, referenced by the supplied locator. */
-      rdonly = ( dat1HandleLock( locator1->handle, 1, 0, 0, status ) == 3 );
+      dat1HandleLock( locator1->handle, 1, 0, 0, &lockinfo, status );
+      rdonly = ( lockinfo == 3 );
 
       /* Attempt to lock the cell for use by the current thread, using the
          same sort of lock (read-only or read-write) as the parent object.
          Report an error if this fails. */
-      if( !dat1HandleLock( thisloc->handle, 2, 0, rdonly, status )
-          && *status == SAI__OK ) {
+      dat1HandleLock( thisloc->handle, 2, 0, rdonly, &lockinfo, status );
+      if( !lockinfo && *status == SAI__OK ) {
          *status = DAT__THREAD;
          emsSetc( "C", cellname );
          emsSetc( "A", rdonly ? "read-only" : "read-write" );

@@ -227,7 +227,7 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
    write lock on the parent object. We give the same sort of lock to the
    new Handle below (ignoring the supplied value for "rdonly"). */
          if( parent && parent->docheck ) {
-            lock_status = dat1HandleLock( parent, 1, 0, 0, status );
+            dat1HandleLock( parent, 1, 0, 0, &lock_status, status );
             if( lock_status == 1 ) {
                rdonly = 0;
             } else if( lock_status == 3 ) {
@@ -244,7 +244,7 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
 /* Lock the new Handle for use by the current thread. The type of lock
    (read-only or read-write) is inherited from the parent (if there is a
    parent) or supplied by the caller. */
-         dat1HandleLock( result, 2, 0, rdonly, status );
+         dat1HandleLock( result, 2, 0, rdonly, &lock_status, status );
       }
    }
 

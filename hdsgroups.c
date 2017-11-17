@@ -304,16 +304,19 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
      If it does not, but it has the only read lock on the locator, we
      temporarily promote the read lock to a read/write lock. First get
      the lock status of the locator. */
-  lock_status = dat1HandleLock( locator->handle, 1, 0, 0, status );
+  dat1HandleLock( locator->handle, 1, 0, 0, &lock_status, status );
 
   /* If it is locked by the current thread for reading but not writing, we
      attempt to promote the read lock to a read/write lock. Report an error if
      the promotion fails (i.e. because another thread also has a read-lock). */
   ok = 0;
   promoted = 0;
-  if( lock_status == 3 && dat1HandleLock( locator->handle, 2, 0, 0, status ) == 1 ) {
-     ok = 1;
-     promoted = 1;
+  if( lock_status == 3 ){
+     dat1HandleLock( locator->handle, 2, 0, 0, &lock_status, status );
+     if( lock_status == 1 ) {
+        ok = 1;
+        promoted = 1;
+     }
 
   /* If it is locked by the current thread for reading and writing, we
      can continue withotu changing anything. */
@@ -367,15 +370,16 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
 
   /* If the locator was originally promoted from a read lock to a
      read/write lock, demote it back to a read lock. */
-  if( promoted && dat1HandleLock( locator->handle, 2, 0, 1, status ) != 1 ) {
-    if( *status == SAI__OK ) {
+  if( promoted ){
+     dat1HandleLock( locator->handle, 2, 0, 1, &lock_status, status );
+     if( lock_status != 1 && *status == SAI__OK ) {
         *status = DAT__THREAD;
         datMsg( "O", locator );
         emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
                  status );
         emsRep( " ", "The read-write lock cannot be demoted to a "
                 "read-only lock(programming error).", status );
-    }
+     }
   }
 
   return *status;

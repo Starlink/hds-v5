@@ -113,8 +113,8 @@ int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc,
 /* If required, check that the object is locked by the current thread for
    the appropriate type of access. Do not check any child objects as these
    will be checked if and when accessed. */
-   if( checklock && loc->handle->docheck && *status == SAI__OK ) {
-      lock_status = dat1HandleLock( loc->handle, 1, 0, 0, status );
+   if( checklock && *status == SAI__OK && loc->handle->docheck ) {
+      dat1HandleLock( loc->handle, 1, 0, 0, &lock_status, status );
 
 /* Calling function will not make any change to the object. In this case
    the current thread must have a lock but the type (read-only or

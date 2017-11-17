@@ -434,7 +434,7 @@ rdonly, int * status );
 Handle *dat1EraseHandle( Handle *parent, const char *name, int * status );
 Handle *dat1FreeHandle( Handle *handle );
 int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc, int rdonly, int *status );
-int dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly, int *status );
+Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly, int *result, int *status );
 void dat1HandleMsg( const char *token, const Handle *handle );
 
 /* DAT1_H_INCLUDED */
