@@ -21,11 +21,10 @@
 *     recurs = int (Given)
 *        If the supplied object is locked successfully, and "recurs" is
 *        non-zero, then an attempt is made to lock any component objects
-*        contained within the supplied object. No error is reported if
-*        any components cannot be locked due to being locked already by
-*        a different thread - such components are left unchanged. This
-*        operation is recursive - any children of the child components
-*        are also locked, etc.
+*        contained within the supplied object. An error is reported if
+*        any components cannot be locked due to them being locked already
+*        by a different thread. This operation is recursive - any children
+*        of the child components are also locked, etc.
 *     readonly = int (Given)
 *        If non-zero, the object (and child objects if "recurs" is non-zero)
 *        is locked for read-only access. Otherwise it is locked for
@@ -72,9 +71,9 @@
 
 *  Notes:
 *     - An error will be reported if the supplied object is currently
-*     locked by another thread, but no error is reported if any component
-*     objects contained within the supplied object are locked by other
-*     threads (such objects are left unchanged).
+*     locked by another thread. If "recurs" is non-zero, an error is
+*     also reported if any component objects contained within the
+*     supplied object are locked by other threads.
 *     - The majority of HDS functions will report an error if the object
 *     supplied to the function has not been locked for use by the calling
 *     thread. The exceptions are the functions that manage these locks -

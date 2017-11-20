@@ -68,6 +68,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
+#include <pthread.h>
 
 static void traceme (const HDSLoc * loc, const char * expected, int explev,
                      int *status);
@@ -81,6 +82,8 @@ static void testThreadSafety( const char *path, int *status );
 static void *test1ThreadSafety( void *data );
 static void *test2ThreadSafety( void *data );
 static void *test3ThreadSafety( void *data );
+void showloc( HDSLoc *loc, const char *title, int ind );
+void showhan( Handle *h, int ind );
 
 typedef struct threadData {
    HDSLoc *loc;
@@ -89,6 +92,9 @@ typedef struct threadData {
    int id;
    int status;
 } threadData;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 int main (void) {
 
@@ -1161,7 +1167,9 @@ static void testThreadSafety( const char *path, int *status ) {
    }
 
 /* Attempt to access the two top-level objects in two separate threads.
-   Each thread attempt to lock the object read/write, but only one can win.
+   Each thread attempt to lock the object read/write, but only one can
+   win (assuming that the second thread starts up before the first thread
+   has finished and unlocked the object).
    The other should report an error. */
    if( *status == SAI__OK ) {
       threaddata1.id = 1;
@@ -1197,9 +1205,6 @@ static void testThreadSafety( const char *path, int *status ) {
                   threaddata1.failed + threaddata2.failed );
       }
 
-/* Unlock them now that the test has completed. */
-      datUnlock( loc1, 1, status );
-      datUnlock( loc1b, 1, status );
    }
 
 /* Attempt to access the two top-level objects in two separate threads.
@@ -1236,10 +1241,6 @@ static void testThreadSafety( const char *path, int *status ) {
                   "- expected 0 to fail.",  status,
                   threaddata1.failed + threaddata2.failed );
       }
-
-/* Unlock them now that the test has completed. */
-      datUnlock( loc1, 1, status );
-      datUnlock( loc1b, 1, status );
    }
 
 /* Lock both top level locators for read-only use by the current thread. The
@@ -1410,23 +1411,42 @@ void *test2ThreadSafety( void *data ) {
    HDSLoc *loc2 = NULL;
    int status = SAI__OK;
    int expect = tdata->rdonly ? 3 : 1;
+   int i, ii;
 
    datLock( loc1, 1, tdata->rdonly, &status );
    if( status == DAT__THREAD ) {
       emsAnnul( &status );
       tdata->failed = 1;
-   } else {
+   } else if( status == SAI__OK ){
+
       tdata->failed = 0;
       datFind( loc1, "Records", &loc2, &status );
 
       /* Check the component locator is locked by the current thread. */
-      if( datLocked( loc2, 1, &status ) != expect && status == SAI__OK ) {
+      ii = datLocked( loc2, 1, &status );
+      if( ii != expect && status == SAI__OK ) {
          status = DAT__FATAL;
          emsRepf("", "testThreadSafety error B1: loc2 is not locked by "
-                 "current thread.", &status );
+                 "current thread (%d %d). ", &status, ii, expect );
 
       }
       datAnnul( &loc2, &status );
+
+      /* Do something time consuming to make it likely that this thread
+         will not have finished (and so unlocked the object), before the other
+         thread starts. */
+      for( i = 0; i < 1000000; i++ ) {
+         ii = datLocked( loc1, 1, &status );
+         if( ii != expect && status == SAI__OK ) {
+            status = SAI__ERROR;
+            emsRepf( " ", "test2ThreadSafety: Unexpected lock status %d - "
+                     "expected %d", &status, ii, expect );
+            break;
+         }
+      }
+
+      datUnlock( loc1, 1, &status );
+
    }
 
    tdata->status = status;
@@ -1478,6 +1498,39 @@ void *test3ThreadSafety( void *data ) {
 
 
 
+
+
+
+/* Display information about the locs on a locator. */
+void showloc( HDSLoc *loc, const char *title, int indent ) {
+   int i;
+   pthread_mutex_lock(&mutex);
+   printf("\n");
+   for( i = 0; i < indent; i++ ) printf(" ");
+   printf( "%s\n", title );
+   for( i = 0; i < indent; i++ ) printf(" ");
+   for( i = 0; i < strlen(title); i++ ) printf("-");
+   printf("\n");
+   showhan( loc->handle, indent );
+   pthread_mutex_unlock(&mutex);
+}
+
+void showhan( Handle *h, int indent ) {
+   if( !h ) return;
+
+   int i;
+   for( i = 0; i < indent; i++ ) printf(" ");
+   printf("'%s' ", h->name ? h->name : " " );
+   if( h->nwrite_lock ) printf("w:%zu ", h->write_locker );
+   for( i = 0; i < h->nread_lock; i++ ) {
+      printf("r:%zu ", h->read_lockers[ i ] );
+   }
+   printf("\n");
+
+   for( i = 0; i < h->nchild; i++ ) {
+      showhan( h->children[i], indent + 3 );
+   }
+}
 
 
 

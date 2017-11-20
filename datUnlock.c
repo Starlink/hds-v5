@@ -21,17 +21,15 @@
 *     recurs = int (Given)
 *        If the supplied object is unlocked successfully, and "recurs" is
 *        non-zero, then an attempt is made to unlock any component objects
-*        contained within the supplied object. No error is reported if
-*        any components cannot be unlocked due to being locked already by
-*        a different thread - such components are left unchanged. This
-*        operation is recursive - any children of the child components
-*        are also unlocked, etc.
+*        contained within the supplied object.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
 *     This function removes a lock on the supplied HDS object. An error
-*     is reported if the current thread has no lock to be removed. See
+*     is reported if the object is not locked by the current thread. If
+*     "recurs" is non-zero, an error will be reported if any child component
+*     within the supplied object is not locked by the current thread. See
 *     datLock.
 *
 *     The object must be locked again, using datLock, before it can be

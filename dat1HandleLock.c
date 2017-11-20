@@ -62,7 +62,7 @@
 *            otherwise (in which case the current thread does not have a lock,
 *            but some other threads may have read locks). If "recurs" is
 *            non-zero, +1 is returned only if the supplied Handle and all
-*            child handles are by the current thread. Otherwise, the
+*            child handles are locked by the current thread. Otherwise, the
 *            returned value relates to the first handle (either the supplied
 *            or a child handle) that was no locked by the current thread.
 *
@@ -265,7 +265,7 @@ Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
             if( child ) {
 
 /* Get the lock status of the child. */
-               (void) dat1HandleLock( child, -2, 1, rdonly, &child_result,
+               (void) dat1HandleLock( child, -1, 1, rdonly, &child_result,
                                       status );
 
 /* If it's 2, we can set the final result and exit immediately. */
@@ -394,7 +394,7 @@ Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
                child = handle->children[ichild];
                if( child ) {
                   error_handle = dat1HandleLock( child, -2, 1, rdonly,
-                                                 &child_result, status );
+                                                 result, status );
                   if( error_handle ) break;
                }
             }
@@ -455,7 +455,7 @@ Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
                child = handle->children[ichild];
                if( child ) {
                   error_handle = dat1HandleLock( child, -3, 1, 0,
-                                                 &child_result, status );
+                                                 result, status );
                   if( error_handle ) break;
                }
             }
