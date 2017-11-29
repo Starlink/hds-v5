@@ -124,7 +124,7 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
   dat1ValidateLocator( "datVec", 1, locator1, 1, status );
 
   /* We cannot vectorise a discontiguous slice of an array. */
-  if ( locator1->isdiscont ) {
+  if( *status == SAI__OK && locator1->isdiscont ) {
     *status = DAT__OBJIN;
     emsRep("datVec_1", "datVec: Cannot vectorise a discontiguous slice",
            status );
@@ -137,7 +137,7 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
      represented by the supplied locator. If it is already one-dimensional,
      or if it has already been vectorised, there is nothing more to do. */
   dat1GetDataDims( locator1, dims, &actdims, status );
-  if( actdims != 1 && !locator1->vectorized ) {
+  if( *status == SAI__OK && actdims != 1 && !locator1->vectorized ) {
 
     /* The supplied locator may represent a slice of the full array. Find
        the lower and upper bounds within the full array, of the supplied
