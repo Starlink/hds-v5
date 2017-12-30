@@ -25,3 +25,5 @@ libtool
 componentinfo.dtd
 fac_200_err
 hds_types.h
+*~
+/make.log.err
