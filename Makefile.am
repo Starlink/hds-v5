@@ -39,10 +39,10 @@ include_HEADERS = $(PUBLIC_INCLUDES)
 noinst_MESSAGES = dat_err.h
 
 # dat_par.h was previously released so must go in the root include dir
-PUBLIC_CINCLUDES = hds_v5.h hds_types.h
+PUBLIC_CINCLUDES = hds_v5.h
 
 PRIVATE_INCLUDES = \
-	hds_h dat_par.h
+	hds_h dat_par.h hds_types.h \
 	hds1_types.h \
 	hds_fortran.h \
 	dat1.h \
