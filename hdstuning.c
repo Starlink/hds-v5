@@ -283,7 +283,7 @@ hdsGtune(const char *param_str, int *value, int *status) {
   } else if (strncasecmp(param_str, "MAP", 3) == 0) {
     *value = hds1GetUseMmap();
   } else {
-    *status = DAT__FATAL;
+    *status = DAT__NOTIM;
     emsRep("hdsGtune", "hdsGtune: Not yet implemented for HDF5",
            status);
   }
