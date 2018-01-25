@@ -216,12 +216,6 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
 
   if (*status != SAI__OK) goto CLEANUP;
 
-  /* Locator for a slice MUST be secondary */
-  if (sliceloc->isprimary) {
-    hdsbool_t isprimary = HDS_FALSE;
-    datPrmry(1, &sliceloc, &isprimary, status );
-  }
-
   /* If the slice corresponds to all the elements (which can happen: see ARY)
      then we do not need to modify the supplied at all. */
 
