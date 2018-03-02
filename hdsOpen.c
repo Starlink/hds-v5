@@ -52,6 +52,12 @@
 *        Initial version
 *     2014-11-22 (TIMJ):
 *        Root HDF5 group is now the HDS root
+*     2018-03-02 (DSB):
+*        Allow a file to be opened for read-write access that is already 
+*        open for read-only access. This uses a starlink-specific feature
+*        in HDF5 enabled by supplying the H5F_ACC_FORCERW flag when opening 
+*        the file.
+
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -128,13 +134,20 @@ hdsOpen( const char *file_str, const char *mode_str,
      before any others. */
   dat1InitHDF5();
 
-  /* Work out the flags for opening */
+  /* Work out the flags for opening. Note if we are opening the file for
+     update or write access,  mimic the old HDS behaviour by including
+     the starlink-specific H5F_ACC_FORCERW flag. This flag prevents an
+     error being reported within H5Fopen if the file has previously been
+     opened for read-only access. HDS V4 allows a file to opened for
+     update even if it has previously been opened read-only, although
+     the second open may fail if the file is write-protected. Some
+     starlink apps rely on this behaviour. */
   switch (mode_str[0]) {
   case 'U':
   case 'u':
   case 'w':
   case 'W':
-    flags = H5F_ACC_RDWR;
+    flags = H5F_ACC_RDWR | H5F_ACC_FORCERW;
     break;
   case 'R':
   case 'r':
