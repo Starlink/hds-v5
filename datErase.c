@@ -122,7 +122,7 @@ datErase(const HDSLoc   *locator, const char *name_str, int *status) {
  CLEANUP:
   if (*status != SAI__OK) {
     emsRepf("datErase_2", "Error deleting component %s in group %s",
-            status, cleanname, groupstr);
+            status, name_str, groupstr);
   }
   return *status;
 }

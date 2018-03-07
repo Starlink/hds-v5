@@ -291,6 +291,7 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
   int lock_status;
   int ok;
   int promoted;
+  int locked;
 
   if (*status != SAI__OK) return *status;
 
@@ -311,6 +312,7 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
      the promotion fails (i.e. because another thread also has a read-lock). */
   ok = 0;
   promoted = 0;
+  locked = 0;
   if( lock_status == 3 ){
      dat1HandleLock( locator->handle, 2, 0, 0, &lock_status, status );
      if( lock_status == 1 ) {
@@ -322,6 +324,15 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
      can continue withotu changing anything. */
   } else if( lock_status == 1 ){
      ok = 1;
+
+  /* If it is unlocked we temporarily lock it for reading and writing by
+     the current thread. */
+  } else if( lock_status == 0 ){
+     dat1HandleLock( locator->handle, 2, 0, 0, &lock_status, status );
+     if( lock_status == 1 ) {
+        ok = 1;
+        locked = 1;
+     }
   }
 
   /* If we cannot get a write-lock report an error and return. */
@@ -367,6 +378,18 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
      We do not clone the locator, the locator is now owned by the group. */
   elt.locator = locator;
   utarray_push_back( entry->locators, &elt );
+
+  /* If the locator was originally unlocked, unlock it now. */
+  if( locked ){
+     dat1HandleLock( locator->handle, 3, 0, 1, &lock_status, status );
+     if( lock_status != 1 && *status == SAI__OK ) {
+        *status = DAT__THREAD;
+        datMsg( "O", locator );
+        emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
+                 status );
+        emsRep( " ", "The read-write lock cannot be unlocked (programming error).", status );
+     }
+  }
 
   /* If the locator was originally promoted from a read lock to a
      read/write lock, demote it back to a read lock. */
