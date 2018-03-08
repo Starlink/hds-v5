@@ -1102,7 +1102,7 @@ static Handle *hds2FindHandle( hid_t file_id, int *status ){
 /* All file ids for the same file should share the same Handle, so we
    only need to look at the first file id - if any. */
    i = 0;
-   while( file_ids[ i ] ) {
+   while( *status == SAI__OK && file_ids[ i ] ) {
 
 /* Find the entry containing the locators that refer to the i'th file
    id. */
@@ -1114,7 +1114,7 @@ static Handle *hds2FindHandle( hid_t file_id, int *status ){
          elt = (HDSelement *) utarray_front( entry->locators );
 
 /* Work up the tree of handles to find the top level Handle. */
-         result = hds2TopHandle( elt->locator->handle );
+         if( elt && elt->locator ) result = hds2TopHandle( elt->locator->handle );
 
 /* Leave the file id loop now if we have a Handle. */
          if( result ) break;
