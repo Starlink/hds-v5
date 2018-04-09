@@ -35,7 +35,7 @@
 *        removed. This will be the required "group" name if the
 *        supplied type specified a non-primitive type.
 *     normlen = size_t (Given)
-*        Allocated size of normstr.
+*        Allocated size of norm_str.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
@@ -69,6 +69,11 @@
 *  History:
 *     2014-08-18 (TIMJ):
 *        Initial version
+*     2018-04-09 (DSB):
+*        If the supplied type string is blank (which is allowed in HDS V4) 
+*        return a normalised type consisting of a single space rather than
+*        a null (i.e. zero-length) string. Using a null string causes problems 
+*        when storing the type as an HDF5 attribute.  
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -136,6 +141,14 @@ int dau1CheckType ( hdsbool_t asmem, const char * type_str, hid_t * h5type,
   /* If the type does not begin with an _ then we assume this is
      a structure / group name. */
   if ( norm_str[0] != '_' ) {
+
+    /* HDS V4 allows structure types to be blank. But a blank name ends
+       up with zero length after removal of spaces, and returning a null
+       (i.e. zero length) type string here causes problems when storing
+       the type string as an HDF5 attribute (attribute names cannot be
+       zero length). So instead return a single space. */
+    if( strlen( norm_str ) == 0 && normlen > 1 ) strcpy( norm_str, " " );
+
     return 0;
   }
 
