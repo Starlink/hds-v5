@@ -68,7 +68,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
-#include <pthread.h>
 
 static void traceme (const HDSLoc * loc, const char * expected, int explev,
                      int *status);
@@ -82,6 +81,7 @@ static void testThreadSafety( const char *path, int *status );
 static void *test1ThreadSafety( void *data );
 static void *test2ThreadSafety( void *data );
 static void *test3ThreadSafety( void *data );
+static void *test4ThreadSafety( void *data );
 void showloc( HDSLoc *loc, const char *title, int ind );
 void showhan( Handle *h, int ind );
 
@@ -91,9 +91,11 @@ typedef struct threadData {
    int rdonly;
    int id;
    int status;
+   const char *path;
 } threadData;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 
 int main (void) {
@@ -1030,6 +1032,7 @@ static void testThreadSafety( const char *path, int *status ) {
    double *ip2;
    hdsdim dim;
    hdsdim i;
+   char typestr[DAT__SZTYP+1];
 
 /* Check inherited status */
    if( *status != SAI__OK ) return;
@@ -1363,6 +1366,38 @@ static void testThreadSafety( const char *path, int *status ) {
       }
    }
 
+/* Open the file again (read-only) in a thread. After opening the file
+   the thread blocks until condition variable cond_page is broadcast. */
+   emsMark();
+   threaddata2.path = path;
+   pthread_create( &t1, NULL, test4ThreadSafety, &threaddata2 );
+
+/* Block until the thread signals that the HDS file has been opened. */
+   pthread_mutex_lock( &mutex );
+   pthread_cond_wait( &cond, &mutex );
+   pthread_mutex_unlock( &mutex );
+
+/* Attempt also to open the file in this thread. */
+   hdsOpen( path, "Read", &loc1b, status );
+
+/* Attempt to use the locator for something. */
+   datType( loc1b, typestr, status );
+
+/* Broadcast the signal that tells the thread to close the file. */
+   pthread_mutex_lock( &mutex );
+   pthread_cond_broadcast( &cond );
+   pthread_mutex_unlock( &mutex );
+
+/* Attempt to use this thread's locator again. */
+   datType( loc1b, typestr, status );
+
+/* Close the file in this thread too. */
+   datAnnul( &loc1b, status );
+
+   if( *status == SAI__OK ) emsStat( status );
+   emsRlse();
+
+
 
    if( *status == SAI__OK ) {
       printf( "TestThreadSafety passed\n" );
@@ -1492,6 +1527,27 @@ void *test3ThreadSafety( void *data ) {
    datUnlock( loc1, 0, &status );
    tdata->loc = loc1;
 
+   return NULL;
+}
+
+
+void *test4ThreadSafety( void *data ) {
+   threadData *tdata = (threadData *) data;
+   HDSLoc *loc1 = NULL;
+   char typestr[DAT__SZTYP+1];
+   int status = SAI__OK;
+
+   hdsOpen( tdata->path, "Read", &loc1, &status );
+   datType( loc1, typestr, &status );
+
+   pthread_mutex_lock( &mutex );
+   pthread_cond_broadcast( &cond );
+   pthread_cond_wait( &cond, &mutex );
+   pthread_mutex_unlock( &mutex );
+
+   datAnnul( &loc1, &status );
+
+   tdata->status = status;
    return NULL;
 }
 

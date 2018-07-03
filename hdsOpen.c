@@ -53,10 +53,15 @@
 *     2014-11-22 (TIMJ):
 *        Root HDF5 group is now the HDS root
 *     2018-03-02 (DSB):
-*        Allow a file to be opened for read-write access that is already 
+*        Allow a file to be opened for read-write access that is already
 *        open for read-only access. This uses a starlink-specific feature
-*        in HDF5 enabled by supplying the H5F_ACC_FORCERW flag when opening 
+*        in HDF5 enabled by supplying the H5F_ACC_FORCERW flag when opening
 *        the file.
+*     2018-07-03 (DSB):
+*        Ensure the returned locator is locked for use by the current thread.
+*        Previously, this was not the case if the file was already open in 
+*        another thread, in which case the existing Handle was re-used without
+*        any further locks being requested.
 
 *     {enter_further_changes_here}
 
@@ -119,6 +124,7 @@ int
 hdsOpen( const char *file_str, const char *mode_str,
          HDSLoc **locator, int *status) {
   HDSLoc *temploc = NULL;
+  Handle *error_handle = NULL;
   Handle *handle = NULL;
   char * fname = NULL;
   hid_t file_id = 0;
@@ -126,6 +132,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   htri_t filstat = 0;
   unsigned int flags = 0;
   int rdonly = 0;
+  int lstat;
 
   *locator = NULL;
   if (*status != SAI__OK) return *status;
@@ -238,9 +245,30 @@ hdsOpen( const char *file_str, const char *mode_str,
   /* If the file was already open via another locator, store the
      top-level handle associated with that locator. Otherwise,
      create a new handle structure for the top level data object in the
-     file. Store the handle pointer in the locator. */
+     file. Store the handle pointer in the locator. Then attempt to lock
+     the handle appropriately (read-only or read-write) for use by the
+     current thread (in fact we only need to do this if we are re-using
+     a pre-existing handle, since dat1Handle will already have ensured
+     any newly created Handle is locked appropriately). */
   if( *locator ) {
-    if( !handle ) handle = dat1Handle( NULL, fname, rdonly, status );
+    if( !handle ) {
+       handle = dat1Handle( NULL, fname, rdonly, status );
+    } else {
+      error_handle = dat1HandleLock( handle, 2, 0, rdonly, &lstat, status );
+      if( error_handle && *status == SAI__OK ) {
+         *status = DAT__THREAD;
+         emsSetc( "U", rdonly ? "read-only" : "read-write" );
+         emsSetc( "O", file_str );
+         emsRep( " ", "hdsOpen: Cannot lock HDS object '^O' for ^U use by "
+                 "the current thread:", status );
+         dat1HandleMsg( "E", error_handle );
+         if( error_handle != handle ) {
+            emsRep( " ", "A component within it (^E) is locked for writing by another thread.", status );
+         } else {
+            emsRep( " ", "It is locked for writing by another thread.", status );
+         }
+      }
+    }
     (*locator)->handle = handle;
   }
 
