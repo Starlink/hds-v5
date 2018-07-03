@@ -194,6 +194,11 @@ int hdsLink(HDSLoc *locator, const char *group_str, int *status) {
 *        Initial version
 *     2014-11-07 (TIMJ):
 *        Remove from group before calling datAnnul
+*     2018-07-03 (DSB):
+*        Do nothing if the old and new groups names are equal. 
+*        This means no read-write lock needs to be acquired, which 
+*        can prevent errors from happening (e.g. if the locator is 
+*        already locked by another thread).
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -295,57 +300,6 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
 
   if (*status != SAI__OK) return *status;
 
-  /* Validate supplied locator, but do not check that the current thread
-     is locked by the current thread. */
-  dat1ValidateLocator( "hdsLink", 0, locator, 0, status );
-
-  /* The group name is stored inside the locator, so changing the group modifies
-     the locator structure. Therefore, we need to ensure that the current
-     thread has a read/write lock on the locator. If it does, continue.
-     If it does not, but it has the only read lock on the locator, we
-     temporarily promote the read lock to a read/write lock. First get
-     the lock status of the locator. */
-  dat1HandleLock( locator->handle, 1, 0, 0, &lock_status, status );
-
-  /* If it is locked by the current thread for reading but not writing, we
-     attempt to promote the read lock to a read/write lock. Report an error if
-     the promotion fails (i.e. because another thread also has a read-lock). */
-  ok = 0;
-  promoted = 0;
-  locked = 0;
-  if( lock_status == 3 ){
-     dat1HandleLock( locator->handle, 2, 0, 0, &lock_status, status );
-     if( lock_status == 1 ) {
-        ok = 1;
-        promoted = 1;
-     }
-
-  /* If it is locked by the current thread for reading and writing, we
-     can continue withotu changing anything. */
-  } else if( lock_status == 1 ){
-     ok = 1;
-
-  /* If it is unlocked we temporarily lock it for reading and writing by
-     the current thread. */
-  } else if( lock_status == 0 ){
-     dat1HandleLock( locator->handle, 2, 0, 0, &lock_status, status );
-     if( lock_status == 1 ) {
-        ok = 1;
-        locked = 1;
-     }
-  }
-
-  /* If we cannot get a write-lock report an error and return. */
-  if( !ok && *status == SAI__OK ){
-     *status = DAT__THREAD;
-     datMsg( "O", locator );
-     emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
-              status );
-     emsRep( " ", "It cannot be locked for read-write access by the current "
-             "thread (programming error).", status );
-     return *status;
-  }
-
   /* If we get a zero length string this either means we are trying to unlink
      the locator from the group or we have a bug in the calling code or else
      we mean that we don't want to link the locator at all. For now trigger
@@ -356,52 +310,115 @@ static int hds2Link(HDSLoc *locator, const char *group_str, int *status) {
     return *status;
   }
 
-  /* Check that a group name is not already set - we are allowed to
-     move a locator to a different group. We must unregister it though. */
-  if ( (locator->grpname)[0] != '\0') {
-    hds2RemoveLocator(locator, status);
-  }
+  /* Validate supplied locator, but do not check that the current thread
+     is locked by the current thread. */
+  dat1ValidateLocator( "hdsLink", 0, locator, 0, status );
 
-  /* Now copy the group name to the locator */
-  one_strlcpy( locator->grpname, group_str, sizeof(locator->grpname), status );
+  /* If the requested group name is already set, return without further action.
+     This avoids us needing a read-write lock on the locator and so avoids
+     unnecessary failures in cases where the locator is already locked by a
+     different thread. */
+  if( !locator->grpname || strcmp( locator->grpname, group_str ) ) {
 
-  /* See if this entry already exists in the hash */
-  HASH_FIND_STR( groups, group_str, entry );
-  if (!entry) {
-    entry = calloc( 1, sizeof(HDSgroup) );
-    one_strlcpy( entry->grpname, group_str, sizeof(entry->grpname), status );
-    utarray_new( entry->locators, &locators_icd);
-    HASH_ADD_STR( groups, grpname, entry );
-  }
+     /* We only need to check the locator's lock if the group name is
+        currently set and so will be changed by this call. This is safe
+        (i.e. two threads cannot set a name simultaneously) because this
+        function is already serialised by a mutex. */
+     promoted = 0;
+     locked = 0;
+     if ( (locator->grpname)[0] != '\0') {
 
-  /* Now we have the entry, we need to store the locator inside.
-     We do not clone the locator, the locator is now owned by the group. */
-  elt.locator = locator;
-  utarray_push_back( entry->locators, &elt );
+       /* The group name is stored inside the locator, so changing the group modifies
+          the locator structure. Therefore, we need to ensure that the current
+          thread has a read/write lock on the locator. If it does, continue.
+          If it does not, but it has the only read lock on the locator, we
+          temporarily promote the read lock to a read/write lock. First get
+          the lock status of the locator. */
+       dat1HandleLock( locator->handle, 1, 0, 0, &lock_status, status );
 
-  /* If the locator was originally unlocked, unlock it now. */
-  if( locked ){
-     dat1HandleLock( locator->handle, 3, 0, 1, &lock_status, status );
-     if( lock_status != 1 && *status == SAI__OK ) {
-        *status = DAT__THREAD;
-        datMsg( "O", locator );
-        emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
-                 status );
-        emsRep( " ", "The read-write lock cannot be unlocked (programming error).", status );
+       /* If it is locked by the current thread for reading but not writing, we
+          attempt to promote the read lock to a read/write lock. Report an error if
+          the promotion fails (i.e. because another thread also has a read-lock). */
+       ok = 0;
+       if( lock_status == 3 ){
+          dat1HandleLock( locator->handle, 2, 0, 0, &lock_status, status );
+          if( lock_status == 1 ) {
+             ok = 1;
+             promoted = 1;
+          }
+
+       /* If it is locked by the current thread for reading and writing, we
+          can continue withotu changing anything. */
+       } else if( lock_status == 1 ){
+          ok = 1;
+
+       /* If it is unlocked we temporarily lock it for reading and writing by
+          the current thread. */
+       } else if( lock_status == 0 ){
+          dat1HandleLock( locator->handle, 2, 0, 0, &lock_status, status );
+          if( lock_status == 1 ) {
+             ok = 1;
+             locked = 1;
+          }
+       }
+
+       /* If we cannot get a write-lock report an error and return. */
+       if( !ok && *status == SAI__OK ){
+          *status = DAT__THREAD;
+          datMsg( "O", locator );
+          emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
+                   status );
+          emsRep( " ", "It cannot be locked for read-write access by the current "
+                  "thread (programming error).", status );
+          return *status;
+       }
+
+     /* We are moving  a locator to a different group so unregister it
+        from the old group first. */
+       hds2RemoveLocator(locator, status);
      }
-  }
 
-  /* If the locator was originally promoted from a read lock to a
-     read/write lock, demote it back to a read lock. */
-  if( promoted ){
-     dat1HandleLock( locator->handle, 2, 0, 1, &lock_status, status );
-     if( lock_status != 1 && *status == SAI__OK ) {
-        *status = DAT__THREAD;
-        datMsg( "O", locator );
-        emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
-                 status );
-        emsRep( " ", "The read-write lock cannot be demoted to a "
-                "read-only lock(programming error).", status );
+     /* Now copy the group name to the locator */
+     one_strlcpy( locator->grpname, group_str, sizeof(locator->grpname), status );
+
+     /* See if this entry already exists in the hash */
+     HASH_FIND_STR( groups, group_str, entry );
+     if (!entry) {
+       entry = calloc( 1, sizeof(HDSgroup) );
+       one_strlcpy( entry->grpname, group_str, sizeof(entry->grpname), status );
+       utarray_new( entry->locators, &locators_icd);
+       HASH_ADD_STR( groups, grpname, entry );
+     }
+
+     /* Now we have the entry, we need to store the locator inside.
+        We do not clone the locator, the locator is now owned by the group. */
+     elt.locator = locator;
+     utarray_push_back( entry->locators, &elt );
+
+     /* If the locator was originally unlocked, unlock it now. */
+     if( locked ){
+        dat1HandleLock( locator->handle, 3, 0, 1, &lock_status, status );
+        if( lock_status != 1 && *status == SAI__OK ) {
+           *status = DAT__THREAD;
+           datMsg( "O", locator );
+           emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
+                    status );
+           emsRep( " ", "The read-write lock cannot be unlocked (programming error).", status );
+        }
+     }
+
+     /* If the locator was originally promoted from a read lock to a
+        read/write lock, demote it back to a read lock. */
+     if( promoted ){
+        dat1HandleLock( locator->handle, 2, 0, 1, &lock_status, status );
+        if( lock_status != 1 && *status == SAI__OK ) {
+           *status = DAT__THREAD;
+           datMsg( "O", locator );
+           emsRepf( " ", "hdsLink: The supplied HDS locator for '^O' cannot be used.",
+                    status );
+           emsRep( " ", "The read-write lock cannot be demoted to a "
+                   "read-only lock(programming error).", status );
+        }
      }
   }
 
