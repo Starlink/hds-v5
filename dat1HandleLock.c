@@ -129,6 +129,9 @@
 *        Change the returned values depend on "recurs". Change the API to
 *        return a pointer to the first Handle that causes the lock or unlock
 *        operation to fail.
+*     3-JUL-2018 (DSB):
+*        Fix incrementation bugs in loops that loop round lists of
+*        read-lockers.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -329,7 +332,7 @@ Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
 
 /* Set "result" to 1 if the current thread already has a read-only lock. */
             locker = handle->read_lockers;
-            for( i = 0; i < handle->nread_lock;i++ ) {
+            for( i = 0; i < handle->nread_lock;i++,locker++ ) {
                if( pthread_equal( *locker, pthread_self() )) {
                   *result = 1;
                   break;
@@ -436,7 +439,7 @@ Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
             if( pthread_equal( *locker, pthread_self() )) {
                rlocker = locker + 1;
                for( j = i + 1; j < handle->nread_lock; j++,locker++ ) {
-                  *(locker++) = *(rlocker++);
+                  *locker = *(rlocker++);
                }
 
 /* Reduce the number of read-only locks. */
