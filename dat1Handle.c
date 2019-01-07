@@ -225,12 +225,16 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
 
 /* If a parent was supplied, see if the current thread has a read or
    write lock on the parent object. We give the same sort of lock to the
-   new Handle below (ignoring the supplied value for "rdonly"). */
+   new Handle below (ignoring the supplied value for "rdonly"). If lock
+   checks are not being performed, arbitrarily assume a read-only lock
+   (not that it will make any difference). */
          if( parent && parent->docheck ) {
             dat1HandleLock( parent, 1, 0, 0, &lock_status, status );
             if( lock_status == 1 ) {
                rdonly = 0;
             } else if( lock_status == 3 ) {
+               rdonly = 1;
+            } else if( !hds1GetLockCheck() ) {
                rdonly = 1;
             } else if( *status == SAI__OK ) {
                *status = DAT__FATAL;

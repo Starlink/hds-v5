@@ -110,6 +110,9 @@ int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc,
               status, func );
    }
 
+/* If the LockCheck tuning parameter is False, never check locks. */
+   if( checklock ) checklock = hds1GetLockCheck();
+
 /* If required, check that the object is locked by the current thread for
    the appropriate type of access. Do not check any child objects as these
    will be checked if and when accessed. */

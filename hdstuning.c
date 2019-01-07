@@ -24,6 +24,10 @@ static hds_shell_t HDS_SHELL = HDS__SHSHELL; /* Default to doing expansion */
 
 static hdsbool_t HDS_MAP = HDS_TRUE; /* Do mmap by default when possible */
 
+/* Should checks on HDS object locks be performed? 1 (yes), 0 (no) */
+
+static hdsbool_t HDS_LOCKCHECK = HDS_TRUE; /* Perform locking checks by default */
+
 /* A mutex used to serialise access to the getters and setters so that
    multiple threads do not try to access the global data simultaneously. */
 static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
@@ -35,6 +39,7 @@ static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 static void hds1SetShell( hds_shell_t shell);
 static void hds1SetUseMmap( hdsbool_t use_mmap );
+static void hds1SetLockCheck( hdsbool_t lock_check );
 
 static void hds1ReadTuneEnvironment () {
   int itemp = 0;
@@ -51,6 +56,10 @@ static void hds1ReadTuneEnvironment () {
   itemp = (HDS_MAP ? 1 : 0);
   dat1Getenv( "HDS_MAP", HDS_MAP, &itemp );
   hds1SetUseMmap( itemp ? HDS_TRUE : HDS_FALSE );
+
+  itemp = (HDS_LOCKCHECK ? 1 : 0);
+  dat1Getenv( "HDS_LOCKCHECK", HDS_LOCKCHECK, &itemp );
+  hds1SetLockCheck( itemp ? HDS_TRUE : HDS_FALSE );
 
   HAVE_INITIALIZED_V5_TUNING = 1;
 }
@@ -175,6 +184,8 @@ hdsTune(const char *param_str, int  value, int  *status) {
     /* Irrelevant for HDF5 */
   } else if (strncmp( param_str, "MAP", 3) == 0 ) {
     hds1SetUseMmap( value ? HDS_TRUE : HDS_FALSE );
+  } else if (strncmp( param_str, "LOCKCHECK", 9) == 0 ) {
+    hds1SetLockCheck( value ? HDS_TRUE : HDS_FALSE );
   } else if (strncmp( param_str, "SHEL", 4) == 0) {
     hds1SetShell( value );
   } else {
@@ -282,6 +293,8 @@ hdsGtune(const char *param_str, int *value, int *status) {
     *value = hds1GetShell();
   } else if (strncasecmp(param_str, "MAP", 3) == 0) {
     *value = hds1GetUseMmap();
+  } else if (strncasecmp(param_str, "LOCKCHECK", 9) == 0) {
+    *value = hds1GetLockCheck();
   } else {
     *status = DAT__NOTIM;
     emsRep("hdsGtune", "hdsGtune: Not yet implemented for HDF5",
@@ -305,6 +318,23 @@ hdsbool_t hds1GetUseMmap() {
 static void hds1SetUseMmap( hdsbool_t use_mmap ) {
   LOCK_MUTEX
   HDS_MAP = use_mmap;
+  UNLOCK_MUTEX
+  return;
+}
+
+hdsbool_t hds1GetLockCheck() {
+  hdsbool_t result;
+  /* Ensure that defaults have been read */
+  hds1ReadTuneEnvironment();
+  LOCK_MUTEX;
+  result = HDS_LOCKCHECK;
+  UNLOCK_MUTEX;
+  return result;
+}
+
+static void hds1SetLockCheck( hdsbool_t lock_check ) {
+  LOCK_MUTEX
+  HDS_LOCKCHECK = lock_check;
   UNLOCK_MUTEX
   return;
 }

@@ -416,7 +416,7 @@ dat1GetAttrString( hid_t objid, const char * attrname, hdsbool_t usedef,
 void dat1Getenv( const char *varname, int def, int *val );
 
 hdsbool_t hds1GetUseMmap();
-
+hdsbool_t hds1GetLockCheck();
 hds_shell_t hds1GetShell();
 
 int dat1Annul( HDSLoc *locator, int * status );
