@@ -10,6 +10,7 @@
 #define datCoerc datCoerc_v5
 #define datCopy datCopy_v5
 #define datDrep datDrep_v5
+#define datDsame datDsame_v5
 #define datErase datErase_v5
 #define datErmsg datErmsg_v5
 #define datFind datFind_v5

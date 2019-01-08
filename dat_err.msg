@@ -58,4 +58,5 @@ FILFM   <File not in the expected format>
 THREAD  <Object not locked by current thread>
 MUTEX   <Failed to initialise mutex>
 NOTIM   <Not implemented>
+NOTPR   <Object is not primitive>
 .END

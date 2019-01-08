@@ -3,7 +3,7 @@
 <!-- component.xml.  Generated from component.xml.in by configure. -->
 
 <component id="hds-v5" support="S">
-  <version>1.0-1</version>
+  <version>1.0-2</version>
   <path>libext/hds-v5</path>
   <description>Hierarchical Data System layered on HDF5</description>
   <abstract>

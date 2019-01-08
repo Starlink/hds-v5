@@ -65,6 +65,7 @@ datClone.c \
 datCopy.c \
 datCoerc.c \
 datDrep.c \
+datDsame.c \
 datErase.c \
 datErmsg.c \
 datExportFloc.c \
