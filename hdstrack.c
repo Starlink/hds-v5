@@ -75,13 +75,29 @@ static void hds2ShowLocators( hid_t file_id, int * status );
 
 /* Public functions
    -----------------------------------------------------------------------
-   These use a mutex to serialise calls so that the module variables used
-   within this module are not accessed by multiple threads at the same
-   time. There is a one-to-one correspondance between these public
-   functions and the corresponding private function. */
+   These use a recursive mutex to serialise calls so that the module
+   variables used within this module are not accessed by multiple threads
+   at the same time. There is a one-to-one correspondance between these
+   public functions and the corresponding private function. A recursive
+   mutex is used since some of these function call "dat1" functions, that
+   may call these functions again. */
 
-static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
-#define LOCK_MUTEX pthread_mutex_lock( &mutex1 );
+static int mutex1_initialised = 0;
+static pthread_mutex_t mutex1;
+static pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+
+#define LOCK_MUTEX \
+pthread_mutex_lock( &mutex2 ); \
+if( !mutex1_initialised ){ \
+   pthread_mutexattr_t Attr; \
+   pthread_mutexattr_init(&Attr); \
+   pthread_mutexattr_settype(&Attr, PTHREAD_MUTEX_RECURSIVE); \
+   pthread_mutex_init(&mutex1, &Attr); \
+   mutex1_initialised = 1; \
+} \
+pthread_mutex_unlock( &mutex2 ); \
+pthread_mutex_lock( &mutex1 );
+
 #define UNLOCK_MUTEX pthread_mutex_unlock( &mutex1 );
 
 
