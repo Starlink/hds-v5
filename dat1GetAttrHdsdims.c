@@ -120,7 +120,7 @@ dat1GetAttrHdsdims( hid_t objid, const char * attrname, hdsbool_t usedef,
 
   if (*status != SAI__OK) return;
 
-  CALLHDF( attrtype,
+  CALLHDFE( hid_t, attrtype,
            H5Tcopy(H5T_NATIVE_HSIZE),
            DAT__HDF5E,
            emsRepf("dat1GetAttrHdsdims_1", "Error copying data type during reading of attribute '%s'", status, attrname );

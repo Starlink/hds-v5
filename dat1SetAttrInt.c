@@ -99,7 +99,7 @@ dat1SetAttrInt( hid_t obj_id, const char * attrname,
 
   if (*status != SAI__OK) return;
 
-  CALLHDF( attrtype,
+  CALLHDFE( hid_t, attrtype,
            H5Tcopy(H5T_NATIVE_INT32),
            DAT__HDF5E,
            emsRepf("dat1SetAttrInt_1", "Error copying data type during writing of attribute '%s'", status, attrname );

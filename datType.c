@@ -136,7 +136,7 @@ datType( const HDSLoc *locator, char type_str[DAT__SZTYP+1], int * status ) {
     /* Get the type from the dataset and request its size */
     {
       size_t dsize = 0;
-      CALLHDF( h5type,
+      CALLHDFE( hid_t, h5type,
                H5Dget_type( locator->dataset_id ),
                DAT__HDF5E,
                emsRep("datType_1", "datType: Error obtaining data type of dataset", status)

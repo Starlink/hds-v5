@@ -103,7 +103,7 @@ dat1Type( const HDSLoc *locator, int * status ) {
   /* if this is a group locator we can return straightaway */
   if (dat1IsStructure(locator, status)) return HDSTYPE_STRUCTURE;
 
-  CALLHDF( h5type,
+  CALLHDFE( hid_t, h5type,
            H5Dget_type( locator->dataset_id ),
            DAT__HDF5E,
            emsRep("dat1Type_1", "datType: Error obtaining data type of dataset", status)

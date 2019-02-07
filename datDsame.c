@@ -128,13 +128,13 @@ datDsame(const HDSLoc *loc1, const HDSLoc *loc2, hdsbool_t *same, int *status) {
   }
 
 /* Get the two HDF5 data type objects. */
-  CALLHDF( h5type1,
+  CALLHDFE( hid_t, h5type1,
            H5Dget_type( loc1->dataset_id ),
            DAT__HDF5E,
            emsRep("datDsame_type", "datDsame: Error obtaining data type "
                   "of first dataset", status) );
 
-  CALLHDF( h5type2,
+  CALLHDFE( hid_t, h5type2,
            H5Dget_type( loc2->dataset_id ),
            DAT__HDF5E,
            emsRep("datDsame_type", "datDsame: Error obtaining data type "

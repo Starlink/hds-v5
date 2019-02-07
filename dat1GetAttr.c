@@ -124,7 +124,7 @@ dat1GetAttr( hid_t obj_id, const char * attrname, hid_t attrtype,
   }
 
   /* Get the attribute object */
-  CALLHDF( attribute_id,
+  CALLHDFE( hid_t, attribute_id,
            H5Aopen( obj_id, attrname, H5P_DEFAULT ),
            DAT__HDF5E,
            emsRepf("dat1GetAttr_1", "Error retrieving attribute named %s",
@@ -132,7 +132,7 @@ dat1GetAttr( hid_t obj_id, const char * attrname, hid_t attrtype,
            );
 
   /* Retrieve the underlying dataspace */
-  CALLHDF( attr_dataspace_id,
+  CALLHDFE( hid_t, attr_dataspace_id,
            H5Aget_space( attribute_id ),
            DAT__HDF5E,
            emsRepf("dat1GetAttr_2", "Error retrieving dataspace from attribute named %s",
@@ -154,7 +154,7 @@ dat1GetAttr( hid_t obj_id, const char * attrname, hid_t attrtype,
     }
     if (rank > 0) { /* not a scalar */
       int i;
-      CALLHDF(rank,
+      CALLHDFE( int, rank,
               H5Sget_simple_extent_dims( attr_dataspace_id, dims, NULL),
               DAT__HDF5E,
               emsRepf("dat1GetAttr_4", "Error retrieving dimensions of attribute %s", status, attrname)

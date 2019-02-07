@@ -268,7 +268,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 
   /* Now we want the HDSTYPE of the requested type so that we can work out how much
      memory we will need to allocate. */
-  CALLHDF(nbytes,
+  CALLHDFE( size_t, nbytes,
           H5Tget_size( h5type ),
           DAT__HDF5E,
           emsRep("datLen_size", "datMap: Error obtaining size of requested data type",
@@ -294,7 +294,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
     hid_t dataset_h5type = 0;
     /* In theory we can do a memory map so now compare
        the data types of the request and the low-level dataset. */
-    CALLHDF( dataset_h5type,
+    CALLHDFE( hid_t, dataset_h5type,
              H5Dget_type( locator->dataset_id ),
              DAT__HDF5E,
              emsRep("datMap_type", "datType: Error obtaining data type of dataset", status)

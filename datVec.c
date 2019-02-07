@@ -182,7 +182,7 @@ datVec( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
        representing a 1-dimensional (i.e. vectorised) version of the full
        array. */
     } else {
-      CALLHDF( (*locator2)->dataspace_id,
+      CALLHDFE( hid_t, (*locator2)->dataspace_id,
                H5Screate_simple( 1, &plane_size, maxptr ),
                DAT__HDF5E,
                emsRepf(" ", "Error allocating data space", status )

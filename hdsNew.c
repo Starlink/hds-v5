@@ -164,12 +164,12 @@ hdsNew(const char *file_str,
   fname = dau1CheckFileName( file_str, status );
 
   /* Create the HDF5 file */
-  CALLHDF( file_id,
-           H5Fcreate( fname, H5F_ACC_TRUNC,
-                      H5P_DEFAULT, H5P_DEFAULT ),
-           DAT__FILCR,
-           emsRepf("hdsNew","Error creating file '%s'", status, fname )
-           );
+  CALLHDFE( hid_t, file_id,
+            H5Fcreate( fname, H5F_ACC_TRUNC,
+                       H5P_DEFAULT, H5P_DEFAULT ),
+            DAT__FILCR,
+            emsRepf("hdsNew","Error creating file '%s'", status, fname )
+            );
 
   /* Create the top-level structure/primitive */
   if (*status == SAI__OK) {

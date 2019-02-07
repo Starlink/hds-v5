@@ -160,7 +160,7 @@ datClen( const HDSLoc * locator, size_t * clen, int * status ) {
     break;
   case HDSTYPE_CHAR:
     /* length of the special type */
-    CALLHDF( h5type,
+    CALLHDFE( hid_t, h5type,
              H5Dget_type( locator->dataset_id ),
              DAT__HDF5E,
              emsRep("datClen_3", "datClen: Error obtaining data type of dataset", status)

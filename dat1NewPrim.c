@@ -114,7 +114,7 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
 
   if (ndim == 0) {
 
-    CALLHDF( *dataspace_id,
+    CALLHDFE( hid_t, *dataspace_id,
              H5Screate( H5S_SCALAR ),
              DAT__HDF5E,
              emsRepf("dat1New_0", "Error allocating data space for scalar %s",
@@ -126,7 +126,7 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
        dataset, if we are to allow resizing we have to make it unlimited. */
     const hsize_t *maxdims = NULL;
 
-    CALLHDF( cparms,
+    CALLHDFE( hid_t, cparms,
              H5Pcreate( H5P_DATASET_CREATE ),
              DAT__HDF5E,
              emsRepf("dat1New_1b", "Error creating parameters for data set %s",
@@ -156,7 +156,7 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
 #endif
 
     /* Create the data space for the dataset */
-    CALLHDF( *dataspace_id,
+    CALLHDFE( hid_t, *dataspace_id,
              H5Screate_simple( ndim, h5dims, maxdims ),
              DAT__HDF5E,
              emsRepf("dat1New_1", "Error allocating data space for %s",
@@ -166,7 +166,7 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
   }
 
   /* now place the dataset */
-  CALLHDF( *dataset_id,
+  CALLHDFE( hid_t, *dataset_id,
            H5Dcreate2(group_id, name_str, h5type, *dataspace_id,
                       H5P_DEFAULT, cparms, H5P_DEFAULT),
            DAT__HDF5E,

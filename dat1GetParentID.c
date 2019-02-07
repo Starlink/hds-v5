@@ -151,7 +151,7 @@ dat1GetParentID( hid_t objid, hdsbool_t allow_root, int * status ) {
      item (group or dataset) if you use a fully specified
      path. This means you do not need to get an
      explicit file_id to open the group */
-  CALLHDF(parent_id,
+  CALLHDFE( hid_t, parent_id,
           H5Gopen(objid, tempstr, H5P_DEFAULT),
           DAT__HDF5E,
           emsRepf("datParen_2", "Error opening parent structure '%s'",

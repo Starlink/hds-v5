@@ -107,7 +107,7 @@ dat1NeedsRootName( hid_t objid, hdsbool_t wantprim, char * rootname, size_t root
 
   if (*status != SAI__OK) return needroot;
 
-  CALLHDF( group_id,
+  CALLHDFE( hid_t, group_id,
            H5Gopen2(objid, "/", H5P_DEFAULT),
            DAT__HDF5E,
            emsRepf("hdsOpen_2","Error opening root group to get name",

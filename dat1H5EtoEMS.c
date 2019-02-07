@@ -154,7 +154,7 @@ custom_print_cb(unsigned int n, const H5E_error2_t *err_desc, void* client_data)
     H5Eget_msg(err_desc->min_num, NULL, min, MSG_SIZE);
 
     emsRepf("HDF5_INTERNAL_2",
-            "%s-DIAG #%03u: %s line %u in %s()%s%s",
+            "%s-DIAG #%03u: %s line %zu in %s()%s%s",
             eprint->status,
             cls, n, err_desc->file_name, err_desc->line, err_desc->func_name,
             (have_desc ? ": " : ""),

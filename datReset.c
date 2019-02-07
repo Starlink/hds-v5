@@ -141,7 +141,7 @@ datReset(HDSLoc *locator, int *status) {
             );
 
   /* Data type that we need */
-  CALLHDF( h5type,
+  CALLHDFE( hid_t, h5type,
            H5Dget_type( locator->dataset_id ),
            DAT__HDF5E,
            emsRep("dat1Type_1", "datType: Error obtaining data type of dataset", status)

@@ -177,14 +177,14 @@ datFind( const HDSLoc   *locator1,
     hid_t dataset_id;
     hid_t dataspace_id;
 
-    CALLHDF(dataset_id,
+    CALLHDFE( hid_t, dataset_id,
             H5Dopen2( locator1->group_id, cleanname, H5P_DEFAULT),
             DAT__OBJIN,
             emsRepf("datFind_2", "Error opening primitive named %s", status, cleanname)
             );
 
     /* and data space */
-    CALLHDF(dataspace_id,
+    CALLHDFE( hid_t, dataspace_id,
             H5Dget_space( dataset_id ),
             DAT__OBJIN,
             emsRepf("datFind_2b", "Error retrieving data space from primitive named %s",
@@ -198,7 +198,7 @@ datFind( const HDSLoc   *locator1,
   } else {
     /* Try to open it as a group */
     hid_t group_id;
-    CALLHDF(group_id,
+    CALLHDFE( hid_t, group_id,
             H5Gopen2( locator1->group_id, cleanname, H5P_DEFAULT ),
             DAT__OBJIN,
             emsRepf("datFind_3", "Error opening component %s", status, cleanname)

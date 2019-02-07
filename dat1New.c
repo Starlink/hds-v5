@@ -181,7 +181,7 @@ dat1New( const HDSLoc    *locator,
      we open the group and write an attribute of the required name. */
 
     if (!locator->group_id) {
-      CALLHDF( group_id,
+      CALLHDFE( hid_t, group_id,
                H5Gopen2( locator->file_id, "/", H5P_DEFAULT ),
                DAT__HDF5E,
                emsRepf("dat1New_4a", "Error opening root group", status )
@@ -191,7 +191,7 @@ dat1New( const HDSLoc    *locator,
       dat1SetAttrString( group_id, HDS__ATTR_ROOT_NAME, cleanname, status );
 
     } else {
-      CALLHDF( group_id,
+      CALLHDFE( hid_t, group_id,
                H5Gcreate2(place, cleanname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
                DAT__HDF5E,
                emsRepf("dat1New_4", "Error creating structure/group '%s'", status, cleanname)

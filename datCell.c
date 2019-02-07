@@ -195,7 +195,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
 
     /* Calculate the relevant group name */
     dat1Coords2CellName( ndim, groupsub, cellname, sizeof(cellname), status );
-    CALLHDF(group_id,
+    CALLHDFE( hid_t, group_id,
             H5Gopen2( locator1->group_id, cellname, H5P_DEFAULT ),
             DAT__OBJIN,
             emsRepf("datCell_3", "datCell: Error opening component %s", status, cellname)

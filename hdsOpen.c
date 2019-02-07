@@ -59,7 +59,7 @@
 *        the file.
 *     2018-07-03 (DSB):
 *        Ensure the returned locator is locked for use by the current thread.
-*        Previously, this was not the case if the file was already open in 
+*        Previously, this was not the case if the file was already open in
 *        another thread, in which case the existing Handle was re-used without
 *        any further locks being requested.
 
@@ -183,7 +183,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   }
 
   /* Open the HDF5 file */
-  CALLHDF( file_id,
+  CALLHDFE( hid_t, file_id,
            H5Fopen( fname, flags, H5P_DEFAULT ),
            DAT__HDF5E,
            emsRepf("hdsOpen_1", "Error opening HDS file: %s",
@@ -193,7 +193,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   /* Now we need to find a top-level object. This will usually simply
      be the root group but for the special case where we have an HDS
      primitive in the root group we have to open that one level down. */
-  CALLHDF( group_id,
+  CALLHDFE( hid_t, group_id,
            H5Gopen2(file_id, "/", H5P_DEFAULT),
            DAT__HDF5E,
            emsRepf("hdsOpen_2","Error opening root group of file %s",

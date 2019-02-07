@@ -113,7 +113,7 @@ dat1SetAttr( hid_t obj_id, const char * attrname, hid_t attrtype,
   }
 
   if (nvals == 0) {
-    CALLHDF(attr_dataspace_id,
+    CALLHDFE( hid_t, attr_dataspace_id,
             H5Screate( H5S_SCALAR ),
             DAT__HDF5E,
             emsRepf("dat1SetAttrString_2", "Error creating data space for attribute '%s'", status, attrname )
@@ -121,7 +121,7 @@ dat1SetAttr( hid_t obj_id, const char * attrname, hid_t attrtype,
   } else {
     hsize_t h5dims[1];
     h5dims[0] = nvals;
-    CALLHDF( attr_dataspace_id,
+    CALLHDFE( hid_t, attr_dataspace_id,
              H5Screate_simple( 1, h5dims, NULL ),
              DAT__HDF5E,
              emsRepf("dat1New_1", "Error allocating data space for attribute %s",
@@ -131,7 +131,7 @@ dat1SetAttr( hid_t obj_id, const char * attrname, hid_t attrtype,
 
   if (H5Aexists( obj_id, attrname)) H5Adelete( obj_id, attrname );
 
-  CALLHDF(attribute_id,
+  CALLHDFE( hid_t, attribute_id,
           H5Acreate2( obj_id, attrname, attrtype, attr_dataspace_id,
                       H5P_DEFAULT, H5P_DEFAULT),
           DAT__HDF5E,

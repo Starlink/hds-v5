@@ -112,7 +112,7 @@ dat1GetAttrInt( hid_t objid, const char * attrname, hdsbool_t usedef,
 
   if (*status != SAI__OK) return retval;
 
-  CALLHDF( attrtype,
+  CALLHDFE( hid_t, attrtype,
            H5Tcopy(H5T_NATIVE_INT32),
            DAT__HDF5E,
            emsRepf("dat1GetAttrInt_1", "Error copying data type during reading of attribute '%s'", status, attrname );

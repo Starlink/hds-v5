@@ -105,7 +105,7 @@ dau1HdsType( hid_t h5type, int * status ) {
 
   if (*status != SAI__OK) return thetype;
 
-  CALLHDF( tclass,
+  CALLHDFE( H5T_class_t, tclass,
            H5Tget_class( h5type ),
            DAT__HDF5E,
            emsRep("dat1Type_2", "datType: Error obtaining class of data type", status)

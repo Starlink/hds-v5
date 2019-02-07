@@ -113,7 +113,7 @@ dat1CreateStructureCell( hid_t group_id, size_t index, const char * typestr, con
   dat1Index2Coords(index, ndim, dims, coords, status );
   dat1Coords2CellName( ndim, coords, cellname, sizeof(cellname), status );
 
-  CALLHDF( cellgroup_id,
+  CALLHDFE( hid_t, cellgroup_id,
            H5Gcreate2(group_id, cellname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT),
            DAT__HDF5E,
            emsRepf("dat1New_4", "Error creating structure/group '%s'", status, parentstr)

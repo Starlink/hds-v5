@@ -139,14 +139,14 @@ dat1GetAttrString( hid_t objid, const char * attrname, hdsbool_t usedef,
   }
 
   /* Get the attribute object */
-  CALLHDF( attribute_id,
+  CALLHDFE( hid_t, attribute_id,
            H5Aopen( objid, attrname, H5P_DEFAULT ),
            DAT__HDF5E,
            emsRepf("dat1GetAttrString_1", "Error retrieving attribute named %s",
                    status, attrname)
            );
   /* and the data type */
-  CALLHDF( attrtype,
+  CALLHDFE( hid_t, attrtype,
            H5Aget_type(attribute_id),
            DAT__HDF5E,
            emsRepf("dat1GetAttrString_2", "Error retrieving data type of attributed name %s",

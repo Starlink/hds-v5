@@ -210,7 +210,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
     datSize( locator, &nelem, status );
 
     /* Number of bytes per element in the input type */
-    CALLHDF(nbin,
+    CALLHDFE( size_t, nbin,
             H5Tget_size( h5type ),
             DAT__HDF5E,
             emsRep("datPut_size", "datPut: Error obtaining size of input type",
@@ -233,7 +233,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
     /* The type of the things we are writing has now changed
        so we need to update that */
     if (h5type) H5Tclose(h5type);
-    CALLHDF( h5type,
+    CALLHDFE( hid_t, h5type,
              H5Dget_type( locator->dataset_id ),
              DAT__HDF5E,
              emsRep("datPut_type", "datPut: Error obtaining data type of native dataset", status)
@@ -247,7 +247,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   dat1ImportDims( ndim, dims, h5dims, status );
 
   /* Create a memory dataspace for the incoming data */
-  CALLHDF( mem_dataspace_id,
+  CALLHDFE( hid_t, mem_dataspace_id,
            H5Screate_simple( ndim, h5dims, NULL),
            DAT__HDF5E,
            emsRep("datPut_2", "Error allocating in-memory dataspace", status )

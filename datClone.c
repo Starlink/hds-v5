@@ -117,7 +117,7 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
   hds1RegLocator( clonedloc, status );
 
   if (locator1->dataset_id > 0) {
-    CALLHDF( clonedloc->dataset_id,
+    CALLHDFE( hid_t, clonedloc->dataset_id,
              H5Dopen2( locator1->dataset_id, ".", H5P_DEFAULT ),
              DAT__HDF5E,
              emsRep("datClone_1", "Error opening a dataset during clone",
@@ -125,7 +125,7 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
              );
   }
   if (locator1->dataspace_id > 0) {
-    CALLHDF( clonedloc->dataspace_id,
+    CALLHDFE( hid_t, clonedloc->dataspace_id,
              H5Scopy( locator1->dataspace_id ),
              DAT__HDF5E,
              emsRep("datClone_2", "Error copying a dataspace during clone",
@@ -133,7 +133,7 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
              );
   }
   if (locator1->group_id > 0) {
-    CALLHDF( clonedloc->group_id,
+    CALLHDFE( hid_t, clonedloc->group_id,
              H5Gopen2( locator1->group_id, ".", H5P_DEFAULT ),
              DAT__HDF5E,
              emsRep("datClone_3", "Error opening a group ID during clone",
