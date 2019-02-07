@@ -102,14 +102,6 @@ int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc,
              status, func );
    }
 
-/* Report an error if there is no handle in the locator. */
-   if( loc && !loc->handle && *status == SAI__OK ) {
-      *status = DAT__FATAL;
-      datMsg( "O", loc );
-      emsRepf( " ", "%s: The supplied HDS locator for '^O' has no handle (programming error).",
-              status, func );
-   }
-
 /* If the LockCheck tuning parameter is False, never check locks. */
    if( checklock ) checklock = hds1GetLockCheck();
 

@@ -143,8 +143,9 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
       }
    }
 
-/* Get the handle for the parent object (if any). */
+/* Get the handle for the parent object (if any), and validate it. */
    parent = parent_loc ? parent_loc->handle : NULL;
+   if( parent_loc ) dat1ValidateHandle( "dat1Handle", parent, status );
 
 /* If a parent Handle is available, search through the Handles for any
    known child objects to see if the requested component within the parent
@@ -159,6 +160,8 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
          child = parent->children[ichild];
          if( !child ){
             ichild_unused = ichild;
+         } else if( !dat1ValidateHandle( "dat1Handle", child, status ) ){
+            break;
          } else if( !strcmp( child->name, lname ) ) {
             result = child;
             break;
@@ -167,7 +170,7 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
    }
 
 /* If we need to create a new Handle... */
-   if( !result ) {
+   if( !result && *status == SAI__OK ) {
 
 /* Allocate the memory, filling it with zeros (NULLs). Report an error
    if the memory could not be allocated */
@@ -223,6 +226,11 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
          result->read_lockers = NULL;
          result->maxreaders = 0;
 
+/* The address of the Handle is stored in the "check" component. This is
+   used later to check that the handle is still valid (i.e. has not been
+   freed). */
+         result->check = result;
+
 /* If a parent was supplied, see if the current thread has a read or
    write lock on the parent object. We give the same sort of lock to the
    new Handle below (ignoring the supplied value for "rdonly"). If lock
@@ -257,10 +265,8 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
    if( lname ) MEM_FREE( lname );
 
 /* If an error occurred, free the resources used by the Handle. */
-   if( *status != SAI__OK ) result = dat1FreeHandle( result );
+   if( *status != SAI__OK ) result = dat1FreeHandle( result, status );
 
 /* Return the Handle pointer */
    return result;
 }
-
-

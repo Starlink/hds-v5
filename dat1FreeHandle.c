@@ -86,25 +86,32 @@
 #include "dat1.h"
 #include "ems.h"
 
-Handle *dat1FreeHandle( Handle *handle ) {
+Handle *dat1FreeHandle( Handle *handle, int *status ) {
 
-/* Return immediately if no Handle was supplied. */
-   if( !handle ) return NULL;
+/* Start a new error reporting context. */
+   emsBegin( status );
+
+/* Return immediately if an invalid Handle was supplied. */
+   if( dat1ValidateHandle( "dat1FreeHandle", handle, status ) ) {
 
 /* Free the memory used by components of the Handle structure. */
-   if( handle->name ) MEM_FREE( handle->name );
-   if( handle->children ) MEM_FREE( handle->children );
-   if( handle->read_lockers ) MEM_FREE( handle->read_lockers );
+      if( handle->name ) MEM_FREE( handle->name );
+      if( handle->children ) MEM_FREE( handle->children );
+      if( handle->read_lockers ) MEM_FREE( handle->read_lockers );
 
 /* Destroy the mutex */
-   pthread_mutex_destroy( &(handle->mutex) );
+      pthread_mutex_destroy( &(handle->mutex) );
 
 /* Fill the handles with zeros in case any other points to the same
    handle exist. */
-   memset( handle, 0, sizeof(*handle) );
+      memset( handle, 0, sizeof(*handle) );
 
 /* Free the memory used by the Handle structure itself. */
-   MEM_FREE( handle );
+      MEM_FREE( handle );
+   }
+
+/* End the error reporting context. */
+   emsEnd( status );
 
 /* Return a NULL pointer. */
    return NULL;

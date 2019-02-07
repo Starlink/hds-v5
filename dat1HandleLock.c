@@ -207,6 +207,9 @@ Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly,
 /* Check inherited status. */
    if( *status != SAI__OK ) return error_handle;
 
+/* Validate the supplied Handle */
+   if( !dat1ValidateHandle( "dat1HandleLock", handle, status ) ) return error_handle;
+
 /* To avoid deadlocks, we only lock the Handle mutex for top level
    entries to this function. If "oper" is negative, negate it and set a
    flag indicating we do not need to lock the mutex. */

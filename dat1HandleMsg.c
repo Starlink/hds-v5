@@ -95,8 +95,8 @@ void dat1HandleMsg( const char *token, const Handle *handle ){
 /* Return immediately if no message token was supplied. */
    if( !token ) return;
 
-/* Check a Handle was supplied. */
-   if( handle ) {
+/* Check a valid Handle was supplied. */
+   if( HANDLE_VALID(handle) ) {
 
 /* Work up the tree from the supplied Handle to the root, saving pointers
    to the name strings at each level. */
@@ -123,9 +123,9 @@ void dat1HandleMsg( const char *token, const Handle *handle ){
       }
       emsSetc( token, names[ 0 ] );
 
-/* If no Handle was supplied, return a blacnk token. */
+/* If no Handle was supplied, return a suitable token. */
    } else {
-      emsSetc( token, " " );
+      emsSetc( token, "<invalid Handle>" );
    }
 }
 

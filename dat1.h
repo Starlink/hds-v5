@@ -74,7 +74,6 @@
 
 #include <pthread.h>
 #include "hdf5.h"
-#include "hdf5_hl.h"
 #include "hds1.h"
 #include "hds_types.h"
 
@@ -157,6 +156,7 @@ typedef struct Handle {
    char *name;              /* Name (cleaned) of the HDF object within its parent */
    char docheck;            /* If non-zero, check any lock is appropriate
                                before using the locator */
+   struct Handle *check;    /* Used to test validity of the Handle */
 } Handle;
 
 /* Private definition of the HDS locator struct */
@@ -202,6 +202,9 @@ typedef struct HdsTypeInfo {
   char BADC;
 } HdsTypeInfo;
 
+
+/* Check if a Handle is valid. */
+#define HANDLE_VALID(handle) ((handle)&&((handle)->check==(handle)))
 
 /* Wrapper to check HDF5 status and map to EMS.
    Also does not call the routine unless status is good.
@@ -432,10 +435,11 @@ dat1NeedsRootName( hid_t objid, hdsbool_t wantprim, char * rootname, size_t root
 Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int
 rdonly, int * status );
 Handle *dat1EraseHandle( Handle *parent, const char *name, int * status );
-Handle *dat1FreeHandle( Handle *handle );
+Handle *dat1FreeHandle( Handle *handle, int *status );
 int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc, int rdonly, int *status );
 Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly, int *result, int *status );
 void dat1HandleMsg( const char *token, const Handle *handle );
+int dat1ValidateHandle( const char *func, Handle *handle, int *status );
 
 /* DAT1_H_INCLUDED */
 #endif

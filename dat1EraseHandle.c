@@ -145,7 +145,7 @@ Handle *dat1EraseHandle( Handle *parent, const char *name, int * status ){
       }
 
 /* Then erase the child itself. */
-      comp = dat1FreeHandle( comp );
+      comp = dat1FreeHandle( comp, status );
    }
 
    return NULL;

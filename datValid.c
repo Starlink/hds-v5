@@ -90,7 +90,7 @@ datValid(const HDSLoc *locator, hdsbool_t *valid, int *status) {
   if ( !locator ) return *status;
 
   if (locator->group_id > 0 || locator->dataset_id > 0 ) {
-    *valid = 1;
+    if( HANDLE_VALID(locator->handle) ) *valid = 1;
   }
 
   return *status;

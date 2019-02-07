@@ -193,6 +193,7 @@ dau1CheckType.c \
 dau1HdsType.c \
 dau1Native2MemType.c \
 dat1ValidateLocator.c \
+dat1ValidateHandle.c \
 hdstrack.c
 
 hds_types.h: make-hds-types$(EXEEXT)

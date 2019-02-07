@@ -56,7 +56,7 @@ static HDSregistry *all_locators = NULL;
 
 /* Private routines */
 static Handle *hds2FindHandle( hid_t file_id, int *status );
-static Handle *hds2TopHandle( Handle *handle );
+static Handle *hds2TopHandle( Handle *handle, int *status );
 static hdsbool_t hds2UnregLocator( HDSLoc * locator, int *status );
 static hid_t *hds2GetFileIds( hid_t file_id, int *status );
 static int hds2CountFiles();
@@ -648,7 +648,7 @@ static hdsbool_t hds2UnregLocator( HDSLoc * locator, int *status ) {
     if (nprimary == 0) {
 
       /* Get the handle at the top of the tree and erase the whole tree. */
-      dat1EraseHandle( hds2TopHandle( locator->handle ), NULL, status );
+      dat1EraseHandle( hds2TopHandle( locator->handle, status ), NULL, status );
 
       /* Close all locators */
       hds2FlushFile( file_id, status );
@@ -1130,7 +1130,8 @@ static Handle *hds2FindHandle( hid_t file_id, int *status ){
          elt = (HDSelement *) utarray_front( entry->locators );
 
 /* Work up the tree of handles to find the top level Handle. */
-         if( elt && elt->locator ) result = hds2TopHandle( elt->locator->handle );
+         if( elt && elt->locator ) result = hds2TopHandle( elt->locator->handle,
+                                                           status );
 
 /* Leave the file id loop now if we have a Handle. */
          if( result ) break;
@@ -1149,11 +1150,13 @@ static Handle *hds2FindHandle( hid_t file_id, int *status ){
 }
 
 /* Get the handle at the top of the tree containing a specified handle. */
-static Handle *hds2TopHandle( Handle *handle ) {
+static Handle *hds2TopHandle( Handle *handle, int *status ) {
    Handle *parent = NULL;
    Handle *result = handle;
 
    if( !handle ) return result;
+
+   if( !dat1ValidateHandle( "hds2TopHandle", handle, status ) ) return result;
 
    parent = result->parent;
    while( parent ) {
