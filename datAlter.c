@@ -247,7 +247,7 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
     herr_t h5err;
 
     /* Copy dimensions and reorder */
-    dat1ImportDims( ndim, dims, h5dims, status );
+    dat1ImportDims( "datAlter", ndim, dims, h5dims, status );
 
     /* First we simply try the native resize. This will only work
        if the system is using chunked storage and the registered

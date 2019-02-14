@@ -207,9 +207,9 @@ datSlice(const HDSLoc *locator1, int ndim, const hdsdim lower[],
   }
 
   /* Import the bounds. */
-  dat1ImportDims( ndim, loc2lower, h5lower, status );
-  dat1ImportDims( ndim, loc2upper, h5upper, status );
-  dat1ImportDims( ndim, loc1dims, h5dims, status );
+  dat1ImportDims( "datSlice (lower)", ndim, loc2lower, h5lower, status );
+  dat1ImportDims( "datSlice (upper)", ndim, loc2upper, h5upper, status );
+  dat1ImportDims( "datSlice", ndim, loc1dims, h5dims, status );
 
   /* Clone the locator and modify its dataspace */
   datClone( locator1, &sliceloc, status );

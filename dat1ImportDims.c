@@ -13,14 +13,17 @@
 *     Library routine
 
 *  Invocation:
-*     void dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
-*                          int * status );
+*     void dat1ImportDims( const char *func, int ndims, const hdsdim hdsdims[],
+*                          hsize_t h5dims[], int * status );
 
 *  Arguments:
+*     func = const char * (Given)
+*        The name of the calling function, for use in error messages.
 *     ndims = int (Given)
 *        Number of dimensions to import.
 *     hdsdims = const hdsdim[] (Given)
-*        Dimensions to import. Only ndims will be accessed.
+*        Dimensions to import. Only ndims will be accessed. These are
+*        1-based indices.
 *     h5dims = hsize_t [] (Returned)
 *        Array to receive imported dimensions. Must be at least ndims in size.
 *     status = int* (Given and Returned)
@@ -32,7 +35,8 @@
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
-*     {enter_new_authors_here}
+*     DSB: David S Berry (EAO)
+    {enter_new_authors_here}
 
 *  Notes:
 *     - Does not assume that hdsdim and hsize_t are the same type.
@@ -42,6 +46,8 @@
 *  History:
 *     2014-09-03 (TIMJ):
 *        Initial version
+*     2019-02-14 (DSB):
+*        Report error if any supplied index is less than or equal to zero.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -92,11 +98,12 @@
 
 #include "hds1.h"
 #include "dat1.h"
+#include "dat_err.h"
 #include "hds.h"
 
 void
-dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
-                int *status ) {
+dat1ImportDims( const char *func, int ndims, const hdsdim hdsdims[],
+                hsize_t h5dims[], int *status ) {
   int i;
 
   if (*status != SAI__OK) return;
@@ -104,8 +111,16 @@ dat1ImportDims( int ndims, const hdsdim hdsdims[], hsize_t h5dims[],
 
   /* We have to transpose these dimensions */
   for (i=0; i<ndims; i++) {
-    int oposn = ndims - 1 - i;
-    h5dims[oposn] = hdsdims[i];
+     if( hdsdims[ i ] <= 0 ) {
+        *status = DAT__SUBIN;
+        emsRepf( " ", "%s: Illegal subscript (%" HDS_DIM_FORMAT
+                 ") for dimension %d", status, func, hdsdims[ i ],
+                 i );
+        break;
+     } else {
+        int oposn = ndims - 1 - i;
+       h5dims[oposn] = hdsdims[i];
+     }
   }
   return;
 }

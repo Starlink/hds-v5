@@ -244,7 +244,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   }
 
   /* Copy dimensions if appropriate */
-  dat1ImportDims( ndim, dims, h5dims, status );
+  dat1ImportDims( "datPut", ndim, dims, h5dims, status );
 
   /* Create a memory dataspace for the incoming data */
   CALLHDFE( hid_t, mem_dataspace_id,

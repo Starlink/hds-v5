@@ -151,7 +151,7 @@ dat1New( const HDSLoc    *locator,
   if (*status != SAI__OK) return NULL;
 
   /* Copy dimensions if appropriate */
-  dat1ImportDims( ndim, dims, h5dims, status );
+  dat1ImportDims( "dat1New", ndim, dims, h5dims, status );
 
   /* Work out where to place the component */
   place = dat1RetrieveContainer( locator, status );

@@ -119,7 +119,7 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
   datName(locator1, namestr, status );
 
   /* Copy dimensions if appropriate */
-  dat1ImportDims( ndim, subs, h5subs, status );
+  dat1ImportDims( "datCell", ndim, subs, h5subs, status );
 
   isstruct = dat1IsStructure( locator1, status );
 

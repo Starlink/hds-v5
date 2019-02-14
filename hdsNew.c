@@ -149,7 +149,7 @@ hdsNew(const char *file_str,
   if (*status != SAI__OK) return *status;
 
   /* Copy dimensions if appropriate */
-  dat1ImportDims( ndim, dims, h5dims, status );
+  dat1ImportDims( "hdsNew", ndim, dims, h5dims, status );
 
   /* Convert the HDS data type to HDF5 data type as an early sanity
      check. */
