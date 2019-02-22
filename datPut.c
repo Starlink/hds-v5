@@ -130,6 +130,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   /* Validate input locator. */
   dat1ValidateLocator( "datPut", 1, locator, 0, status );
 
+  namestr[ 0 ] = 0;
   datName(locator, namestr, status);
 
   /* we do not care because this must be a temporary component
@@ -145,6 +146,7 @@ datPut( const HDSLoc *locator, const char *type_str, int ndim, const hdsdim dims
   }
 
   /* Ensure that we have a primitive type supplied */
+  normtypestr[ 0 ] = 0;
   isprim = dau1CheckType( 1, type_str, &h5type, normtypestr,
                           sizeof(normtypestr), status );
 
