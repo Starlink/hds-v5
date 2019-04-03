@@ -754,7 +754,7 @@ static void hds2ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status
     len = utarray_len( entry->locators );
     nprim = hds2PrimaryCountByFileID( file_id, status );
     name_str = dat1GetFullName( file_id, 1, NULL, status );
-    if (listfiles) printf("File: %s [%s] (%d) (%u locator%s) (refcnt=%zu)\n", name_str, intent_str, file_id,
+    if (listfiles) printf("File: %s [%s] (%zu) (%u locator%s) (refcnt=%zu)\n", name_str, intent_str, file_id,
                           len, (len == 1 ? "" : "s"), nprim);
     if (listlocs) hds2ShowLocators( file_id, status );
     if (name_str) MEM_FREE(name_str);
@@ -779,7 +779,7 @@ static void hds2ShowLocators( hid_t file_id, int * status ) {
   len = utarray_len( entry->locators );
   /* Read all the elements from the entry, looking for the relevant one
      but also counting how many primary locators we have. */
-  printf("File %d has %u locator%s:\n", file_id, len, (len == 1 ? "" : "s"));
+  printf("File %zu has %u locator%s:\n", file_id, len, (len == 1 ? "" : "s"));
   for ( i = 0; i < len; i++) {
     HDSLoc * thisloc;
     char * namestr = NULL;
@@ -852,7 +852,7 @@ static hid_t *hds2GetFileIds( hid_t file_id, int *status ) {
      if( *status == SAI__OK ) {
         *status = DAT__FATAL;
         emsRepf( " ", "hds2GetFileIds: Unexpected null file reference for "
-                 "ID %d (internal HDS programming error)", status, file_id );
+                 "ID %zu (internal HDS programming error)", status, file_id );
      }
 
   } else {
@@ -877,7 +877,7 @@ static hid_t *hds2GetFileIds( hid_t file_id, int *status ) {
 
      if( !file_id_found && *status == SAI__OK ) {
         *status = DAT__FATAL;
-        emsRepf( " ", "hds2GetFileIds: File ID %d not found - has the "
+        emsRepf( " ", "hds2GetFileIds: File ID %zu not found - has the "
                  "corresponding locator been registered? (internal HDS "
                  "programming error).", status, file_id );
      }

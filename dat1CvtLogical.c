@@ -132,7 +132,6 @@ dat1CvtLogical( size_t nval, hdstype_t intype, size_t nbin,
              size_t *nbad, int * status ) {
   size_t n;
   char * buffer = NULL;
-  HdsTypeInfo *typeinfo;
 
   *nbad = 0;
   if (*status != SAI__OK) return *status;
@@ -164,9 +163,6 @@ dat1CvtLogical( size_t nval, hdstype_t intype, size_t nbin,
     return dat1CvtChar( nval, intype, nbin, outtype, nbout, imp, exp, nbad, status );
   }
 
-
-  /* Get cached type information */
-  typeinfo = dat1TypeInfo();
 
   /* Convert each value, one at a time -- this is the case for string
      given, and non-string returned. Note that we convert EVERY element

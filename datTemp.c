@@ -133,7 +133,6 @@ datTemp( const char *type_str, int ndim, const hdsdim dims[],
   char fname[256];
   char tempname[DAT__SZNAM+1];
   hdsbool_t there = 1;
-  int init;
 
   if (*status != SAI__OK) return *status;
 
