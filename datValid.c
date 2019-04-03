@@ -26,6 +26,9 @@
 *  Description:
 *     Enquire if a locator is valid, ie currently associated with an object.
 
+*  Notes:
+*     This fuction attempts to execute even if an error status is set on entry.
+
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
 *     {enter_new_authors_here}
@@ -81,17 +84,27 @@
 #include "hds1.h"
 #include "dat1.h"
 #include "hds.h"
+#include "ems.h"
 
 int
 datValid(const HDSLoc *locator, hdsbool_t *valid, int *status) {
-  *valid = 0;
-  if (*status != SAI__OK) return *status;
 
-  if ( !locator ) return *status;
+/* Initialise the returned value */
+   *valid = 0;
 
-  if (locator->group_id > 0 || locator->dataset_id > 0 ) {
-    if( HANDLE_VALID(locator->handle) ) *valid = 1;
-  }
+/* Check a locator was supplied. */
+   if ( !locator ) return *status;
 
-  return *status;
+/* Begin a new error reporting context */
+   emsBegin( status );
+
+/* Check the validity of the locator */
+   if (locator->group_id > 0 || locator->dataset_id > 0 ) {
+      if( HANDLE_VALID(locator->handle) ) *valid = 1;
+   }
+
+/* End the current error reporting context */
+   emsEnd( status );
+
+   return *status;
 }
