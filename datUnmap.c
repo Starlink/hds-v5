@@ -115,65 +115,67 @@ datUnmap( HDSLoc * locator, int * status ) {
 
   /* Validate input locator. */
   dat1ValidateLocator( "datUnmap", 1, locator, (locator->accmode & HDSMODE_READ), status );
+  if( *status == SAI__OK) {
 
   /* We only copy back explicitly if we did not do a native mmap on the file */
-  if (!locator->uses_true_mmap) {
+     if (!locator->uses_true_mmap ) {
 
-    /* If these data were mapped for WRITE or UPDATE we have to copy
-       back the data. Use datPut() for that. Mark the error stack
-       before we try this.
-    */
+       /* If these data were mapped for WRITE or UPDATE we have to copy
+          back the data. Use datPut() for that. Mark the error stack
+          before we try this.
+       */
 
-    emsMark();
+       emsMark();
 
-    if (locator->accmode == HDSMODE_WRITE ||
-        locator->accmode == HDSMODE_UPDATE) {
-      datPut( locator, locator->maptype, locator->ndims, locator->mapdims,
-              locator->regpntr, &lstat);
-    }
+       if (locator->accmode == HDSMODE_WRITE ||
+           locator->accmode == HDSMODE_UPDATE) {
+         datPut( locator, locator->maptype, locator->ndims, locator->mapdims,
+                 locator->regpntr, &lstat);
+       }
 
-    /* if we have bad status from this just ignore it. Release the error stack */
-    if (lstat != SAI__OK) emsAnnul( &lstat );
-    emsRlse();
-  }
+       /* if we have bad status from this just ignore it. Release the error stack */
+       if (lstat != SAI__OK) emsAnnul( &lstat );
+       emsRlse();
+     }
 
-  /* Need to free the memory and, if needed, unregister the pointer.
-     If "pntr" is defined then this was mmapped. */
-  if (locator->pntr) {
-    cnfUregp( locator->regpntr );
+     /* Need to free the memory and, if needed, unregister the pointer.
+        If "pntr" is defined then this was mmapped. */
+     if (locator->pntr) {
+       cnfUregp( locator->regpntr );
 
-    if ( munmap( locator->pntr, locator->bytesmapped ) != 0 ) {
-      if (*status == SAI__OK) {
-        *status = DAT__FILMP;
-        emsSyser( "MESSAGE", errno );
-        emsRep("datUnMap_4", "datUnmap: Error unmapping mapped memory: ^MESSAGE", status);
-      }
-    }
-  } else if (locator->regpntr) {
-    /* Allocated memory that needs to be freed by CNF but was not mmapped */
-    cnfFree( locator->regpntr );
-  }
+       if ( munmap( locator->pntr, locator->bytesmapped ) != 0 ) {
+         if (*status == SAI__OK) {
+           *status = DAT__FILMP;
+           emsSyser( "MESSAGE", errno );
+           emsRep("datUnMap_4", "datUnmap: Error unmapping mapped memory: ^MESSAGE", status);
+         }
+       }
+     } else if (locator->regpntr) {
+       /* Allocated memory that needs to be freed by CNF but was not mmapped */
+       cnfFree( locator->regpntr );
+     }
 
-  /* If these data were mmap-ed directly on disk in WRITE mode then
-     we cause an error as this has not been tested. */
-  if (locator->uses_true_mmap) {
-    if (locator->accmode == HDSMODE_WRITE) {
-      if (*status == SAI__OK) {
-        *status = DAT__FATAL;
-        emsRep("datUnmap_no", "datUnmap: Unexpectedly mapped an array in WRITE mode",
-               status);
-      }
-    }
-  }
+     /* If these data were mmap-ed directly on disk in WRITE mode then
+        we cause an error as this has not been tested. */
+     if (locator->uses_true_mmap) {
+       if (locator->accmode == HDSMODE_WRITE) {
+         if (*status == SAI__OK) {
+           *status = DAT__FATAL;
+           emsRep("datUnmap_no", "datUnmap: Unexpectedly mapped an array in WRITE mode",
+                  status);
+         }
+       }
+     }
 
-  locator->pntr = NULL;
-  locator->regpntr = NULL;
-  locator->bytesmapped = 0;
+     locator->pntr = NULL;
+     locator->regpntr = NULL;
+     locator->bytesmapped = 0;
 
-  /* Close the file if we opened it -- ignore the return value */
-  if (locator->fdmap > 0) {
-    close(locator->fdmap);
-    locator->fdmap = 0;
+     /* Close the file if we opened it -- ignore the return value */
+     if (locator->fdmap > 0) {
+       close(locator->fdmap);
+       locator->fdmap = 0;
+     }
   }
 
   return *status;
