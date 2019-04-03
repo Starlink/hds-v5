@@ -647,11 +647,11 @@ static hdsbool_t hds2UnregLocator( HDSLoc * locator, int *status ) {
        only locator so that we do not duplicate the hash delete code */
     if (nprimary == 0) {
 
-      /* Get the handle at the top of the tree and erase the whole tree. */
-      dat1EraseHandle( hds2TopHandle( locator->handle, status ), NULL, status );
-
       /* Close all locators */
       hds2FlushFile( file_id, status );
+
+      /* Get the handle at the top of the tree and erase the whole tree. */
+      dat1EraseHandle( hds2TopHandle( locator->handle, status ), NULL, status );
     }
 
     removed = 1;
