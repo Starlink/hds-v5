@@ -184,6 +184,7 @@ typedef struct LOC {
   int fdmap;  /* File descriptor for mapped data (can free if >0) [datMap only] */
   char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */
   char grpname[DAT__SZGRP+1]; /* Name of group associated with locator */
+  hdsbool_t erase;    /* Erase file after it is closed? */
 } HDSLoc;
 
 
@@ -440,6 +441,7 @@ int dat1ValidateLocator( const char *func, int checklock, const HDSLoc *loc, int
 Handle *dat1HandleLock( Handle *handle, int oper, int recurs, int rdonly, int *result, int *status );
 void dat1HandleMsg( const char *token, const Handle *handle );
 int dat1ValidateHandle( const char *func, Handle *handle, int *status );
+int dat1IsTopLevel( const HDSLoc *loc, int *status );
 
 /* DAT1_H_INCLUDED */
 #endif

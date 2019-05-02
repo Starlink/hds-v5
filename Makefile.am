@@ -173,6 +173,7 @@ dat1ImportDims.c \
 dat1ImportFloc.c \
 dat1Index2Coords.c \
 dat1InitHDF5.c \
+dat1IsTopLevel.c \
 dat1IsStructure.c \
 dat1NeedsRootName.c \
 dat1New.c \

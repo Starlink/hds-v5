@@ -10,6 +10,8 @@
 
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "hdf5.h"
 #include "ems.h"
@@ -584,6 +586,8 @@ static hdsbool_t hds2UnregLocator( HDSLoc * locator, int *status ) {
   unsigned int len = 0;
   unsigned int i = 0;
   int removed = 0;
+  char *name;
+  int errstat = 0;
 
   if (*status != SAI__OK) return removed;
 
@@ -647,8 +651,24 @@ static hdsbool_t hds2UnregLocator( HDSLoc * locator, int *status ) {
        only locator so that we do not duplicate the hash delete code */
     if (nprimary == 0) {
 
+      /* If we will be erasing the file, get its file path. */
+      if( locator->erase ) name = dat1GetFullName( file_id, 1,
+                                                   NULL, status );
+
       /* Close all locators */
       hds2FlushFile( file_id, status );
+
+      /* If required, delete the file. */
+      if( locator->erase && name ) {
+         errstat = unlink( name );
+         if (*status == SAI__OK && errstat > 0) {
+           *status = DAT__FILND;
+           emsErrno( "ERRNO", errno );
+           emsRepf( "hdsErase_2", "Error deleting file %s: ^ERRNO",
+                    status, name );
+         }
+         MEM_FREE( name );
+      }
 
       /* Get the handle at the top of the tree and erase the whole tree. */
       dat1EraseHandle( hds2TopHandle( locator->handle, status ), NULL, status );

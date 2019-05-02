@@ -1,10 +1,10 @@
 /*
 *+
 *  Name:
-*     hdsErase
+*     dat1IsTopLevel
 
 *  Purpose:
-*     Erase container file.
+*     Test if a locator is for a top level object.
 
 *  Language:
 *     Starlink ANSI C
@@ -13,42 +13,37 @@
 *     Library routine
 
 *  Invocation:
-*     hdsErase(HDSLoc **locator, int *status);
+*     int dat1IsTopLevel( const HDSLoc *loc, int *status );
 
 *  Arguments:
-*     locator = HDSLoc ** (Given and Returned)
-*        Locator to the container file's top-level object. Will be annuled
-*        on exit.
+*     loc = const HDSLoc * (Given)
+*        Pointer to a locator for the HDF object that is to be tested.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
-*  Description:
-*     Mark a container file for deletion and annul the locator
-*     associated with the top-level object. The container file will
-*     not be physically deleted if other primary locators are still
-*     associated with the file - this is only done when the reference
-*     count drops to zero.
+*  Returned function value:
+*     Non-zero if the locator is for a top-levbel object, and zero
+*     otherwise.
 
-*  Authors:
-*     TIMJ: Tim Jenness (Cornell)
-*     {enter_new_authors_here}
+*  Description:
+*     A non-zero value is returned if the supplied locator is for a
+*     top-level object.
 
 *  Notes:
-*     - Must be a top-level object.
-*     - Does not attempt execute if status is bad on entry.
-*     - calls unlink(2) to remove the file from the file system.
+*     - Zero will be returned if an error has already occurred, or if
+*     this function fails for any reason.
+
+*  Authors:
+*     DSB: David S Berry (EAO)
+*     {enter_new_authors_here}
 
 *  History:
-*     2014-09-18 (TIMJ):
+*     2-MAY-2019 (DSB):
 *        Initial version
-*     2019-05-02 (DSB):
-*        Re-written to defer the file deletion until the file is closed,
-*        as described in the prologue description. The old version
-*        deleted it immediately.
 *     {enter_further_changes_here}
 
 *  Copyright:
-*     Copyright (C) 2014 Cornell University
+*     Copyright (C) 2019 East Asian Observatory
 *     All Rights Reserved.
 
 *  Licence:
@@ -87,39 +82,38 @@
 *     {note_any_bugs_here}
 *-
 */
-
-#include <unistd.h>
-#include <errno.h>
-
-#include "hdf5.h"
+#include <strings.h>
+#include <pthread.h>
 
 #include "ems.h"
 #include "sae_par.h"
-
-#include "hds1.h"
 #include "dat1.h"
-#include "hds.h"
-
 #include "dat_err.h"
 
-int
-hdsErase(HDSLoc **locator, int *status) {
+int dat1IsTopLevel( const HDSLoc *loc, int *status ){
 
-  if (*status != SAI__OK) return *status;
+/* Local Variables; */
+   int result;
+   Handle *parent;
 
-  if ( !dat1IsTopLevel( *locator, status ) ) {
-    *status = DAT__LOCIN;
-    emsRep("hdsErase_1", "Must supply a top level locator to hdsErase",
-           status );
-    return *status;
-  }
+/* Initialise */
+   result = 0;
 
-  /* Flag that the file should be erased when it is closed. */
-  (*locator)->erase = 1;
+/* Return immediately if an error has already occurred. */
+   if( *status != SAI__OK ) return result;
 
-  /* Annul the locator. This will close the file if the file has no other
-     active primary locators, causing it to be erased. */
-  datAnnul( locator, status );
+/* If the locator's handle has no parent, it is a top level locator. */
+   parent = loc->handle->parent;
+   if( !parent ) {
+      result = 1;
 
-  return *status;
+/* Otherwise, if the parent handle has no parent, and the locator's
+   handle and the parent handle are for the same object, it is a top
+   level locator. */
+   } else if( !parent->parent && loc->handle->name && parent->name ) {
+      result = !strcasecmp( loc->handle->name, parent->name );
+   }
+
+/* Return the result. */
+   return result;
 }
