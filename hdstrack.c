@@ -71,8 +71,8 @@ static size_t hds2PrimaryCount( hid_t file_id, int *status );
 static size_t hds2PrimaryCountByFileID( hid_t file_id, int * status );
 static void hds2ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int *status );
 static void hds2ShowLocators( hid_t file_id, int * status );
-
-
+static void hds2GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist, hid_t **file_ids, int *status );
+static void hds2SetFileId( HDSLoc *locator, hid_t file_id, int *status );
 
 
 /* Public functions
@@ -329,7 +329,17 @@ int hds1CountFiles() {
    return result;
 }
 
+void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist, hid_t **file_ids, int *status ) {
+   LOCK_MUTEX;
+   hds2GetLocators( file_id, nloc, loclist, file_ids, status );
+   UNLOCK_MUTEX
+}
 
+void hds1SetFileId( HDSLoc *locator, hid_t file_id, int *status ) {
+   LOCK_MUTEX;
+   hds2SetFileId( locator, file_id, status );
+   UNLOCK_MUTEX
+}
 
 /*
   ncomp = number of components in search filter
@@ -842,8 +852,8 @@ static int hds2GetFileDescriptor( hid_t file_id ) {
    the underlying file descriptor for matching. This should
    be more efficient and more accurate than getting the file name
    and matching that. Might have issues if non-standard file drivers
-   are used later on. */
-
+   are used later on. No locators need have been registered with the
+   supplied file_d. */
 static hid_t *hds2GetFileIds( hid_t file_id, int *status ) {
   hid_t * file_ids = NULL;
   size_t num_files;
@@ -866,8 +876,6 @@ static hid_t *hds2GetFileIds( hid_t file_id, int *status ) {
 
   /* Get this filename as the reference -- assume normalized */
   ref_fd = hds2GetFileDescriptor( file_id );
-  file_ids[0] = file_id;
-  nfound++;
   if (ref_fd == 0) {
      if( *status == SAI__OK ) {
         *status = DAT__FATAL;
@@ -876,15 +884,14 @@ static hid_t *hds2GetFileIds( hid_t file_id, int *status ) {
      }
 
   } else {
-     int file_id_found = 0;
-
      for (entry = all_locators; entry != NULL; entry = entry->hh.next) {
        hid_t this_file_id = entry->file_id;
        int fd;
 
        /* We know this matches */
        if (this_file_id == file_id) {
-          file_id_found = 1;
+          file_ids[nfound] = this_file_id;
+          nfound++;
           continue;
        }
 
@@ -893,13 +900,6 @@ static hid_t *hds2GetFileIds( hid_t file_id, int *status ) {
          file_ids[nfound] = this_file_id;
          nfound++;
        }
-     }
-
-     if( !file_id_found && *status == SAI__OK ) {
-        *status = DAT__FATAL;
-        emsRepf( " ", "hds2GetFileIds: File ID %zu not found - has the "
-                 "corresponding locator been registered? (internal HDS "
-                 "programming error).", status, file_id );
      }
   }
 
@@ -1185,5 +1185,101 @@ static Handle *hds2TopHandle( Handle *handle, int *status ) {
    }
 
    return result;
+}
+
+static void hds2GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
+                             hid_t **file_ids, int *status ) {
+  HDSelement *elt = NULL;
+  HDSLoc **ploc;
+  HDSregistry *entry = NULL;
+  size_t i = 0;
+  unsigned int j = 0;
+  unsigned int len = 0;
+
+  *nloc = 0;
+  *loclist = NULL;
+
+  if (*status != SAI__OK) return;
+
+  /* Get all the file ids associated with this individual file_id */
+  *file_ids = hds2GetFileIds( file_id, status );
+
+  /* Count how many locators are to be returned. */
+  i = 0;
+  while( (*file_ids)[ i ] ) {
+     HASH_FIND_FILE_ID( all_locators, *file_ids + i, entry );
+     if( entry ) *nloc += utarray_len( entry->locators );
+     i++;
+  }
+
+  /* Allocate and fill the returned array. */
+  if( *nloc > 0 ) {
+     *loclist = MEM_CALLOC( *nloc, sizeof(*loclist) );
+     if( *loclist ) {
+
+        ploc = *loclist;
+        i = 0;
+        while( (*file_ids)[ i ] ) {
+           HASH_FIND_FILE_ID( all_locators, *file_ids + i, entry );
+           len = entry ? utarray_len( entry->locators ) : 0;
+           for ( j = 0; j < len; j++) {
+              elt = (HDSelement *)utarray_eltptr( entry->locators, j );
+              *(ploc++) = elt->locator;
+           }
+           i++;
+        }
+
+     } else {
+        *status = DAT__NOMEM;
+        emsRepf( " ", "hds1GetLocators: Cannot allocate array of %d locators",
+                 status, *nloc );
+     }
+  }
+}
+
+static void hds2SetFileId( HDSLoc *locator, hid_t file_id, int *status ) {
+  HDSregistry *entry = NULL;
+  HDSelement elt;
+  HDSelement *pelt = NULL;
+  unsigned int len = 0;
+  unsigned int i = 0;
+  hid_t old_id;
+
+  if (*status != SAI__OK) return;
+
+  /* Look for the entry associated with the original file id */
+  old_id = locator->file_id;
+  HASH_FIND_FILE_ID( all_locators, &old_id, entry );
+
+  /* Read all the elements from the entry, looking for the relevant one.
+     When found remove it, and nullify its file_id field.  */
+  len = utarray_len( entry->locators );
+  for( i = 0; i < len; i++ ) {
+    pelt = (HDSelement *) utarray_eltptr( entry->locators, i );
+    if( (HDSLoc *)(pelt->locator) == locator) {
+      utarray_erase( entry->locators, i, 1 );
+      locator->file_id = 0;
+      break;
+    }
+  }
+
+  /* See if entry already exists for the new file id in the hash */
+  HASH_FIND_FILE_ID( all_locators, &file_id, entry );
+
+  /* If not, create one. */
+  if( !entry ) {
+    entry = calloc( 1, sizeof(HDSregistry) );
+    entry->file_id = file_id;
+    utarray_new( entry->locators, &all_locators_icd );
+    HASH_ADD_FILE_ID( all_locators, file_id, entry );
+  }
+
+  /* Now we have the entry, we need to store the locator inside.
+     We do not clone the locator, the locator is now owned by the group. */
+  elt.locator = locator;
+  utarray_push_back( entry->locators, &elt );
+
+/* Store the new file_id inside the locator */
+  locator->file_id = file_id;
 }
 

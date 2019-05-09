@@ -62,7 +62,12 @@
 *        Previously, this was not the case if the file was already open in
 *        another thread, in which case the existing Handle was re-used without
 *        any further locks being requested.
-
+*     2019-05-08 (DSB):
+*        The move from HDF5 1.8 to 1.10 seems to have broken the H5F_ACC_FORCERW
+*        trick for reopening files that have previously been opened read-only, with
+*        update access. Instead use the new dat1Reopen function to close and 
+*        re-open such files, taking care to ensure that any active locators for 
+*        the file are not invalidated by the process.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -141,20 +146,13 @@ hdsOpen( const char *file_str, const char *mode_str,
      before any others. */
   dat1InitHDF5();
 
-  /* Work out the flags for opening. Note if we are opening the file for
-     update or write access,  mimic the old HDS behaviour by including
-     the starlink-specific H5F_ACC_FORCERW flag. This flag prevents an
-     error being reported within H5Fopen if the file has previously been
-     opened for read-only access. HDS V4 allows a file to opened for
-     update even if it has previously been opened read-only, although
-     the second open may fail if the file is write-protected. Some
-     starlink apps rely on this behaviour. */
+  /* Work out the flags for opening. */
   switch (mode_str[0]) {
   case 'U':
   case 'u':
   case 'w':
   case 'W':
-    flags = H5F_ACC_RDWR | H5F_ACC_FORCERW;
+    flags = H5F_ACC_RDWR;
     break;
   case 'R':
   case 'r':
@@ -182,13 +180,35 @@ hdsOpen( const char *file_str, const char *mode_str,
     goto CLEANUP;
   }
 
-  /* Open the HDF5 file */
-  CALLHDFE( hid_t, file_id,
-           H5Fopen( fname, flags, H5P_DEFAULT ),
-           DAT__HDF5E,
-           emsRepf("hdsOpen_1", "Error opening HDS file: %s",
-                   status, fname )
-           );
+  /* Open the HDF5 file. First check status is good so we can tell if the
+    file open has failed.  */
+  if( *status == SAI__OK ) {
+     file_id = H5Fopen( fname, flags, H5P_DEFAULT );
+
+/* If the file could not be opened, and we are attempting to open it in
+   UPDATE or WRITE mode, the error may be caused by it already being open
+   in READ mode. To see if this is the case, try to open it again in
+   READ mode [HDS V4 allows a file to opened for update even if it has 
+   previously been opened read-only, although the second open may fail 
+   if the file is write-protected. Some starlink apps rely on this 
+   behaviour]. */
+     if( file_id < 0 && !rdonly ) {
+        file_id = H5Fopen( fname, H5F_ACC_RDONLY, H5P_DEFAULT );
+
+/* If the file was opened successfully in READ mode, we need to
+   close the file and then re-open it in the requested mode, re-establishing
+   all the active locators associated with the file. */
+        if( file_id > 0 ) {
+           file_id = dat1Reopen( file_id, flags, H5P_DEFAULT, status );
+        } else {
+           *status = DAT__HDF5E;
+           dat1H5EtoEMS( status );
+           emsRepf( "hdsOpen_1", "Error opening HDS file: %s",
+                    status, fname );
+           goto CLEANUP;
+        }
+     }
+  }
 
   /* Now we need to find a top-level object. This will usually simply
      be the root group but for the special case where we have an HDS

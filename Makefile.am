@@ -178,6 +178,7 @@ dat1IsStructure.c \
 dat1NeedsRootName.c \
 dat1New.c \
 dat1NewPrim.c \
+dat1Reopen.c \
 dat1RetrieveContainer.c \
 dat1RetrieveIdentifier.c \
 dat1SetAttr.c \

@@ -269,6 +269,7 @@ void
 dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type,
              const char * name_str, hid_t * dataset_id, hid_t *dataspace_id, int *status );
 
+hid_t dat1Reopen( hid_t file_id, unsigned int flags, hid_t fapl, int *status );
 hid_t dat1RetrieveContainer( const HDSLoc *locator, int * status );
 hid_t dat1RetrieveIdentifier( const HDSLoc * locator, int * status );
 
@@ -371,6 +372,12 @@ hds1CountFiles();
 
 int
 hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int * status );
+
+void
+hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist, hid_t **file_ids, int *status );
+
+void
+hds1SetFileId( HDSLoc *locator, hid_t file_id, int *status );
 
 Handle *
 hds1FindHandle( hid_t file_id, int *status );
