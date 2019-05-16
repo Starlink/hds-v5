@@ -40,6 +40,12 @@
 *  History:
 *     2-MAY-2019 (DSB):
 *        Initial version
+*     16-MAY-2019 (DSB):
+*        If the container file name has more than DAT__SZNAM (15) characters,
+*        the name stored in the handle associated with the top level object
+*        will be truncated and so will not equal the name of the container
+*        file. So only use the first DAT__SZNAM characters when comparing 
+*        the handle name with the container file name.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -108,10 +114,11 @@ int dat1IsTopLevel( const HDSLoc *loc, int *status ){
       result = 1;
 
 /* Otherwise, if the parent handle has no parent, and the locator's
-   handle and the parent handle are for the same object, it is a top
-   level locator. */
+   handle and the parent handle are for the same object (allowing for
+   truncation of the object name to DAT__SZNAM characters), it is a
+   top level locator. */
    } else if( !parent->parent && loc->handle->name && parent->name ) {
-      result = !strcasecmp( loc->handle->name, parent->name );
+      result = !strncasecmp( loc->handle->name, parent->name, DAT__SZNAM );
    }
 
 /* Return the result. */
