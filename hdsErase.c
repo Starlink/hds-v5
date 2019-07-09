@@ -31,6 +31,7 @@
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
+*     DSB: David S Berry (EAO)
 *     {enter_new_authors_here}
 
 *  Notes:
@@ -45,6 +46,15 @@
 *        Re-written to defer the file deletion until the file is closed,
 *        as described in the prologue description. The old version
 *        deleted it immediately.
+*     2019-07-09 (DSB):
+*        Store the deferred file deletion flag in the handle rather than
+*        the locator. The old system did not work if there were other
+*        locators refering to the same file, because the flag got deleted
+*        along with the locator and so had no effect when later locators
+*        referring to the same file were annulled. All locators for a
+*        single file use the same Handle object, so putting the deletion
+*        flag in the Handle allows the flag to be honoured no matter
+*        which locator ends up being annilled last.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -115,7 +125,7 @@ hdsErase(HDSLoc **locator, int *status) {
   }
 
   /* Flag that the file should be erased when it is closed. */
-  (*locator)->erase = 1;
+  if( (*locator)->handle ) (*locator)->handle->erase = 1;
 
   /* Annul the locator. This will close the file if the file has no other
      active primary locators, causing it to be erased. */

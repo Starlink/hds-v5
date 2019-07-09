@@ -103,7 +103,6 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   printf("- Is sliced: %d; Primary: %s; Group name: '%s'\n", locator->isslice,
          (locator->isprimary ? "yes" : "no"), locator->grpname);
   printf("- Is a discontiguous slice: %s\n", (locator->isdiscont ? "yes" : "no") );
-  printf("- Will be erased on closure: %s\n", (locator->erase ? "yes" : "no") );
 
   if (locator->dataspace_id > 0) {
     dump_dataspace_info( locator->dataspace_id, "Locator associated", status);
@@ -199,7 +198,11 @@ static void dump_handle( const HDSLoc *loc, int *status ){
    handle = loc->handle;
    while( handle ) {
       name = handle->name ? handle->name : "<>";
-      printf("%s(%p)", name, handle );
+      if( handle->erase ) {
+         printf("%s(%p,erase on close)", name, handle );
+      } else {
+         printf("%s(%p)", name, handle );
+      }
       handle = handle->parent;
       if( handle ) printf("." );
    }

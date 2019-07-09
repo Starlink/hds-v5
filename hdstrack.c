@@ -662,14 +662,14 @@ static hdsbool_t hds2UnregLocator( HDSLoc * locator, int *status ) {
     if (nprimary == 0) {
 
       /* If we will be erasing the file, get its file path. */
-      if( locator->erase ) name = dat1GetFullName( file_id, 1,
-                                                   NULL, status );
+      if( locator->handle->erase ) name = dat1GetFullName( file_id, 1,
+                                                           NULL, status );
 
       /* Close all locators */
       hds2FlushFile( file_id, status );
 
       /* If required, delete the file. */
-      if( locator->erase && name ) {
+      if( locator->handle->erase && name ) {
          errstat = unlink( name );
          if (*status == SAI__OK && errstat > 0) {
            *status = DAT__FILND;

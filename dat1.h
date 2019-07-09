@@ -157,6 +157,7 @@ typedef struct Handle {
    char docheck;            /* If non-zero, check any lock is appropriate
                                before using the locator */
    struct Handle *check;    /* Used to test validity of the Handle */
+   hdsbool_t erase;         /* Erase file after it is closed? */
 } Handle;
 
 /* Private definition of the HDS locator struct */
@@ -184,7 +185,6 @@ typedef struct LOC {
   int fdmap;  /* File descriptor for mapped data (can free if >0) [datMap only] */
   char maptype[DAT__SZTYP+1]; /* HDS type string used for memory mapping [datMap only] */
   char grpname[DAT__SZGRP+1]; /* Name of group associated with locator */
-  hdsbool_t erase;    /* Erase file after it is closed? */
 } HDSLoc;
 
 
