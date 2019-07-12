@@ -65,9 +65,13 @@
 *     2019-05-08 (DSB):
 *        The move from HDF5 1.8 to 1.10 seems to have broken the H5F_ACC_FORCERW
 *        trick for reopening files that have previously been opened read-only, with
-*        update access. Instead use the new dat1Reopen function to close and 
-*        re-open such files, taking care to ensure that any active locators for 
+*        update access. Instead use the new dat1Reopen function to close and
+*        re-open such files, taking care to ensure that any active locators for
 *        the file are not invalidated by the process.
+*     2019-07-12 (DSB):
+*        If a file is to be opened in read mode that has already been opened in
+*        read-write mode, then the lock on the file should be left as read-write
+*        and not changed to read-only.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -138,6 +142,7 @@ hdsOpen( const char *file_str, const char *mode_str,
   unsigned int flags = 0;
   int rdonly = 0;
   int lstat;
+  int oldlock;
 
   *locator = NULL;
   if (*status != SAI__OK) return *status;
@@ -188,9 +193,9 @@ hdsOpen( const char *file_str, const char *mode_str,
 /* If the file could not be opened, and we are attempting to open it in
    UPDATE or WRITE mode, the error may be caused by it already being open
    in READ mode. To see if this is the case, try to open it again in
-   READ mode [HDS V4 allows a file to opened for update even if it has 
-   previously been opened read-only, although the second open may fail 
-   if the file is write-protected. Some starlink apps rely on this 
+   READ mode [HDS V4 allows a file to opened for update even if it has
+   previously been opened read-only, although the second open may fail
+   if the file is write-protected. Some starlink apps rely on this
    behaviour]. */
      if( file_id < 0 && !rdonly ) {
         file_id = H5Fopen( fname, H5F_ACC_RDONLY, H5P_DEFAULT );
@@ -262,19 +267,25 @@ hdsOpen( const char *file_str, const char *mode_str,
     }
   }
 
-  /* If the file was already open via another locator, store the
-     top-level handle associated with that locator. Otherwise,
-     create a new handle structure for the top level data object in the
-     file. Store the handle pointer in the locator. Then attempt to lock
-     the handle appropriately (read-only or read-write) for use by the
-     current thread (in fact we only need to do this if we are re-using
-     a pre-existing handle, since dat1Handle will already have ensured
-     any newly created Handle is locked appropriately). */
+  /* If we have a locator to return, set up it's Handle. */
   if( *locator ) {
-    if( !handle ) {
-       handle = dat1Handle( NULL, fname, rdonly, status );
-    } else {
-      error_handle = dat1HandleLock( handle, 2, 0, rdonly, &lstat, status );
+
+  /* If the file was already open via another locator, we will re-use the
+     top-level handle associated with that locator. */
+    if( handle ) {
+
+      /* Attempt to lock the handle appropriately (read-only or read-write) for
+         use by the current thread. If it was originally open in read-write
+         mode, but we have just opened it again in read-only mode, then
+         lock the handle for read-write (so as not to deny write access to the
+         original locator). */
+      dat1HandleLock( handle, 1, 0, 0, &oldlock, status );
+      if( oldlock == 1 ) {
+         error_handle = dat1HandleLock( handle, 2, 0, 0, &lstat, status );
+      } else {
+         error_handle = dat1HandleLock( handle, 2, 0, rdonly, &lstat, status );
+      }
+
       if( error_handle && *status == SAI__OK ) {
          *status = DAT__THREAD;
          emsSetc( "U", rdonly ? "read-only" : "read-write" );
@@ -288,7 +299,14 @@ hdsOpen( const char *file_str, const char *mode_str,
             emsRep( " ", "It is locked for writing by another thread.", status );
          }
       }
+
+    /* If the file was not already open via another locator, create a new handle
+       structure for the top level data object in the file. */
+    } else {
+       handle = dat1Handle( NULL, fname, rdonly, status );
     }
+
+    /* Store the handle pointer in the locator. */
     (*locator)->handle = handle;
   }
 
