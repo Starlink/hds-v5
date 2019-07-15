@@ -19,18 +19,16 @@
 *     locator = HDSLoc * (Given)
 *        Locator to the object that is to be unlocked.
 *     recurs = int (Given)
-*        If the supplied object is unlocked successfully, and "recurs" is
-*        non-zero, then an attempt is made to unlock any component objects
-*        contained within the supplied object.
+*        If zero, only unlock the supplied object itself. If non-zero,
+*        also unlock any component objects contained within the supplied
+*        object.
 *     status = int* (Given and Returned)
 *        Pointer to global status.
 
 *  Description:
-*     This function removes a lock on the supplied HDS object. An error
-*     is reported if the object is not locked by the current thread. If
-*     "recurs" is non-zero, an error will be reported if any child component
-*     within the supplied object is not locked by the current thread. See
-*     datLock.
+*     This function ensures that the current thread does not have a lock
+*     on the supplied HDS object. Note, no error is reported if the object
+*     is not locked by the current thread.
 *
 *     The object must be locked again, using datLock, before it can be
 *     used by any other HDS function. All objects are initially
@@ -48,6 +46,21 @@
 *  History:
 *     10-JUL-2017 (DSB):
 *        Initial version
+*     15-JUL-2019 (DSB):
+*        Changed so that no error is reported if the object is already
+*        unlocked on entry. This is because there can be multiple
+*        locators for the same object - unlocking an object using one
+*        such locator should not cause an error if a later attempt is
+*        made to unlock it using one of the othjer locators. For
+*        instance, in ARY the "loc" and "dloc" locators may sometimes
+*        refer to the same HDS object. Before this change aryUnlock
+*        reported an error in such cases because unlocking "loc" also
+*        implicitly caused "dloc" to be unlocked, so that the subsequent
+*        attempt to unlock "dloc" explicitly caused an error to be
+*        reported. There is no HDS function to tell if two locators refer
+*        to the same object, so the alternative approach ofnot attempting
+*        to unlock "dloc" if it refers to the same object as "loc", cannot
+*        be used.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -114,29 +127,10 @@ int datUnlock( HDSLoc *locator, int recurs, int *status ) {
    if( *status == SAI__OK ) {
 
 /* Attempt to unlock the specified object, plus all its components if
-   required. Report suitable errors if this fails. */
+   required. Note, no error is reported if the object is not currently
+   locked by the current thread. */
       error_handle = dat1HandleLock( locator->handle, 3, recurs, 0, &lstat,
                                      status );
-      if( *status == SAI__OK && lstat < 1 ) {
-         *status = DAT__THREAD;
-         datMsg( "O", locator );
-         emsRep( " ", "datUnlock: Cannot unlock HDS object '^O' for "
-                 "use by the current thread:", status );
-
-         if( lstat < 0 ) {
-            phrase = "currently locked for writing by a different thread";
-         } else {
-            phrase = "not currently locked by the current thread";
-         }
-
-         emsSetc( "P", phrase );
-         dat1HandleMsg( "E", error_handle );
-         if( error_handle != locator->handle ) {
-            emsRep( " ", "A component within it (^E) is ^P.", status );
-         } else {
-            emsRep( " ", "It is ^P.", status );
-         }
-      }
    }
 
    return *status;
