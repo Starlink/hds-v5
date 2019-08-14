@@ -49,6 +49,10 @@
 *     2017-05-24 (DSB):
 *        Report an error if the supplied dimensions are different to the
 *        shape of the supplied object.
+*     2019-08-14 (DSB):
+*        If getting a _CHAR*nnn, report an error (DAT__TRUNC) if the supplied
+*        buffer is too small for the returned string. This mimics HDS_V4
+*        behaviour.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -91,6 +95,8 @@
 *     {note_any_bugs_here}
 *-
 */
+#include <string.h>
+#include <ctype.h>
 
 #include "hdf5.h"
 
@@ -113,6 +119,7 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   hdstype_t doconv = HDSTYPE_NONE;
   hdstype_t intype = HDSTYPE_NONE;
   hdstype_t outtype = HDSTYPE_NONE;
+  hid_t tmptype = 0;
   hid_t h5type = 0;
   hid_t mem_dataspace_id = 0;
   hsize_t h5dims[DAT__MXDIM];
@@ -120,9 +127,11 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
   int defined = 0;
   int i;
   int isprim;
+  size_t inlen;
   size_t nbin = 0;
   size_t nbout = 0;
   size_t nelem = 0;
+  size_t outlen;
   void * tmpvalues = NULL;
 
   if (*status != SAI__OK) return *status;
@@ -201,7 +210,6 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
        seem to be compatible with HDS so we do our own _LOGICAL handling. */
     /* First we allocate temporary space, then read the data
        from HDF5 in native form */
-    hid_t tmptype = 0;
 
     /* Number of elements to convert */
     datSize( locator, &nelem, status );
@@ -232,6 +240,24 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
     tmptype = dau1Native2MemType( h5type, status );
     H5Tclose(h5type);
     h5type = tmptype;
+
+/* If both types are _CHAR, check if the input string is longer than the
+   output string. If so, we allocate a temporary buffer to recieve the input
+   string. */
+  } else if( outtype == HDSTYPE_CHAR && intype == HDSTYPE_CHAR ) {
+     CALLHDFE( hid_t, tmptype,
+               H5Dget_type( locator->dataset_id ),
+               DAT__HDF5E,
+               emsRep("datGet_3", "datGet: Error obtaining data type of dataset", status)
+               );
+     inlen = H5Tget_size( tmptype );
+     outlen = H5Tget_size( h5type );
+     if( inlen > outlen && *status == SAI__OK ){
+        datSize( locator, &nelem, status );
+        tmpvalues = MEM_MALLOC( nelem * inlen );
+        H5Tclose( h5type );
+        h5type = tmptype;
+     }
   }
 
   /* Copy dimensions if appropriate */
@@ -258,6 +284,22 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
     } else if (doconv == HDSTYPE_LOGICAL) {
       dat1CvtLogical( nelem, intype, nbin, outtype, nbout, tmpvalues,
                       values, &nbad, status );
+    } else if( outtype == HDSTYPE_CHAR && intype == HDSTYPE_CHAR ) {
+      memcpy( values, tmpvalues, nelem*outlen );
+      /* Report an error if any non-space characters were truncated. */
+      if( *status == SAI__OK ) {
+         char *p;
+         for( p = (char *) tmpvalues + nelem*outlen; p < (char *) tmpvalues + nelem*inlen; p++ ) {
+            if( *p == 0 ) {
+               break;
+            } else if( !isspace( *p ) ) {
+               *status = DAT__TRUNC;
+               emsRepf( "datGet_4", "datGet: Insufficient space (%zu) supplied by caller to "
+                        "receive a string from _CHAR*%zu array.", status, outlen, inlen );
+               break;
+            }
+         }
+      }
     } else {
       if (*status != SAI__OK) {
         *status = DAT__TYPIN;
