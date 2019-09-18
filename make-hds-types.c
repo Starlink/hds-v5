@@ -153,7 +153,7 @@ error unable to find an 8 byte integer type
    values within an HDS data file. Instead, use "INT_BIG" (i.e. signed)
    since then HDS dimensions can be stored in HDS data files using the
    "K" data type. */
-#define BIGDIM 0   /* set to 1 if testing 64 bit dims */
+#define BIGDIM 1   /* set to 1 if testing 64 bit dims */
 #if BIGDIM
 #define DIM_TYPE INT_BIG
 #define HDS_DIM_TYPE "K"
