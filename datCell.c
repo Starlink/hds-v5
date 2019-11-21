@@ -99,6 +99,7 @@
 #include "hds.h"
 
 #include "dat_err.h"
+#include <string.h>
 
 int
 datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
@@ -219,7 +220,8 @@ datCell(const HDSLoc *locator1, int ndim, const hdsdim subs[],
       dat1HandleLock( thisloc->handle, 2, 0, rdonly, &lockinfo, status );
       if( !lockinfo && *status == SAI__OK ) {
          *status = DAT__THREAD;
-         emsSetc( "C", cellname );
+
+         emsSetc( "C", strstr( cellname, "(" ) );
          emsSetc( "A", rdonly ? "read-only" : "read-write" );
          datMsg( "O", locator1 );
          emsRep( "","datCell: requested cell ^C within HDS object '^O' "
