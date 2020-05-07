@@ -44,8 +44,12 @@
 *        If the container file name has more than DAT__SZNAM (15) characters,
 *        the name stored in the handle associated with the top level object
 *        will be truncated and so will not equal the name of the container
-*        file. So only use the first DAT__SZNAM characters when comparing 
+*        file. So only use the first DAT__SZNAM characters when comparing
 *        the handle name with the container file name.
+*     7-MAY-2020 (DSB):
+*        The name associated with the top-level handle may include a directory
+*        path. This needs to be removed before comparing it with the name from 
+*        the supplied handle, which will never include a path.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -89,6 +93,7 @@
 *-
 */
 #include <strings.h>
+#include <string.h>
 #include <pthread.h>
 
 #include "ems.h"
@@ -96,9 +101,17 @@
 #include "dat1.h"
 #include "dat_err.h"
 
+#if __MINGW32__
+      /* Use Windows separator */
+#define DIRSEP  '\\'
+#else
+#define DIRSEP  '/'
+#endif
+
 int dat1IsTopLevel( const HDSLoc *loc, int *status ){
 
 /* Local Variables; */
+   const char *pname;
    int result;
    Handle *parent;
 
@@ -118,7 +131,18 @@ int dat1IsTopLevel( const HDSLoc *loc, int *status ){
    truncation of the object name to DAT__SZNAM characters), it is a
    top level locator. */
    } else if( !parent->parent && loc->handle->name && parent->name ) {
-      result = !strncasecmp( loc->handle->name, parent->name, DAT__SZNAM );
+
+/* If the parent name contains a directory path, get a pointer to the
+   first character in the file name. */
+      pname = strrchr( parent->name, DIRSEP );
+      if( pname ) {
+         pname++;
+      } else {
+         pname = parent->name;
+      }
+
+/* Do the comparison, case-insensitive. */
+      result = !strncasecmp( loc->handle->name, pname, DAT__SZNAM );
    }
 
 /* Return the result. */
