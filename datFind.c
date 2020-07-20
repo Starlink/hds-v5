@@ -169,6 +169,7 @@ datFind( const HDSLoc   *locator1,
 
   /* Child locators are not primary by default -- just store the file_id and register  */
   thisloc->file_id = locator1->file_id;
+  thisloc->hdsFile = locator1->hdsFile;
   hds1RegLocator( thisloc, status );
 
   /* Use the simplification layer to see if we have a dataset of this name */

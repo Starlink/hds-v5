@@ -1,10 +1,11 @@
 /*
 *+
 *  Name:
-*     dat1FreeLoc
+*     dat1TopHandle
 
 *  Purpose:
-*     Free memory associated with an HDS locator
+*     Return a pointer to the handle at the top of the tree containing a
+*     specified handle.
 
 *  Language:
 *     Starlink ANSI C
@@ -13,38 +14,32 @@
 *     Library routine
 
 *  Invocation:
-*     HDSLoc * dat1AllocLoc( HDSLoc * locator, int * status );
+*     Handle *dat1TopHandle( Handle *handle, int *status );
 
 *  Arguments:
-*     locator = HDSLoc * (Given)
-*        Locator to free. Do not use this locator after calling this
-*        routine (consider assigning it to the retun value).
-*     status = int* (Given and Returned)
-*        Pointer to global status.
+*     handle = HDSLoc * (Given)
+*        Pointer to the Handle.
+*     status = int * (Given and Returned)
+*        Pointer to the inherited status value.
 
-*  Returned Value:
-*     loc = HDSLoc *
-*        NULL pointer to allow the locator to be assigned the
-*        return value.
+*  Returned function value:
+*     A NULL pointer is always returned.
 
 *  Description:
-*     Free the memory associated with the locator.
+*     Navigates up the tree of handles, starting at the supplied handle,
+*     until the top of the tree is reached. The handle at the top is returned.
 
 *  Authors:
-*     TIMJ: Tim Jenness (Cornell)
+*     DSB: David S Berry (EAO)
 *     {enter_new_authors_here}
 
-*  Notes:
-*     - Locator must have been allocated by dat1AllocLoc()
-*     - Can be called with a NULL pointer.
-
 *  History:
-*     2014-08-26 (TIMJ):
+*     20-JUL-2020 (DSB):
 *        Initial version
 *     {enter_further_changes_here}
 
 *  Copyright:
-*     Copyright (C) 2014 Cornell University
+*     Copyright (C) 2020 East Asian Observatory
 *     All Rights Reserved.
 
 *  Licence:
@@ -84,32 +79,30 @@
 *-
 */
 
-#include <stdlib.h>
-
-#include "ems.h"
-
-#include "hds1.h"
 #include "dat1.h"
 
-#include "dat_err.h"
-#include "sae_par.h"
+Handle *dat1TopHandle( Handle *handle, int *status ) {
 
-HDSLoc *
-dat1FreeLoc( HDSLoc * locator, int * status ) {
+/* Local Variables: */
+   Handle *parent = NULL;
+   Handle *result = handle;
 
-  /* Sanity check */
-  if( *status == SAI__OK ){
-     if( locator->prev || locator->next || locator->hdsFile ){
-       *status = DAT__FATAL;
-       emsRep( " ", "Attempt to free HDS locator that is still registered.",
-                status );
-     }
-  }
+/* Check inherited status */
+   if( !handle ) return result;
 
-  /* Always attempt to free the memory even if status
-     is bad */
-  if (locator) {
-    MEM_FREE(locator);
-  }
-  return NULL;
+/* Validate the supplied handle. */
+   if( !dat1ValidateHandle( "dat1TopHandle", handle, status ) ) return result;
+
+/* Move up the tree of parent handles until a handle is found that has no
+   parent. */
+   parent = result->parent;
+   while( parent ) {
+      result = parent;
+      parent = result->parent;
+   }
+
+/* Return the top handle. */
+   return result;
 }
+
+

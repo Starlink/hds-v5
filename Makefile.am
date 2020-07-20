@@ -187,6 +187,7 @@ dat1SetAttrHdsdims.c \
 dat1SetAttrInt.c \
 dat1SetAttrString.c \
 dat1SetStructureDims.c \
+dat1TopHandle.c \
 dat1Type.c \
 dat1TypeInfo.c \
 dau1CheckFileName.c \
@@ -196,7 +197,7 @@ dau1HdsType.c \
 dau1Native2MemType.c \
 dat1ValidateLocator.c \
 dat1ValidateHandle.c \
-hdstrack.c
+hdstrack2.c
 
 hds_types.h: make-hds-types$(EXEEXT)
 	./make-hds-types

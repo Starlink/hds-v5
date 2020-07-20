@@ -26,7 +26,7 @@
 *        returned Handle should refer. It is assumed that the named
 *        component does in fact exist within the parent object, although
 *        this is not checked. If "parent" is NULL, the path to the
-*        contained file should be supplied.
+*        container file should be supplied.
 *     rdonly = int (Given)
 *        If a new Handle is created as a result of calling this function,
 *        it is locked for use by the current thread. If "parent" is

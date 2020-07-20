@@ -136,6 +136,7 @@ datParen( const HDSLoc *locator1, HDSLoc **locator2, int *status ) {
     thisloc->group_id = parent_id;
     thisloc->isprimary = HDS_FALSE;
     thisloc->file_id = locator1->file_id;
+    thisloc->hdsFile = locator1->hdsFile;
     hds1RegLocator( thisloc, status );
     if ( (locator1->grpname)[0] != '\0') hdsLink(thisloc, locator1->grpname, status);
   }

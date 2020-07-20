@@ -114,6 +114,7 @@ datClone(const HDSLoc *locator1, HDSLoc **locator2, int *status) {
   /* Lose primary-ness. */
   clonedloc->isprimary = HDS_FALSE;
   clonedloc->file_id = locator1->file_id;
+  clonedloc->hdsFile = locator1->hdsFile;
   hds1RegLocator( clonedloc, status );
 
   if (locator1->dataset_id > 0) {

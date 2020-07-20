@@ -66,10 +66,13 @@
 *     2014-11-10 (TIMJ):
 *        Use central registry of locators to implement primary/secondary
 *        in a way that matched HDSv4.
+*     2020-07-20 (DSB):
+*        Re-written to use facilities in hdsTrack2.c
 *     {enter_further_changes_here}
 
 *  Copyright:
 *     Copyright (C) 2014 Cornell University
+*     Copyright (C) 2020 East Asian Observatory
 *     All Rights Reserved.
 
 *  Licence:
@@ -120,36 +123,38 @@
 
 #include "dat_err.h"
 
-int
-datPrmry(hdsbool_t set, HDSLoc **locator, hdsbool_t *prmry, int *status) {
+int datPrmry( hdsbool_t set, HDSLoc **locator, hdsbool_t *prmry, int *status ) {
 
-  if (*status != SAI__OK) return *status;
+/* Local Variables: */
+   int annul;
 
-  if (set) {
-    if (*prmry) {
-      (*locator)->isprimary = HDS_TRUE;
-    } else {
-      /* check if we need to do something */
-      if ( (*locator)->isprimary ) {
-        int refct = 0;
-        /* We are converting a primary to a secondary locator.
-           Get the reference count for this file id */
-        datRefct( *locator, &refct, status );
+/* Check inhereited status */
+   if( *status != SAI__OK ) return *status;
 
-        if (refct == 1) {
-          /* This locator is primary and there is only one
-             primary associated with this file id. That means
-             the file should be closed and locator freed. */
-          hds1FlushFile( (*locator)->file_id, status );
-          *locator = NULL;
-        } else {
-          (*locator)->isprimary = HDS_FALSE;
-        }
+/* If we are setting a new value for the secondary/primary flag... */
+   if( set ){
+
+/* If the value of the secondary/primary flag will change... */
+      if( ( *prmry && !((*locator)->isprimary) ) ||
+          ( !(*prmry) && (*locator)->isprimary ) ) {
+
+/* Unregister the locator, set the flag, and then register it again. */
+         hds1UnregLocator( *locator, status );
+         (*locator)->isprimary = *prmry;
+         annul = hds1RegLocator( *locator, status );
+
+/* If this means that there are now no primary locators, the file should
+   be closed and all secondary locators annulled. We pop the head of the
+   list of secondary locators (there must be at least one such locator) and
+   annul it. This will cause any other secondary locators to be annulled
+   and the file closed. */
+         if( annul ) dat1Annul( hds1PopSecLocator( *locator, NULL, status ), status );
       }
-    }
 
-  } else {
-    *prmry = (*locator)->isprimary;
-  }
-  return *status;
+/* If we are returning the current value of the flag... */
+   } else {
+      *prmry = ( (*locator)->isprimary != 0 );
+   }
+
+   return *status;
 }

@@ -32,6 +32,7 @@
 
 *  Authors:
 *     TIMJ: Tim Jenness (Cornell)
+*     DSB: David S Berry (EAO)
 *     {enter_new_authors_here}
 
 *  Notes:
@@ -61,6 +62,9 @@
 *        even if status is bad.
 *     2014-11-19 (TIMJ):
 *        Cloned from datAnnul
+*     2020-07-17 (DSB):
+*        Re-written to avoid recursive calls to this function from within
+*        hds1UnregLocator.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -89,6 +93,8 @@
 */
 
 #include <string.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "hdf5.h"
 
@@ -97,81 +103,165 @@
 
 #include "hds1.h"
 #include "dat1.h"
+#include "dat_err.h"
 #include "hds.h"
 
+static void dat1Anloc( HDSLoc *locator, int * status );
+
 int dat1Annul( HDSLoc *locator, int * status ) {
-  /* Attempts to run even if status is bad */
-  HDSLoc * thisloc;
-  hdsbool_t ingrp = 0;
-  int lstat = SAI__OK;
 
-  /* Sanity check argument */
-  if (!locator) return *status;
+/* Local Variables: */
+   HDSLoc *loc = NULL;
+   Handle *tophandle = NULL;
+   HdsFile *hdsFile = NULL;
+   HdsFile *context = NULL;
+   int erase = 0;
+   int errstat = 0;
+   int lstat = SAI__OK;
 
-  /* Begin an entirely new error context as we need to run this
-     regardless of external errors */
-  lstat = *status;
-  emsBegin( &lstat );
-  emsMark();
+/* Return if a null locator is supplied, but do not check the inherited
+   status. */
+   if( !locator ) return *status;
 
-  /* Remove from group. If we do not do this then we risk a segv
-     if someone later calls hdsFlush. They are not meant to call datAnnul
-     if it is part of a group and maybe we should simply return without
-     doing anything if it is part of a group. For now we continue but
-     remove from the group.
-  */
-  ingrp = hds1RemoveLocator( locator, &lstat );
-  /* The following code can be used to indicated whether we should be worried
-     about group usage */
-  /*
-  if (ingrp) {
-    printf("ANNULING LOCATOR %p : part of group '%s'\n", *locator, (*locator)->grpname);
-  }
-  */
+/* Begin an entirely new error context as we need to run this
+   regardless of external errors */
+   lstat = *status;
+   emsBegin( &lstat );
+   emsMark();
 
-  /* Sort out any memory mapping */
-  datUnmap( locator, &lstat );
+/* Unregister the supplied locator - this removes the locator from the
+   list of locators associated with its container file and returns a flag
+   indicating if there are then no remaining primary locators associated
+   with the container file. If this is the case, we annull any secondary
+   locators still associated with the file and close the file. */
+   if( hds1UnregLocator( locator, &lstat ) ) {
 
-  thisloc = locator;
+/* Loop round popping any remaining locators off the list of secondary
+   locators still associated with the container file, and annulling each
+   one. */
+      loc = hds1PopSecLocator( locator, &context, status );
+      while( loc ){
+         dat1Anloc( loc, status );
+         loc = hds1PopSecLocator( NULL, &context, status );
+      }
 
-  /* Free HDF5 resources. We zero them out so that unregistering
-     the locator does not cause confusion */
-  if (thisloc->dtype) {
-    H5Tclose(thisloc->dtype);
-    thisloc->dtype = 0;
-  }
-  if (thisloc->dataspace_id) {
-    H5Sclose(thisloc->dataspace_id);
-    thisloc->dataspace_id = 0;
-  }
-  if (thisloc->dataset_id) {
-    H5Dclose(thisloc->dataset_id);
-    thisloc->dataset_id = 0;
-  }
-  if (thisloc->group_id) {
-    H5Gclose(thisloc->group_id);
-    thisloc->group_id = 0;
-  }
+/* Note if the container file should be erased after annulling the
+   supplied locator. */
+      erase = locator->handle->erase;
 
-  /* Unregister this -- this may result in many other
-     secondary locators being freed. It may or may not result
-     in the file handle being closed. We only unregister if
-     we have a file_id (otherwise we will not know from where
-     to unregister it. */
-  if (thisloc->file_id > 0) hds1UnregLocator( thisloc, &lstat );
+/* Get a pointer to the Handle at the top of the tree so that the tree
+   can be erased after annulling the supplied locator. */
+      tophandle =  dat1TopHandle( locator->handle, status );
 
-  /* End the error context and return the final status */
-  emsRlse();
-  emsEnd( &lstat );
-  *status = lstat;
+/* Get a pointer to the HdsFile structure for the container file (do
+   this now so that we can still access the HdsFile after the locator has
+   been annulled). */
+      hdsFile = locator->hdsFile;
+   }
 
-  /* Clear the locator but retain the version number. This is
-     required to ensure that the locator is sent to the correct
-     HDS implementation when it is finally freed */
-  {
-    int ver = thisloc->hds_version;
-    memset( thisloc, 0, sizeof(*thisloc) );
-    thisloc->hds_version = ver;
-  }
-  return *status;
+/* Annul the supplied locator. */
+   dat1Anloc( locator, status );
+
+/* If required, delete the file. */
+   if( erase && hdsFile && hdsFile->path ) {
+      errstat = unlink( hdsFile->path );
+      if (*status == SAI__OK && errstat > 0) {
+         *status = DAT__FILND;
+         emsErrno( "ERRNO", errno );
+         emsRepf( " ", "Error deleting file %s: ^ERRNO", status, hdsFile->path );
+      }
+   }
+
+/* If required, erase the whole tree of handles. */
+   if( tophandle ) dat1EraseHandle( tophandle, NULL, status );
+
+/* If required, free the HdsFile structure. */
+   if( hdsFile ) hdsFile = hds1FreeHdsFile( hdsFile, status );
+
+/* End the error context and return the final status */
+   emsRlse();
+   emsEnd( &lstat );
+   *status = lstat;
+
+   return *status;
 }
+
+
+
+
+static void dat1Anloc( HDSLoc *locator, int * status ) {
+
+/* Local Variables: */
+   hdsbool_t ingrp = 0;
+   int lstat = SAI__OK;
+   int ver;
+
+/* Return if a null locator is supplied, but do not check the inherited
+   status. */
+   if( !locator) return;
+
+/* Begin an entirely new error context as we need to run this
+   regardless of external errors */
+   lstat = *status;
+   emsBegin( &lstat );
+   emsMark();
+
+/* Remove from group. If we do not do this then we risk a segv if someone
+   later calls hdsFlush. They are not meant to call datAnnul if it is part
+   of a group and maybe we should simply return without doing anything if it
+   is part of a group. For now we continue but remove from the group. */
+   ingrp = hds1RemoveLocator( locator, &lstat );
+
+/* The following code can be used to indicated whether we should be worried
+   about group usage */
+/*
+   if( ingrp ){
+      printf("ANNULING LOCATOR %p : part of group '%s'\n", *locator, (*locator)->grpname);
+   }
+*/
+
+/* Sort out any memory mapping */
+   datUnmap( locator, &lstat );
+
+/* Free HDF5 resources. We zero them out so that unregistering the locator
+   does not cause confusion */
+   if( locator->dtype ){
+      H5Tclose( locator->dtype );
+      locator->dtype = 0;
+   }
+
+   if( locator->dataspace_id ){
+      H5Sclose( locator->dataspace_id );
+      locator->dataspace_id = 0;
+   }
+
+   if( locator->dataset_id ){
+      H5Dclose( locator->dataset_id );
+      locator->dataset_id = 0;
+   }
+
+   if( locator->group_id ){
+      H5Gclose( locator->group_id );
+      locator->group_id = 0;
+   }
+
+/* Nullify the pointer to the structure holding lists of locators
+   associated with the same container file. */
+   locator->hdsFile = NULL;
+
+/* End the error context and return the final status */
+   emsRlse( );
+   emsEnd( &lstat  );
+   *status = lstat;
+
+/* Clear the locator but retain the version number. This is required to
+   ensure that the locator is sent to the correct HDS implementation when
+   it is finally freed */
+   ver = locator->hds_version;
+   memset( locator, 0, sizeof(*locator) );
+   locator->hds_version = ver;
+}
+
+
+
+

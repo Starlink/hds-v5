@@ -105,6 +105,6 @@ datRefct(const HDSLoc *locator, int *refct, int *status) {
 
   /* Validate input locator. */
   dat1ValidateLocator( "datRefct", 1, locator, 1, status );
-  *refct = hds1PrimaryCount( locator->file_id, status );
+  *refct = hds1PrimaryCount( locator, status );
   return *status;
 }

@@ -221,7 +221,7 @@ hid_t dat1Reopen( hid_t file_id, unsigned int flags, hid_t fapl,
    if( *status == SAI__OK ) {
       loc = loclist;
       for( iloc = 0; iloc < nloc; iloc++,loc++ ) {
-         hds1SetFileId( (*loc), file_id, status );
+         (*loc)->file_id = file_id;
          if( isgroup[ iloc ] ) {
             (*loc)->group_id = H5Gopen2( file_id, paths[ iloc ], H5P_DEFAULT );
          } else {

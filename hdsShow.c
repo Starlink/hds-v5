@@ -186,7 +186,7 @@ hdsShow(const char *topic_str, int  *status) {
             intent_str = "Err";
           }
           name_str = dat1GetFullName( obj_id, 1, NULL, status );
-          printf("File: %s [%s] (%d)\n", name_str, intent_str, obj_id );
+          printf("File: %s [%s] (%ld)\n", name_str, intent_str, obj_id );
           if (name_str) MEM_FREE(name_str);
         } else if ( objtype == H5I_GROUP || objtype == H5I_DATASET ) {
           char * name_str = NULL;

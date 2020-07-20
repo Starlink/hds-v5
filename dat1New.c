@@ -245,6 +245,7 @@ dat1New( const HDSLoc    *locator,
       thisloc->dataspace_id = dataspace_id;
       thisloc->dtype = h5type;
       thisloc->file_id = locator->file_id;
+      thisloc->hdsFile = locator->hdsFile;
       thisloc->isprimary = isprimary;
       hds1RegLocator( thisloc, status );
     }

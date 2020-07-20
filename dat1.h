@@ -76,6 +76,7 @@
 #include "hdf5.h"
 #include "hds1.h"
 #include "hds_types.h"
+#include "uthash.h"
 
 /* Access mode requested for a particular primitive type */
 typedef enum {
@@ -160,10 +161,18 @@ typedef struct Handle {
    hdsbool_t erase;         /* Erase file after it is closed? */
 } Handle;
 
+/* Preliminary definition of (currently undefined) structures used in the
+   following HDSLoc structure. */
+struct HdsFile;
+struct LOC;
+
 /* Private definition of the HDS locator struct */
 typedef struct LOC {
   int hds_version;   /* Implementation version number. Always 5 at the moment.
                         Note, this MUST be the first field in the structure. */
+  struct LOC *prev;  /* Previous locator in linked list (see hdstrack2.c) */
+  struct LOC *next;  /* Next locator in linked list (see hdstrack2.c) */
+  struct HdsFile *hdsFile;  /* Holds heads of prim/sec locator lists for each file (see hdstrack2.c) */
   Handle *handle;    /* Structure holding fixed info for the HDF object */
   void *pntr;        /* Pointer to memory mapped data array [datMap only] */
   void *regpntr;     /* Pointer that was registered with CNF */
@@ -187,6 +196,16 @@ typedef struct LOC {
   char grpname[DAT__SZGRP+1]; /* Name of group associated with locator */
 } HDSLoc;
 
+/* A structure that lists all the locators associated with a file path,
+   separating the locators into primary and secondary. */
+typedef struct HdsFile {
+   char *path;         /* The full absolute path to the file (used as the hash key) */
+   HDSLoc *primhead;   /* Pointer to the locator at the head of a double-linked
+                          list of primary locators. */
+   HDSLoc *sechead;    /* Pointer to the locator at the head of a double-linked
+                          list of secondary locators. */
+   UT_hash_handle hh;  /* Mandatory for UTHASH */
+} HdsFile;
 
 /* This structure contains information about data types.
    Values are obtained by use dat1TypeInfo(). */
@@ -359,13 +378,13 @@ hdsbool_t
 hds1UnregLocator( HDSLoc * loc, int *status );
 
 size_t
-hds1PrimaryCount( hid_t file_id, int * status );
+hds1PrimaryCount( const HDSLoc *locator, int * status );
+
+HdsFile *
+hds1FreeHdsFile( HdsFile *hdsFile, int *status );
 
 void
 hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status );
-
-void
-hds1ShowLocators( hid_t file_id, int * status );
 
 int
 hds1CountFiles();
@@ -376,11 +395,17 @@ hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root, int 
 void
 hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist, hid_t **file_ids, int *status );
 
-void
-hds1SetFileId( HDSLoc *locator, hid_t file_id, int *status );
-
 Handle *
 hds1FindHandle( hid_t file_id, int *status );
+
+Handle *
+dat1TopHandle( Handle *handle, int *status );
+
+HDSLoc *
+hds1PopPrimLocator( HDSLoc *locator, HdsFile **context, int *status );
+
+HDSLoc *
+hds1PopSecLocator( HDSLoc *locator, HdsFile **context, int *status );
 
 void
 dat1SetAttrString( hid_t obj_id, const char * attrname,
