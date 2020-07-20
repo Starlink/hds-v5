@@ -115,6 +115,7 @@ int dat1Annul( HDSLoc *locator, int * status ) {
    Handle *tophandle = NULL;
    HdsFile *hdsFile = NULL;
    HdsFile *context = NULL;
+   hid_t file_id = 0;
    int erase = 0;
    int errstat = 0;
    int lstat = SAI__OK;
@@ -157,10 +158,16 @@ int dat1Annul( HDSLoc *locator, int * status ) {
    this now so that we can still access the HdsFile after the locator has
    been annulled). */
       hdsFile = locator->hdsFile;
+
+/* Note the HDF5 id for the file to be closed. */
+      file_id = locator->file_id;
    }
 
 /* Annul the supplied locator. */
    dat1Anloc( locator, status );
+
+/* If required, close the file */
+   if( file_id ) H5Fclose( file_id );
 
 /* If required, delete the file. */
    if( erase && hdsFile && hdsFile->path ) {
