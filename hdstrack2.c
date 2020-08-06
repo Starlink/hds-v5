@@ -90,8 +90,8 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
 
 /* If not found, create a new HdsFile structure to describe the file and add
    it into the hash table using its absolute path as the key. The memory
-   allocated by realpath ("abspath") is then owned by the HdsFile object
-   and should be freed (using free()) when the HdsFile object is freed. */
+   allocated by hds2AbsPath ("abspath") is then owned by the HdsFile object
+   and should be freed when the HdsFile object is freed. */
          if( !hdsFile ){
             hdsFile = MEM_CALLOC( 1, sizeof( HdsFile ) );
             if( hdsFile ) {
@@ -130,13 +130,13 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
       if( !(hdsFile->primhead) ) result = 1;
    }
 
-/* Unlock the mutex that serialises access to the hash table */
-   UNLOCK_MUTEX;
-
 /* Context error message */
    if( *status != SAI__OK ) {
       emsRep( " ", "hds1RegLocator: Failed to register locator.", status );
    }
+
+/* Unlock the mutex that serialises access to the hash table */
+   UNLOCK_MUTEX;
 
    return result;
 }
@@ -156,6 +156,9 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
 
 /* Check a locator was supplied. */
    if( !locator ) return result;
+
+/* Lock the mutex that serialises access to the hash table */
+   LOCK_MUTEX;
 
 /* Begin a new error reporting environment */
    emsBegin( status );
@@ -213,6 +216,9 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
 /* End the current error reporting environment */
    emsEnd( status );
 
+/* Unlock the mutex that serialises access to the hash table */
+   UNLOCK_MUTEX;
+
    return result;
 }
 
@@ -227,6 +233,9 @@ HDSLoc *hds1PopPrimLocator( HDSLoc *locator, HdsFile **context, int *status ){
    HDSLoc *result = NULL;
    HdsFile *hdsFile = context ? *context : NULL;
    int lstat = *status;
+
+/* Lock the mutex that serialises access to the hash table */
+   LOCK_MUTEX;
 
    if( !hdsFile && locator ) {
       hdsFile = locator->hdsFile;
@@ -254,6 +263,9 @@ HDSLoc *hds1PopPrimLocator( HDSLoc *locator, HdsFile **context, int *status ){
               "list of primary locators.", status );
    }
 
+/* Unlock the mutex that serialises access to the hash table */
+   UNLOCK_MUTEX;
+
    return result;
 }
 
@@ -269,6 +281,9 @@ HDSLoc *hds1PopSecLocator( HDSLoc *locator, HdsFile **context, int *status ){
    HDSLoc *result = NULL;
    HdsFile *hdsFile = context ? *context : NULL;
    int lstat = *status;
+
+/* Lock the mutex that serialises access to the hash table */
+   LOCK_MUTEX;
 
    if( !hdsFile && locator ) {
       hdsFile = locator->hdsFile;
@@ -296,6 +311,9 @@ HDSLoc *hds1PopSecLocator( HDSLoc *locator, HdsFile **context, int *status ){
       emsRep( " ", "hds1PopSecLocator: Failed to pop the head of a "
               "list of secondary locators.", status );
    }
+
+/* Unlock the mutex that serialises access to the hash table */
+   UNLOCK_MUTEX;
 
    return result;
 }
@@ -328,7 +346,7 @@ HdsFile *hds1FreeHdsFile( HdsFile *hdsFile, int *status ){
          }
       }
 
-      if( hdsFile->path ) free( hdsFile->path ); /* Must use free, not MEM_FREE */
+      if( hdsFile->path ) MEM_FREE( hdsFile->path );
       memset( hdsFile, 0, sizeof(*hdsFile) );
       MEM_FREE( hdsFile );
       hdsFile = NULL;
@@ -348,6 +366,9 @@ size_t hds1PrimaryCount( const HDSLoc *locator, int *status ) {
    HdsFile *hdsFile;
    size_t result = 0;
 
+/* Lock the mutex that serialises access to the hash table */
+   LOCK_MUTEX;
+
    if( locator ){
       hdsFile = locator->hdsFile;
       if( hdsFile ) {
@@ -358,6 +379,9 @@ size_t hds1PrimaryCount( const HDSLoc *locator, int *status ) {
          }
       }
    }
+
+/* Unlock the mutex that serialises access to the hash table */
+   UNLOCK_MUTEX;
 
    return result;
 }
@@ -394,6 +418,9 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
 /* Check inherited status */
    if( *status != SAI__OK ) return;
 
+/* Lock the mutex that serialises access to the hash table */
+   LOCK_MUTEX;
+
 /* We need the path to the file so that we can use it as a key into the
    hash table. Get a dynamically allocated buffer holding the path to the
    file associated with the supplied file id. */
@@ -410,13 +437,12 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
    }
 
 /* Search for an existing entry in the hash table for this path. */
-   LOCK_MUTEX;
    if( abspath ) {
       HASH_FIND_STR( hdsFiles, abspath, hdsFile );
 
 /* Free the momory holding the absolute path. Must use plain free, not
    MEM_FREE, since realpath uses plain malloc. */
-      free( abspath );
+      MEM_FREE( abspath );
       abspath = NULL;
    }
 
@@ -476,13 +502,14 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
       }
    }
 
-   UNLOCK_MUTEX;
-
 /* Context error message */
    if( *status != SAI__OK ) {
       emsRep( " ", "hds1GetLocators: Failed to return a list of the locators "
               "attached to a container file.", status );
    }
+
+/* Unlock the mutex that serialises access to the hash table */
+   UNLOCK_MUTEX;
 }
 
 
@@ -621,14 +648,15 @@ int hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root,
       hdsFile = hdsFile->hh.next;
    }
 
-/* Unlock the mutex that serialises access to the hash table */
-   UNLOCK_MUTEX;
-
 /* Context error message */
    if( *status != SAI__OK ) {
       emsRep( " ", "hds1CountLocators: Failed to count the locators "
               "that match a filter.", status );
    }
+
+/* Unlock the mutex that serialises access to the hash table */
+   UNLOCK_MUTEX;
+
    return result;
 }
 
@@ -653,6 +681,9 @@ Handle *hds1FindHandle( hid_t file_id, int *status ){
 /* Check inherited status */
    if( *status != SAI__OK ) return result;
 
+/* Lock the mutex that serialises access to the hash table */
+   LOCK_MUTEX;
+
 /* We need the path to the file so that we can use it as a key into the
    hash table. Get a dynamically allocated buffer holding the path to the
    file associated with the supplied file id. */
@@ -669,13 +700,12 @@ Handle *hds1FindHandle( hid_t file_id, int *status ){
    }
 
 /* Search for an existing entry in the hash table for this path. */
-   LOCK_MUTEX;
    if( abspath ) {
       HASH_FIND_STR( hdsFiles, abspath, hdsFile );
 
 /* Free the momory holding the absolute path. Must use plain free, not
    MEM_FREE, since realpath uses plain malloc. */
-      free( abspath );
+      MEM_FREE( abspath );
       abspath = NULL;
    }
 
@@ -699,13 +729,15 @@ Handle *hds1FindHandle( hid_t file_id, int *status ){
       }
    }
 
-   UNLOCK_MUTEX;
-
 /* Context error message */
    if( *status != SAI__OK ) {
       emsRep( " ", "hds1FindHandle: Failed to find a handle for a given "
               "file id.", status );
    }
+
+/* Unlock the mutex that serialises access to the hash table */
+   UNLOCK_MUTEX;
+
    return result;
 }
 
