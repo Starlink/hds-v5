@@ -9,6 +9,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include "hdf5.h"
 #include "ems.h"
@@ -35,8 +36,9 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 #define LOCK_MUTEX pthread_mutex_lock( &mutex );
 #define UNLOCK_MUTEX pthread_mutex_unlock( &mutex );
 
-/* qsort comparison function. */
+/* Local functions. */
 static int hds2CompareId( const void *a, const void *b );
+static char *hds2AbsPath( const char *path, int *status );
 
 
 /* -----------------------------------------------------------------
@@ -71,16 +73,19 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
 /* Get a dynamically allocated buffer holding the path to the file
    associated with the supplied locator. */
       path = dat1GetFullName( locator->file_id, 1, NULL, status );
-      if( *status == SAI__OK ) {
 
 /* Convert the above path, which may be relative, into an absolute path.
    The absolute path is returned in a dynamically allocated string. */
-         abspath = realpath( path, NULL );
+      abspath = hds2AbsPath( path, status );
 
 /* Free the momory holding the relative path. */
+      if( path ) {
          MEM_FREE( path );
+         path = NULL;
+      }
 
 /* Search for an existing entry in the hash table for this path. */
+      if( *status == SAI__OK ) {
          HASH_FIND_STR( hdsFiles, abspath, hdsFile );
 
 /* If not found, create a new HdsFile structure to describe the file and add
@@ -97,8 +102,7 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
 
             } else if( *status == SAI__OK ) {
                *status = DAT__FATAL;
-               emsRep( " ", "hds1RegLocator: Failed to allocate memory.",
-                       status );
+               emsRep( " ", "Failed to allocate memory.", status );
             }
          }
       }
@@ -110,7 +114,7 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
 /* Add the locator onto the head of the appropriate double-linked list of
    primary or secondary locators associated with the file. The "->prev"
    points away from the head, the "->next" link points towards the head. */
-   if( hdsFile ) {
+   if( hdsFile && *status == SAI__OK ) {
       if( locator->isprimary ) {
          head = &(hdsFile->primhead);
       } else {
@@ -128,6 +132,11 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
 
 /* Unlock the mutex that serialises access to the hash table */
    UNLOCK_MUTEX;
+
+/* Context error message */
+   if( *status != SAI__OK ) {
+      emsRep( " ", "hds1RegLocator: Failed to register locator.", status );
+   }
 
    return result;
 }
@@ -162,25 +171,27 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
    hdsFile = locator->hdsFile;
    if( !hdsFile ) {  /* Sanity check */
       *status = DAT__FATAL;
-      emsRepf( " ", "hds1UnregLocator: Attempt to unregister a locator "
-               "that has no container file information.", status );
+      datMsg( "L", locator );
+      emsRepf( " ", "Attempt to unregister locator ^L that has no "
+               "container file information.", status );
 
-   } else if( hdsFile->sechead == locator ) {
+   } else if( hdsFile->sechead == locator && *status == SAI__OK ) {
       hdsFile->sechead = prev;
       if( locator->isprimary ) {  /* Sanity check */
+         datMsg( "L", locator );
          *status = DAT__FATAL;
-         emsRepf( " ", "hds1UnregLocator: A primary locator was found at "
-                  "the head of the list of secondary locators for '%s'.",
-                  status, hdsFile->path );
+         emsRepf( " ", "Primary locator ^L was found at the head of the "
+                  "list of secondary locators for '%s'.", status,
+                  hdsFile->path );
       }
 
-   } else if( hdsFile->primhead == locator ) {
+   } else if( hdsFile->primhead == locator && *status == SAI__OK ) {
       hdsFile->primhead = prev;
       if( !locator->isprimary ) {  /* Sanity check */
          *status = DAT__FATAL;
-         emsRepf( " ", "hds1UnregLocator: A secondary locator was found at "
-                  "the head of the list of primary locators for '%s'.",
-                  status, hdsFile->path );
+         datMsg( "L", locator );
+         emsRepf( " ", "Secondary locator ^l was found at the head of the "
+                  "list of primary locators for '%s'.", status, hdsFile->path );
 
 /* If the list of primary locators associated with the container file is
    now empty, return a non-zero value to indicate that any remaining
@@ -193,6 +204,11 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
 /* Nullify the links in the locator. */
    locator->next = NULL;
    locator->prev = NULL;
+
+/* Context error message */
+   if( *status != SAI__OK ) {
+      emsRep( " ", "hds1UnregLocator: Failed to unregister locator.", status );
+   }
 
 /* End the current error reporting environment */
    emsEnd( status );
@@ -210,14 +226,16 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
 HDSLoc *hds1PopPrimLocator( HDSLoc *locator, HdsFile **context, int *status ){
    HDSLoc *result = NULL;
    HdsFile *hdsFile = context ? *context : NULL;
+   int lstat = *status;
 
    if( !hdsFile && locator ) {
       hdsFile = locator->hdsFile;
       if( context ) *context = hdsFile;
       if( !hdsFile && *status == SAI__OK ) {  /* Sanity check */
          *status = DAT__FATAL;
-         emsRepf( " ", "hds1PopPrimLocator: A locator was supplied that has "
-                  "no container file information", status );
+         datMsg( "L", locator );
+         emsRepf( " ", "A locator (^L) was supplied that has no container "
+                  "file information", status );
       }
    }
 
@@ -226,7 +244,14 @@ HDSLoc *hds1PopPrimLocator( HDSLoc *locator, HdsFile **context, int *status ){
       if( result ) {
          hdsFile->primhead = result->prev;
          result->prev = NULL;
+         if( result->prev ) result->prev->next = NULL;
       }
+   }
+
+/* Context error message */
+   if( *status != SAI__OK && lstat == SAI__OK ) {
+      emsRep( " ", "hds1PopPrimLocator: Failed to pop the head of a "
+              "list of primary locators.", status );
    }
 
    return result;
@@ -237,18 +262,23 @@ HDSLoc *hds1PopPrimLocator( HDSLoc *locator, HdsFile **context, int *status ){
    same container file as the supplied locator. NULL is returned if the
    list is empty. On the initial call, *context should be supplied holding
    a NULL pointer. The returned pointer should not be changed between calls.
-   The value of locator is ignored on subsequent calls and may be NULL. */
+   The value of locator is ignored on subsequent calls and may be NULL.
+   The locator retains its HdsFile reference, but is removed from the
+   chain. */
 HDSLoc *hds1PopSecLocator( HDSLoc *locator, HdsFile **context, int *status ){
    HDSLoc *result = NULL;
    HdsFile *hdsFile = context ? *context : NULL;
+   int lstat = *status;
 
    if( !hdsFile && locator ) {
       hdsFile = locator->hdsFile;
       if( context ) *context = hdsFile;
       if( !hdsFile && *status == SAI__OK ) {  /* Sanity check */
+         datMsg( "L", locator );
          *status = DAT__FATAL;
-         emsRepf( " ", "hds1PopSecLocator: A locator was supplied that has "
-                  "no container file information", status );
+         emsRepf( " ", "A locator (^L) was supplied that has no container "
+                  "file information", status );
+
       }
    }
 
@@ -256,8 +286,15 @@ HDSLoc *hds1PopSecLocator( HDSLoc *locator, HdsFile **context, int *status ){
       result = hdsFile->sechead;
       if( result ) {
          hdsFile->sechead = result->prev;
+         if( result->prev ) result->prev->next = NULL;
          result->prev = NULL;
       }
+   }
+
+/* Context error message */
+   if( *status != SAI__OK && lstat == SAI__OK ) {
+      emsRep( " ", "hds1PopSecLocator: Failed to pop the head of a "
+              "list of secondary locators.", status );
    }
 
    return result;
@@ -292,7 +329,9 @@ HdsFile *hds1FreeHdsFile( HdsFile *hdsFile, int *status ){
       }
 
       if( hdsFile->path ) free( hdsFile->path ); /* Must use free, not MEM_FREE */
+      memset( hdsFile, 0, sizeof(*hdsFile) );
       MEM_FREE( hdsFile );
+      hdsFile = NULL;
 
       UNLOCK_MUTEX;
    }
@@ -362,18 +401,24 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
 
 /* Convert the above path, which may be relative, into an absolute path.
    The absolute path is returned in a dynamically allocated string. */
-   abspath = realpath( path, NULL );
+   abspath = hds2AbsPath( path, status );
 
 /* Free the momory holding the relative path. */
-   MEM_FREE( path );
+   if( path ) {
+      MEM_FREE( path );
+      path = NULL;
+   }
 
 /* Search for an existing entry in the hash table for this path. */
    LOCK_MUTEX;
-   HASH_FIND_STR( hdsFiles, abspath, hdsFile );
+   if( abspath ) {
+      HASH_FIND_STR( hdsFiles, abspath, hdsFile );
 
 /* Free the momory holding the absolute path. Must use plain free, not
    MEM_FREE, since realpath uses plain malloc. */
-   free( abspath );
+      free( abspath );
+      abspath = NULL;
+   }
 
 /* If found... */
    if( hdsFile ){
@@ -432,6 +477,12 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
    }
 
    UNLOCK_MUTEX;
+
+/* Context error message */
+   if( *status != SAI__OK ) {
+      emsRep( " ", "hds1GetLocators: Failed to return a list of the locators "
+              "attached to a container file.", status );
+   }
 }
 
 
@@ -573,6 +624,11 @@ int hds1CountLocators( size_t ncomp, char **comps, hdsbool_t skip_scratch_root,
 /* Unlock the mutex that serialises access to the hash table */
    UNLOCK_MUTEX;
 
+/* Context error message */
+   if( *status != SAI__OK ) {
+      emsRep( " ", "hds1CountLocators: Failed to count the locators "
+              "that match a filter.", status );
+   }
    return result;
 }
 
@@ -604,18 +660,24 @@ Handle *hds1FindHandle( hid_t file_id, int *status ){
 
 /* Convert the above path, which may be relative, into an absolute path.
    The absolute path is returned in a dynamically allocated string. */
-   abspath = realpath( path, NULL );
+   abspath = hds2AbsPath( path, status );
 
 /* Free the momory holding the relative path. */
-   MEM_FREE( path );
+   if( path ) {
+      MEM_FREE( path );
+      path = NULL;
+   }
 
 /* Search for an existing entry in the hash table for this path. */
    LOCK_MUTEX;
-   HASH_FIND_STR( hdsFiles, abspath, hdsFile );
+   if( abspath ) {
+      HASH_FIND_STR( hdsFiles, abspath, hdsFile );
 
 /* Free the momory holding the absolute path. Must use plain free, not
    MEM_FREE, since realpath uses plain malloc. */
-   free( abspath );
+      free( abspath );
+      abspath = NULL;
+   }
 
 /* If found... */
    if( hdsFile ){
@@ -639,6 +701,11 @@ Handle *hds1FindHandle( hid_t file_id, int *status ){
 
    UNLOCK_MUTEX;
 
+/* Context error message */
+   if( *status != SAI__OK ) {
+      emsRep( " ", "hds1FindHandle: Failed to find a handle for a given "
+              "file id.", status );
+   }
    return result;
 }
 
@@ -757,3 +824,69 @@ static int hds2CompareId( const void *a, const void *b ){
    }
 }
 
+/* Return the absolute path to a file given the (possibly relative) supplied
+   path. We can't just use the systems's realpath function since that
+   requires the file to exist, which it may not. */
+static char *hds2AbsPath( const char *path, int *status ){
+
+/* Local Variables: */
+   char *absdir;
+   char *abspath = NULL;
+   char *dir;
+   char *name;
+   char *pathcopy;
+   size_t dlen;
+   size_t flen;
+   size_t plen;
+
+/* Check inherited status and supplied path. */
+   if( *status != SAI__OK || !path ) return abspath;
+
+/* The basename and dirname functions may alter the supplied string, so
+   pass them a copy rather than the original. */
+   plen = strlen(path);
+   pathcopy = MEM_CALLOC( plen + 1, sizeof(char) );
+   if( pathcopy ) {
+      strcpy( pathcopy, path );
+
+/* Get the file name from the path */
+      name = basename( pathcopy );
+
+/* Get the directory from the path */
+      dir = dirname( pathcopy );
+
+/* Convert the directory into an absolute path. */
+      absdir = realpath( dir, NULL );
+      if( !absdir ) {
+         *status = DAT__FATAL;
+         emsSyser( "M", errno );
+         emsRepf(" ", "Error getting real path of '%s': ^M", status, path );
+
+/* Create the returned string by joining the absolute directory and the
+   file name. */
+      } else {
+         dlen = strlen( absdir );
+         flen = strlen( name );
+         abspath = MEM_CALLOC( dlen+flen+2, sizeof(char) );
+         if( abspath ) {
+            strcpy( abspath, absdir );
+            abspath[ dlen ] = '/';
+            strcpy( abspath + dlen + 1, name );
+         } else {
+            *status = DAT__FATAL;
+            emsRepf( " ", "Failed to allocate %zu bytes of memory", status,
+                     dlen+flen+2 );
+         }
+      }
+
+/* Free the local copy of the supplied path. */
+      MEM_FREE( pathcopy );
+
+   } else {
+      *status = DAT__FATAL;
+      emsRepf( " ", "Failed to allocate %zu bytes of memory", status,
+               plen + 1 );
+   }
+
+   return abspath;
+}

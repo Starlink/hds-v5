@@ -41,6 +41,8 @@
 *  History:
 *     2014-08-26 (TIMJ):
 *        Initial version
+*     2020-08-06 (DSB):
+*        Fill the memory with zeros before freeing it.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -109,6 +111,7 @@ dat1FreeLoc( HDSLoc * locator, int * status ) {
   /* Always attempt to free the memory even if status
      is bad */
   if (locator) {
+    memset( locator, 0, sizeof( *locator ));
     MEM_FREE(locator);
   }
   return NULL;

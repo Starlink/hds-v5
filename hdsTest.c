@@ -950,7 +950,7 @@ static  void testSliceVec( int *status ){
    dims[ 0 ] = 80;
    datMapI( loc3, "Read", 1, dims, &ip, status );
    for( i = 0; i < dims[ 0 ]; i++ ) {
-      if( ip[ i ] != i + 11 && *status == SAI__OK ) {
+      if( *status == SAI__OK && ip[ i ] != i + 11 ) {
          *status = DAT__FATAL;
          emsRepf("", "testSliceVec error 6: Got %d but expected %d for "
                  "element %d", status, ip[ i ], i + 11, i );
