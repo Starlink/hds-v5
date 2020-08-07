@@ -123,10 +123,10 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
      if (objid > 0) {
        name_str = dat1GetFullName( objid, 0, &ll, status );
        file_str = dat1GetFullName( objid, 1, &ll, status );
-     } else if (locator->file_id > 0) {
+     } else if (locator->next->file_id > 0) {
        file_str = dat1GetFullName( locator->next->file_id, 1, &ll, status );
      }
-     printf("- Next locator %p at %s (%s)\n", locator,
+     printf("- Next locator %p at %s (%s)\n", locator->next,
             (name_str ? name_str : "none"),
             (file_str ? file_str : "no file"));
      if (file_str) MEM_FREE(file_str);
@@ -140,10 +140,10 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
      if (objid > 0) {
        name_str = dat1GetFullName( objid, 0, &ll, status );
        file_str = dat1GetFullName( objid, 1, &ll, status );
-     } else if (locator->file_id > 0) {
+     } else if (locator->prev->file_id > 0) {
        file_str = dat1GetFullName( locator->prev->file_id, 1, &ll, status );
      }
-     printf("- Previous locator %p at %s (%s)\n", locator,
+     printf("- Previous locator %p at %s (%s)\n", locator->prev,
             (name_str ? name_str : "none"),
             (file_str ? file_str : "no file"));
      if (file_str) MEM_FREE(file_str);
