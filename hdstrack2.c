@@ -76,12 +76,17 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
 
 /* Convert the above path, which may be relative, into an absolute path.
    The absolute path is returned in a dynamically allocated string. */
-      abspath = hds2AbsPath( path, status );
+      if( path ) {
+         abspath = hds2AbsPath( path, status );
 
 /* Free the momory holding the relative path. */
-      if( path ) {
          MEM_FREE( path );
          path = NULL;
+      } else if( *status == SAI__OK ){
+         datMsg( "L", locator );
+         *status = DAT__FATAL;
+         emsRep( " ", "Supplied locator for ^L has no associated file path.",
+                 status );
       }
 
 /* Search for an existing entry in the hash table for this path. */
