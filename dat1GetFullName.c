@@ -112,6 +112,12 @@ dat1GetFullName( hid_t objid, int asfile, ssize_t * namlen, int *status) {
 
   if (*status != SAI__OK) return NULL;
 
+  if( !objid ) {
+    *status = DAT__FATAL;
+    emsRep( " ", "dat1GetFullName: Invalid HDF5 objid (0) supplied.", status );
+    goto CLEANUP;
+  }
+
   /* Run first to get the size of the buffer we need to use */
   lenstr = (asfile ?
             H5Fget_name(objid, NULL, 0) :
