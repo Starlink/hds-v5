@@ -74,6 +74,7 @@
 
 static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *status);
 static void dump_handle( const HDSLoc *loc, int *status );
+static void dump_hdsFile( const HDSLoc *loc, int *status );
 
 void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   char * name_str = NULL;
@@ -112,9 +113,45 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   }
 
   dump_handle( locator, status );
+  dump_hdsFile( locator, status );
 
   if (file_str) MEM_FREE(file_str);
   if (name_str) MEM_FREE(name_str);
+
+  if( locator->next ) {
+     objid = dat1RetrieveIdentifier( locator->next, status );
+     if (objid > 0) {
+       name_str = dat1GetFullName( objid, 0, &ll, status );
+       file_str = dat1GetFullName( objid, 1, &ll, status );
+     } else if (locator->file_id > 0) {
+       file_str = dat1GetFullName( locator->next->file_id, 1, &ll, status );
+     }
+     printf("- Next locator %p at %s (%s)\n", locator,
+            (name_str ? name_str : "none"),
+            (file_str ? file_str : "no file"));
+     if (file_str) MEM_FREE(file_str);
+     if (name_str) MEM_FREE(name_str);
+  } else {
+     printf("- Next locator: none\n");
+  }
+
+  if( locator->prev ) {
+     objid = dat1RetrieveIdentifier( locator->prev, status );
+     if (objid > 0) {
+       name_str = dat1GetFullName( objid, 0, &ll, status );
+       file_str = dat1GetFullName( objid, 1, &ll, status );
+     } else if (locator->file_id > 0) {
+       file_str = dat1GetFullName( locator->prev->file_id, 1, &ll, status );
+     }
+     printf("- Previous locator %p at %s (%s)\n", locator,
+            (name_str ? name_str : "none"),
+            (file_str ? file_str : "no file"));
+     if (file_str) MEM_FREE(file_str);
+     if (name_str) MEM_FREE(name_str);
+  } else {
+     printf("- Previous locator: none\n");
+  }
+
   return;
 }
 
@@ -193,7 +230,7 @@ static void dump_handle( const HDSLoc *loc, int *status ){
 
    if( *status != SAI__OK || !loc ) return;
 
-   printf("Handle: ");
+   printf("- Handle: ");
 
    handle = loc->handle;
    while( handle ) {
@@ -208,6 +245,36 @@ static void dump_handle( const HDSLoc *loc, int *status ){
    }
 
    printf("\n" );
+
+}
+
+static void dump_hdsFile( const HDSLoc *loc, int *status ){
+   HdsFile *hdsFile;
+   int np, ns;
+
+   if( *status != SAI__OK || !loc ) return;
+
+   hdsFile = loc->hdsFile;
+   if( hdsFile ){
+      np = 0;
+      loc = hdsFile->primhead;
+      while( loc ) {
+         np++;
+         loc = loc->prev;
+      }
+
+      ns = 0;
+      loc = hdsFile->sechead;
+      while( loc ) {
+         ns++;
+         loc = loc->prev;
+      }
+
+      printf("- HdsFile: nprim: %d nsec: %d %s\n", np, ns, hdsFile->path );
+
+   } else {
+      printf("- HdsFile: <null>\n");
+   }
 
 }
 
