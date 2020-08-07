@@ -230,8 +230,11 @@ void datMsg( const char * token, const HDSLoc * loc ) {
   if ( status != SAI__OK ) emsAnnul( &status );
   emsRlse();
 
-  /*  If no error occurred, then assign the resulting buffer contents to
-   *  the message token. */
-  if (ok) emsSetc( token, buff );
+  /* If an error has occurred, set the token value to indicate the token
+     is undefined. */
+  if( !ok ) sprintf( buff, "^<%s>", token );
+
+  /* Assign the resulting buffer contents to the message token. */
+  emsSetc( token, buff );
 
 }
