@@ -183,6 +183,13 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
       emsRepf( " ", "Attempt to unregister locator ^L that has no "
                "container file information.", status );
 
+   } else if( !strchr( hdsFile->path, '/' ) ) {  /* Sanity check */
+      *status = DAT__FATAL;
+      datMsg( "L", locator );
+      emsRepf( " ", "Attempt to unregister locator ^L that has bad "
+               "container file information (file '%s').", status,
+               hdsFile->path );
+
    } else if( hdsFile->sechead == locator && *status == SAI__OK ) {
       hdsFile->sechead = prev;
       if( locator->isprimary ) {  /* Sanity check */
@@ -229,55 +236,9 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
 
 
 /* -----------------------------------------------------------------
-   Pop the head of the list of primary locators associated with the
-   same container file as the supplied locator. NULL is returned if the
-   list is empty. On the initial call, *context should be supplied holding
-   a NULL pointer. The returned pointer should not be changed between calls.
-   The value of locator is ignored on subsequent calls and may be NULL. */
-HDSLoc *hds1PopPrimLocator( HDSLoc *locator, HdsFile **context, int *status ){
-   HDSLoc *result = NULL;
-   HdsFile *hdsFile = context ? *context : NULL;
-   int lstat = *status;
-
-/* Lock the mutex that serialises access to the hash table */
-   LOCK_MUTEX;
-
-   if( !hdsFile && locator ) {
-      hdsFile = locator->hdsFile;
-      if( context ) *context = hdsFile;
-      if( !hdsFile && *status == SAI__OK ) {  /* Sanity check */
-         *status = DAT__FATAL;
-         datMsg( "L", locator );
-         emsRepf( " ", "A locator (^L) was supplied that has no container "
-                  "file information", status );
-      }
-   }
-
-   if( hdsFile ){
-      result = hdsFile->primhead;
-      if( result ) {
-         hdsFile->primhead = result->prev;
-         result->prev = NULL;
-         if( result->prev ) result->prev->next = NULL;
-      }
-   }
-
-/* Context error message */
-   if( *status != SAI__OK && lstat == SAI__OK ) {
-      emsRep( " ", "hds1PopPrimLocator: Failed to pop the head of a "
-              "list of primary locators.", status );
-   }
-
-/* Unlock the mutex that serialises access to the hash table */
-   UNLOCK_MUTEX;
-
-   return result;
-}
-
-/* -----------------------------------------------------------------
-   Pop the head of the list of secondary locators associated with the
-   same container file as the supplied locator. NULL is returned if the
-   list is empty. On the initial call, *context should be supplied holding
+   Unregister and return the head of the list of secondary locators associated 
+   with the same container file as the supplied locator. NULL is returned if
+   the list is empty. On the initial call, *context should be supplied holding
    a NULL pointer. The returned pointer should not be changed between calls.
    The value of locator is ignored on subsequent calls and may be NULL.
    The locator retains its HdsFile reference, but is removed from the
@@ -308,6 +269,11 @@ HDSLoc *hds1PopSecLocator( HDSLoc *locator, HdsFile **context, int *status ){
          hdsFile->sechead = result->prev;
          if( result->prev ) result->prev->next = NULL;
          result->prev = NULL;
+         if( result->next && *status == SAI__OK ){
+            *status = DAT__FATAL;
+            emsRepf( " ", "The head secondary locator for file %s had a non-NULL next link.", 
+                     status, hdsFile->path );
+         }
       }
    }
 
@@ -871,7 +837,8 @@ static char *hds2AbsPath( const char *path, int *status ){
    char *abspath = NULL;
    char *dir;
    char *name;
-   char *pathcopy;
+   char *pathcopy1;
+   char *pathcopy2;
    size_t dlen;
    size_t flen;
    size_t plen;
@@ -880,17 +847,19 @@ static char *hds2AbsPath( const char *path, int *status ){
    if( *status != SAI__OK || !path ) return abspath;
 
 /* The basename and dirname functions may alter the supplied string, so
-   pass them a copy rather than the original. */
+   pass them them each a copy rather than the original. */
    plen = strlen(path);
-   pathcopy = MEM_CALLOC( plen + 1, sizeof(char) );
-   if( pathcopy ) {
-      strcpy( pathcopy, path );
+   pathcopy1 = MEM_CALLOC( plen + 1, sizeof(char) );
+   pathcopy2 = MEM_CALLOC( plen + 1, sizeof(char) );
+   if( pathcopy1 && pathcopy2 ) {
+      strcpy( pathcopy1, path );
+      strcpy( pathcopy2, path );
 
 /* Get the file name from the path */
-      name = basename( pathcopy );
+      name = basename( pathcopy1 );
 
 /* Get the directory from the path */
-      dir = dirname( pathcopy );
+      dir = dirname( pathcopy2 );
 
 /* Convert the directory into an absolute path. */
       absdir = realpath( dir, NULL );
@@ -917,7 +886,8 @@ static char *hds2AbsPath( const char *path, int *status ){
       }
 
 /* Free the local copy of the supplied path. */
-      MEM_FREE( pathcopy );
+      MEM_FREE( pathcopy1 );
+      MEM_FREE( pathcopy2 );
 
    } else {
       *status = DAT__FATAL;

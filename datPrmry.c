@@ -144,11 +144,10 @@ int datPrmry( hdsbool_t set, HDSLoc **locator, hdsbool_t *prmry, int *status ) {
          annul = hds1RegLocator( *locator, status );
 
 /* If this means that there are now no primary locators, the file should
-   be closed and all secondary locators annulled. We pop the head of the
-   list of secondary locators (there must be at least one such locator) and
-   annul it. This will cause any other secondary locators to be annulled
-   and the file closed. */
-         if( annul ) dat1Annul( hds1PopSecLocator( *locator, NULL, status ), status );
+   be closed and all secondary locators annulled. Annulling the supplied
+   locator will cause any other secondary locators to be annulled and
+   the file closed. */
+         if( annul ) dat1Annul( *locator, status );
       }
 
 /* If we are returning the current value of the flag... */

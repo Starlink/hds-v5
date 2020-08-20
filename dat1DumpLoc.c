@@ -76,7 +76,7 @@ static void dump_dataspace_info( hid_t dataspace_id, const char * label, int *st
 static void dump_handle( const HDSLoc *loc, int *status );
 static void dump_hdsFile( const HDSLoc *loc, int *status );
 
-void dat1DumpLoc( const HDSLoc* locator, int * status ) {
+void dat1DumpLoc( const char *text, const HDSLoc* locator, int * status ) {
   char * name_str = NULL;
   char * file_str = NULL;
   ssize_t ll;
@@ -92,6 +92,7 @@ void dat1DumpLoc( const HDSLoc* locator, int * status ) {
   } else if (locator->file_id > 0) {
     file_str = dat1GetFullName( locator->file_id, 1, &ll, status );
   }
+  if( text ) printf("%s\n", text );
   printf("Dump of locator %p at %s (%s)\n", locator,
          (name_str ? name_str : "none"),
          (file_str ? file_str : "no file"));

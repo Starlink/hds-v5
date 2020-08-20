@@ -118,7 +118,6 @@ int dat1Annul( HDSLoc *locator, int * status ) {
    hid_t file_id = 0;
    int erase = 0;
    int errstat = 0;
-   int lstat = SAI__OK;
 
 /* Return if a null locator is supplied, but do not check the inherited
    status. */
@@ -126,16 +125,14 @@ int dat1Annul( HDSLoc *locator, int * status ) {
 
 /* Begin an entirely new error context as we need to run this
    regardless of external errors */
-   lstat = *status;
-   emsBegin( &lstat );
-   emsMark();
+   emsBegin( status );
 
 /* Unregister the supplied locator - this removes the locator from the
    list of locators associated with its container file and returns a flag
    indicating if there are then no remaining primary locators associated
    with the container file. If this is the case, we annull any secondary
    locators still associated with the file and close the file. */
-   if( hds1UnregLocator( locator, &lstat ) ) {
+   if( hds1UnregLocator( locator, status ) ) {
 
 /* Loop round popping any remaining locators off the list of secondary
    locators still associated with the container file, and annulling each
@@ -186,9 +183,7 @@ int dat1Annul( HDSLoc *locator, int * status ) {
    if( hdsFile ) hdsFile = hds1FreeHdsFile( hdsFile, status );
 
 /* End the error context and return the final status */
-   emsRlse();
-   emsEnd( &lstat );
-   *status = lstat;
+   emsEnd( status );
 
    return *status;
 }
@@ -200,7 +195,6 @@ static void dat1Anloc( HDSLoc *locator, int * status ) {
 
 /* Local Variables: */
    hdsbool_t ingrp = 0;
-   int lstat = SAI__OK;
    int ver;
 
 /* Return if a null locator is supplied, but do not check the inherited
@@ -209,15 +203,13 @@ static void dat1Anloc( HDSLoc *locator, int * status ) {
 
 /* Begin an entirely new error context as we need to run this
    regardless of external errors */
-   lstat = *status;
-   emsBegin( &lstat );
-   emsMark();
+   emsBegin( status );
 
 /* Remove from group. If we do not do this then we risk a segv if someone
    later calls hdsFlush. They are not meant to call datAnnul if it is part
    of a group and maybe we should simply return without doing anything if it
    is part of a group. For now we continue but remove from the group. */
-   ingrp = hds1RemoveLocator( locator, &lstat );
+   ingrp = hds1RemoveLocator( locator, status );
 
 /* The following code can be used to indicated whether we should be worried
    about group usage */
@@ -228,7 +220,7 @@ static void dat1Anloc( HDSLoc *locator, int * status ) {
 */
 
 /* Sort out any memory mapping */
-   datUnmap( locator, &lstat );
+   datUnmap( locator, status );
 
 /* Free HDF5 resources. We zero them out so that unregistering the locator
    does not cause confusion */
@@ -257,9 +249,7 @@ static void dat1Anloc( HDSLoc *locator, int * status ) {
    locator->hdsFile = NULL;
 
 /* End the error context and return the final status */
-   emsRlse( );
-   emsEnd( &lstat  );
-   *status = lstat;
+   emsEnd( status  );
 
 /* Clear the locator but retain the version number. This is required to
    ensure that the locator is sent to the correct HDS implementation when

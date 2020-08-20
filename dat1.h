@@ -294,7 +294,7 @@ hid_t dat1RetrieveIdentifier( const HDSLoc * locator, int * status );
 
 HDSLoc * dat1FreeLoc( HDSLoc * locator, int * status );
 HDSLoc * dat1AllocLoc( int * status );
-void dat1DumpLoc( const HDSLoc * locator, int * status );
+void dat1DumpLoc( const char *text, const HDSLoc * locator, int * status );
 
 hdstype_t
 dat1Type( const HDSLoc *locator, int * status );
@@ -400,9 +400,6 @@ hds1FindHandle( hid_t file_id, int *status );
 
 Handle *
 dat1TopHandle( Handle *handle, int *status );
-
-HDSLoc *
-hds1PopPrimLocator( HDSLoc *locator, HdsFile **context, int *status );
 
 HDSLoc *
 hds1PopSecLocator( HDSLoc *locator, HdsFile **context, int *status );

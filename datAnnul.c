@@ -88,8 +88,6 @@
 #include "hds.h"
 
 int datAnnul( HDSLoc **locator, int * status ) {
-  /* Attempts to run even if status is bad */
-  int lstat = SAI__OK;
 
   /* Sanity check argument */
   if (!locator) return *status;
@@ -97,20 +95,16 @@ int datAnnul( HDSLoc **locator, int * status ) {
 
   /* Begin an entirely new error context as we need to run this
      regardless of external errors */
-  lstat = *status;
-  emsBegin( &lstat );
-  emsMark();
+  emsBegin( status );
 
   /* Free file resources */
-  dat1Annul( *locator, &lstat );
+  dat1Annul( *locator, status );
 
   /* Free the memory associated with this locator */
-  *locator = dat1FreeLoc( *locator, &lstat );
+  *locator = dat1FreeLoc( *locator, status );
 
   /* End the error context and return the final status */
-  emsRlse();
-  emsEnd( &lstat );
-  *status = lstat;
+  emsEnd( status );
 
   return *status;
 }

@@ -224,7 +224,7 @@ int main (void) {
       size_t actvals;
       datVec(loc2, &loc3, &status );
       datSlice( loc3, 1, lower, upper, &loc4, &status );
-      dat1DumpLoc( loc4, &status );
+      dat1DumpLoc( "", loc4, &status );
       datGet1I( loc4, 4, outdata, &actvals, &status );
       cmpintarr( actvals, outdata, expected, &status);
       datAnnul(&loc4, &status);
