@@ -181,17 +181,19 @@ hid_t dat1Reopen( hid_t file_id, unsigned int flags, hid_t fapl,
    if( *status == SAI__OK ) {
       int this_closed = 0;
 
-      int i = -1;
-      while( file_ids[ ++i ] ) {
+      if( file_ids ) {
+         int i = -1;
+         while( file_ids[ ++i ] ) {
 
-         if( file_ids[ i ] == file_id ) this_closed = 1;
+            if( file_ids[ i ] == file_id ) this_closed = 1;
 
-         if( H5Fclose( file_ids[ i ] ) < 0 ) {
-            *status = DAT__FATAL;
-            dat1H5EtoEMS( status );
-            emsRepf( " ", "hdsOpen: Failed to close file '%s' prior to "
-                     "re-opening it.", status, path );
-            break;
+            if( H5Fclose( file_ids[ i ] ) < 0 ) {
+               *status = DAT__FATAL;
+               dat1H5EtoEMS( status );
+               emsRepf( " ", "hdsOpen: Failed to close file '%s' prior to "
+                        "re-opening it.", status, path );
+               break;
+            }
          }
       }
 
