@@ -769,7 +769,7 @@ void hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status  ){
       }
 
 /* If displaying info about each locator... */
-      if( listfiles ) {
+      if( listlocs ) {
 
          printf("Primary locators:\n");
          loc = hdsFile->primhead;
