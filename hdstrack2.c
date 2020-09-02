@@ -205,7 +205,7 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
       if( !locator->isprimary ) {  /* Sanity check */
          *status = DAT__FATAL;
          datMsg( "L", locator );
-         emsRepf( " ", "Secondary locator ^l was found at the head of the "
+         emsRepf( " ", "Secondary locator ^L was found at the head of the "
                   "list of primary locators for '%s'.", status, hdsFile->path );
 
 /* If the list of primary locators associated with the container file is
