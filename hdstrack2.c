@@ -312,7 +312,7 @@ HdsFile *hds1FreeHdsFile( HdsFile *hdsFile, int *status ){
          if( *status == SAI__OK ) {
             *status = DAT__FATAL;
             emsRepf( " ", "hds1FreeHdsFile: Attempt to free an HdsFile "
-                     "that still has some associated secondary locators "
+                     "that still has some associated primary locators "
                      "(file %s).", status, hdsFile->path );
          }
       }
