@@ -99,20 +99,22 @@
 HDSLoc *
 dat1FreeLoc( HDSLoc * locator, int * status ) {
 
-  /* Sanity check */
-  if( *status == SAI__OK ){
-     if( locator->prev || locator->next || locator->hdsFile ){
-       *status = DAT__FATAL;
-       emsRep( " ", "Attempt to free HDS locator that is still registered.",
-                status );
+  /* Do nothing if no locator was supplied */
+  if (locator) {
+
+     /* Sanity check */
+     if( *status == SAI__OK ){
+        if( locator->prev || locator->next || locator->hdsFile ){
+          *status = DAT__FATAL;
+          emsRep( " ", "Attempt to free HDS locator that is still registered.",
+                   status );
+        }
      }
+
+     /* Always attempt to free the memory even if status is bad */
+     memset( locator, 0, sizeof( *locator ));
+     MEM_FREE(locator);
   }
 
-  /* Always attempt to free the memory even if status
-     is bad */
-  if (locator) {
-    memset( locator, 0, sizeof( *locator ));
-    MEM_FREE(locator);
-  }
   return NULL;
 }
