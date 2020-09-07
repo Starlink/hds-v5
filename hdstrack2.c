@@ -53,7 +53,7 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
    HDSLoc **head = NULL;
    HDSLoc *old = NULL;
    HdsFile *hdsFile;
-   char *abspath;
+   char *abspath = NULL;
    char *path;
    int result = 0;
 
@@ -101,7 +101,7 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
             hdsFile = MEM_CALLOC( 1, sizeof( HdsFile ) );
             if( hdsFile ) {
                hdsFile->path = abspath;
-
+               abspath = NULL;
                HASH_ADD_KEYPTR( hh, hdsFiles, hdsFile->path,
                                 strlen(hdsFile->path), hdsFile );
 
@@ -134,6 +134,9 @@ int hds1RegLocator( HDSLoc *locator, int *status ){
 
       if( !(hdsFile->primhead) ) result = 1;
    }
+
+/* Release abspath (it will be NULL if it is now owned by an HdsFile). */
+   if( abspath ) MEM_FREE( abspath );
 
 /* Context error message */
    if( *status != SAI__OK ) {
@@ -236,7 +239,7 @@ int hds1UnregLocator( HDSLoc *locator, int *status ) {
 
 
 /* -----------------------------------------------------------------
-   Unregister and return the head of the list of secondary locators associated 
+   Unregister and return the head of the list of secondary locators associated
    with the same container file as the supplied locator. NULL is returned if
    the list is empty. On the initial call, *context should be supplied holding
    a NULL pointer. The returned pointer should not be changed between calls.
@@ -271,7 +274,7 @@ HDSLoc *hds1PopSecLocator( HDSLoc *locator, HdsFile **context, int *status ){
          result->prev = NULL;
          if( result->next && *status == SAI__OK ){
             *status = DAT__FATAL;
-            emsRepf( " ", "The head secondary locator for file %s had a non-NULL next link.", 
+            emsRepf( " ", "The head secondary locator for file %s had a non-NULL next link.",
                      status, hdsFile->path );
          }
       }
