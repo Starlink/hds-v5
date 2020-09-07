@@ -164,7 +164,18 @@ int dat1Annul( HDSLoc *locator, int * status ) {
    dat1Anloc( locator, status );
 
 /* If required, close the file */
-   if( file_id ) H5Fclose( file_id );
+   if( file_id ) {
+      if( H5Fclose( file_id ) < 0 && *status == SAI__OK ) {
+         *status = DAT__FATAL;
+         dat1H5EtoEMS( status );
+         if( hdsFile && hdsFile->path ) {
+            emsRepf( " ", "dat1Annul: Failed to close file '%s'.",
+                     status, hdsFile->path );
+         } else {
+            emsRepf( " ", "dat1Annul: Failed to close file.", status );
+         }
+      }
+   }
 
 /* If required, delete the file. */
    if( erase && hdsFile && hdsFile->path ) {
