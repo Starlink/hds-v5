@@ -65,6 +65,10 @@
 *     2020-07-17 (DSB):
 *        Re-written to avoid recursive calls to this function from within
 *        hds1UnregLocator.
+*     2020-09-11 (DSB):
+*        When the last primary locator is annulled, close all HDF5 
+*        identifiers associated with the file, not just the file identifier 
+*        in the supplied locator.
 *     {enter_further_changes_here}
 
 *  Copyright:
@@ -111,13 +115,19 @@ static void dat1Anloc( HDSLoc *locator, int * status );
 int dat1Annul( HDSLoc *locator, int * status ) {
 
 /* Local Variables: */
+   H5I_type_t objtype;
    HDSLoc *loc = NULL;
    Handle *tophandle = NULL;
-   HdsFile *hdsFile = NULL;
    HdsFile *context = NULL;
+   HdsFile *hdsFile = NULL;
+   herr_t herr;
+   hid_t *objs;
    hid_t file_id = 0;
    int erase = 0;
    int errstat = 0;
+   int howmany;
+   int i;
+   ssize_t cnt;
 
 /* Return if a null locator is supplied, but do not check the inherited
    status. */
@@ -163,9 +173,60 @@ int dat1Annul( HDSLoc *locator, int * status ) {
 /* Annul the supplied locator. */
    dat1Anloc( locator, status );
 
-/* If required, close the file */
+/* If required, close all HDF5 identifiers associated with the file. */
    if( file_id ) {
-      if( H5Fclose( file_id ) < 0 && *status == SAI__OK ) {
+
+/* Get the number of active HDF5 identifiers of any type associated with
+   the file. */
+      cnt = H5Fget_obj_count( file_id, H5F_OBJ_ALL );
+
+/* There should always be at least one active identifier (the supplied
+   file identifier). */
+      if( cnt == 0 ) {
+         *status = DAT__FATAL;
+         emsRepf( " ", "dat1Annul: No active HDF5 idenfifiers for supplied file.",
+                  status );
+
+/* Alocate an array to hold the active identifiers then store the active
+   identifiers in it. */
+      } else {
+         objs = MEM_CALLOC( cnt, sizeof(hid_t) );
+         if( objs ) {
+            howmany = H5Fget_obj_ids( file_id, H5F_OBJ_ALL, cnt, objs );
+
+/* Loop round closing each one, except for the supplied file identifier. */
+            for( i = 0; i < howmany; i++ ) {
+               if( objs[i] != file_id ){
+                  objtype = H5Iget_type( objs[i] );
+                  if ( objtype == H5I_FILE ) {
+                     herr = H5Fclose( objs[i] );
+                  } else if ( objtype == H5I_GROUP || objtype == H5I_DATASET ) {
+                     herr = H5Oclose( objs[i] );
+                  } else if ( objtype == H5I_DATASPACE ) {
+                     herr = H5Dclose( objs[i] );
+                  } else if( *status == SAI__OK ){
+                     herr = 0;
+                     *status = DAT__FATAL;
+                     emsRepf( " ", "dat1Annul: Cannot close HDF5 idenfifier - wrong type.",
+                              status );
+                  }
+
+                  if( herr < 0 && *status == SAI__OK ){
+                     *status = DAT__FATAL;
+                     dat1H5EtoEMS( status );
+                     emsRepf( " ", "dat1Annul: Cannot close HDF5 idenfifier.",
+                              status );
+                  }
+               }
+            }
+
+/* Free the memory allocated above. */
+            MEM_FREE( objs );
+         }
+      }
+
+/* Close the supplied file id. */
+      if( H5Fclose( file_id ) < 0 && *status == SAI__OK ){
          *status = DAT__FATAL;
          dat1H5EtoEMS( status );
          if( hdsFile && hdsFile->path ) {

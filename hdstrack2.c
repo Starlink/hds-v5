@@ -364,7 +364,7 @@ size_t hds1PrimaryCount( const HDSLoc *locator, int *status ) {
 
 /* -----------------------------------------------------------------
    Return a dynamically allocated array holding a list of any active
-   locators associated with a supplied HDF5 file id. Also return a
+   locators associated with a supplied HDF5 file path. Also return a
    dynamically allocated array holding a list of file_ids for the same
    file that have associated locators. "*nloc" is returned holding the
    length of the *loclist array. The end of the *file_ids array is
