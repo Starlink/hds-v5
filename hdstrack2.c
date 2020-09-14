@@ -414,8 +414,7 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
    if( abspath ) {
       HASH_FIND_STR( hdsFiles, abspath, hdsFile );
 
-/* Free the momory holding the absolute path. Must use plain free, not
-   MEM_FREE, since realpath uses plain malloc. */
+/* Free the momory holding the absolute path. */
       MEM_FREE( abspath );
       abspath = NULL;
    }
@@ -463,9 +462,14 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
 /* Sort the file_ids. */
          qsort( *file_ids, *nloc, sizeof(**file_ids), hds2CompareId );
 
-/* Remove duplicated ids, shuffling later ones down to fill the gaps. */
+/* Remove duplicated ids, shuffling later ones down to fill the gaps. We
+   accept the first id as unique and then compare each subsequent id to
+   the previous id. If they are different, the new id is stored in the
+   next available element in the array. "pw" points to the array element
+   in which to store the next unique id. "pr" points to the array element
+   from which to read the next candidate id (the element with index "ir"). */
          pw = pr = (*file_ids) + 1;
-         for( ir = 1; ir < *nloc; ir++,pw++ ) {
+         for( ir = 1; ir < *nloc; ir++ ) {
             if( (*pr != pw[-1]) && ( *pr != 0 )) {
                *(pw++) = *pr;
             }
