@@ -453,8 +453,8 @@ hdsbool_t hds1GetLockCheck();
 hds_shell_t hds1GetShell();
 
 int dat1Annul( HDSLoc *locator, int * status );
-
 hid_t dat1GetParentID( hid_t objid, hdsbool_t allow_root, int *status );
+int  dat1CloseAllIds( hid_t file_id, int* status );
 
 int
 dat1GetStructureDims( const HDSLoc * locator, int maxdims, hdsdim dims[], int *status );

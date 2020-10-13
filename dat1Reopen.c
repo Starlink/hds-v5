@@ -177,36 +177,8 @@ hid_t dat1Reopen( hid_t file_id, unsigned int flags, hid_t fapl,
 /* Get the path for the file. */
    H5Fget_name( file_id, path, sizeof(path) );
 
-/* Close all HDF5 file_ids associated with file. */
-   if( *status == SAI__OK ) {
-      int this_closed = 0;
-
-      if( file_ids ) {
-         int i = -1;
-         while( file_ids[ ++i ] ) {
-
-            if( file_ids[ i ] == file_id ) this_closed = 1;
-
-            if( H5Fclose( file_ids[ i ] ) < 0 ) {
-               *status = DAT__FATAL;
-               dat1H5EtoEMS( status );
-               emsRepf( " ", "hdsOpen: Failed to close file '%s' prior to "
-                        "re-opening it.", status, path );
-               break;
-            }
-         }
-      }
-
-/* Close the supplied file_id if it has not already been closed. */
-      if( !this_closed ) {
-         if( H5Fclose( file_id ) < 0 ) {
-            *status = DAT__FATAL;
-            dat1H5EtoEMS( status );
-            emsRepf( " ", "hdsOpen: Failed to close file '%s' prior to "
-                     "re-opening it.", status, path );
-         }
-      }
-   }
+/* Close all remaining HDF5 file_ids and objects associated with file. */
+   dat1CloseAllIds( file_id, status );
 
 /* Re-open it. */
    if( *status == SAI__OK ) {
