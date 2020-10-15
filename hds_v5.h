@@ -1070,6 +1070,13 @@ hdsLock_v5(const HDSLoc *locator, int *status);
 int
 hdsNew_v5(const char *file_str, const char *name_str, const char *type_str, int ndim, const hdsdim dims[], HDSLoc **locator, int *status);
 
+/*=============================================*/
+/* hdsIsOpen - Check if container file is open */
+/*=============================================*/
+
+int
+hdsIsOpen_v5(const char *file_str, int *isopen, int *status);
+
 /*========================================*/
 /* hdsOpen - Open existing container file */
 /*========================================*/

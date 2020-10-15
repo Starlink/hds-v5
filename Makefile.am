@@ -119,6 +119,7 @@ hdsDimF2C.c \
 hdsFree.c \
 hdsGroup.c \
 hdsInfoI.c \
+hdsIsOpen.c \
 hdsLock.c \
 hdsNew.c \
 hdsOpen.c \

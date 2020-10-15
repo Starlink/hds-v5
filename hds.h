@@ -1057,6 +1057,13 @@ hdsGtune(const char *param_str, int *value, int *status);
 int
 hdsInfoI(const HDSLoc* locator, const char *topic_str, const char *extra, int *result, int *status);
 
+/*=============================================*/
+/* hdsIsOpen - Check if container file is open */
+/*=============================================*/
+
+int
+hdsIsOpen(const char *file_str, int *result, int *status);
+
 /*=================================*/
 /* hdsLink - Link locator to group */
 /*=================================*/

@@ -146,6 +146,7 @@
 #define hdsInfoI hdsInfoI_v5
 #define hdsLink hdsLink_v5
 #define hdsLock hdsLock_v5
+#define hdsIsOpen hdsIsOpen_v5
 #define hdsNew hdsNew_v5
 #define hdsOpen hdsOpen_v5
 #define hdsShow hdsShow_v5

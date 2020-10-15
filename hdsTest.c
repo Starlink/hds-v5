@@ -110,6 +110,7 @@ int main (void) {
   char buffer[1024];  /* plenty large enough */
   double darr[] = { 4.5, 2.5 };
   const hdsbool_t boolarr[] = { 1, 0, 1 };
+  int isopen;
   double retdarr[2];
   void *mapv;    /* Mapped void* */
   double *mapd;  /* Mapped _DOUBLE */
@@ -674,8 +675,22 @@ int main (void) {
   printf("Query Locator status:\n");
   hdsShow("LOCATORS", &status);
 
+  /* Check it is now closed */
+  hdsIsOpen( path, &isopen, &status );
+  if( isopen && status == SAI__OK ) {
+     status = DAT__FATAL;
+     emsRepf( "SIZE","File %s should now be closed, but it isn't", &status, path);
+  }
+
   /* Re-open */
   hdsOpen( path, "UPDATE", &loc1, &status );
+
+  /* Check it is now open */
+  hdsIsOpen( path, &isopen, &status );
+  if( !isopen && status == SAI__OK ) {
+     status = DAT__FATAL;
+     emsRepf( "SIZE","File %s should now be open, but it isn't", &status, path);
+  }
 
   /* Look for the data array and map it */
   datFind( loc1, "DATA_ARRAY", &loc2, &status );
