@@ -37,8 +37,10 @@
 
 *  Description:
 *     Creates a new HDS container file and returns a locator to the root element.
-*     The file is opened with read/write access and will overwrite any previously
-*     existing file.
+*     The file is opened with read/write access. If a file with the same
+*     name already exists, it will be over-written silently unless it is
+*     currently opened within HDS_V5, in which case an error will be
+*     reported.
 
 *  Returned Value:
 *     int = inherited status on exit. This is for compatibility with the original
@@ -163,13 +165,24 @@ hdsNew(const char *file_str,
   /* Create buffer for file name so that we include the file extension */
   fname = dau1CheckFileName( file_str, status );
 
-  /* Create the HDF5 file */
-  CALLHDFE( hid_t, file_id,
+  /* Check to see if the file is currently open. If so, we cannot create
+     a new file of the same name withotu over-writing it, so report an
+     error. */
+  if( hds1IsOpen( fname, status ) && *status == SAI__OK ) {
+     *status = DAT__FILIN;
+     emsRepf( " ", "The file %s is already in use by HDS; this name "
+              "cannot be used to create a new container file.", status,
+              fname );
+
+  /* Otherrwise, create the HDF5 file */
+  } else {
+     CALLHDFE( hid_t, file_id,
             H5Fcreate( fname, H5F_ACC_TRUNC,
                        H5P_DEFAULT, H5P_DEFAULT ),
             DAT__FILCR,
             emsRepf("hdsNew","Error creating file '%s'", status, fname )
             );
+  }
 
   /* Create the top-level structure/primitive */
   if (*status == SAI__OK) {

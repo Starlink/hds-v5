@@ -491,6 +491,40 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
 }
 
 
+/* -----------------------------------------------------------------
+   See if a named file is already open. */
+
+int hds1IsOpen( const char *path, int *status ){
+
+/* Local Variables: */
+   HdsFile *hdsFile;
+   char *abspath = NULL;
+   int result = 0;
+
+/* Check inherited status */
+   if( *status != SAI__OK ) return result;
+
+/* Convert the supplied path, which may be relative, into an absolute path.
+   The absolute path is returned in a dynamically allocated string. */
+   abspath = hds2AbsPath( path, status );
+
+/* Search for an existing entry in the hash table for this path. */
+   if( *status == SAI__OK ) {
+      LOCK_MUTEX;
+      HASH_FIND_STR( hdsFiles, abspath, hdsFile );
+      UNLOCK_MUTEX;
+
+/* Set the returned flag to indicate if an existing entry was found. */
+      result = ( hdsFile != NULL );
+   }
+
+/* Release abspath. */
+   MEM_FREE( abspath );
+
+   return result;
+}
+
+
 
 /* -----------------------------------------------------------------
    Return the number of unique opened files. */

@@ -374,6 +374,9 @@ hds1RegLocator(HDSLoc *locator, int *status);
 int
 hds1FlushFile( hid_t file_id, int *status);
 
+int
+hds1IsOpen( const char *path, int *status);
+
 hdsbool_t
 hds1UnregLocator( HDSLoc * loc, int *status );
 
