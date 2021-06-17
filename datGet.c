@@ -257,6 +257,8 @@ datGet(const HDSLoc *locator, const char *type_str, int ndim,
         tmpvalues = MEM_MALLOC( nelem * inlen );
         H5Tclose( h5type );
         h5type = tmptype;
+     } else {
+        if( tmptype > 0 ) H5Tclose( tmptype );
      }
   }
 

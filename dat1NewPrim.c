@@ -175,6 +175,7 @@ void dat1NewPrim( hid_t group_id, int ndim, const hsize_t h5dims[], hid_t h5type
            );
 
  CLEANUP:
+  if ( cparms > 0 ) H5Pclose( cparms );
   if (*status != SAI__OK) {
     /* tidy */
     if (*dataspace_id > 0) {

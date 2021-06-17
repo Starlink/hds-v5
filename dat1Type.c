@@ -110,6 +110,7 @@ dat1Type( const HDSLoc *locator, int * status ) {
            );
 
   thetype = dau1HdsType( h5type, status );
+  if( h5type > 0 ) H5Tclose( h5type );
 
  CLEANUP:
   return thetype;

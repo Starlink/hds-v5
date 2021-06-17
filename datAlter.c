@@ -385,9 +385,7 @@ datAlter( HDSLoc *locator, int ndim, const hdsdim dims[], int *status) {
 
  CLEANUP:
   datAnnul(&parloc, status);
-  if (*status != SAI__OK) {
-    if (h5type > 0) H5Tclose( h5type );
-    if (temploc) temploc = dat1FreeLoc( temploc, status );
-  }
+  if (h5type > 0) H5Tclose( h5type );
+  if (temploc) temploc = dat1FreeLoc( temploc, status );
   return *status;
 }
