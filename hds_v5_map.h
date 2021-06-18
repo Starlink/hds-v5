@@ -158,3 +158,4 @@
 #define datConv datConv_v5
 #define hdsClose hdsClose_v5
 #define hdsFind hdsFind_v5
+#define hdsExpandPath hdsExpandPath_v5

@@ -116,6 +116,7 @@ hdsErase.c \
 hdsEwild.c \
 hdsDimC2F.c \
 hdsDimF2C.c \
+hdsExpandPath.c \
 hdsFree.c \
 hdsGroup.c \
 hdsInfoI.c \

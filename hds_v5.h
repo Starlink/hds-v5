@@ -1014,6 +1014,13 @@ hdsErase_v5(HDSLoc **locator, int *status);
 int
 hdsEwild_v5(HDSWild *iwld, int *status);
 
+/*========================================================*/
+/* hdsExpandPath - Expand shell metacharacters in a path
+/*========================================================*/
+
+int
+hdsExpandPath_v5(const char *file, char *buffer, size_t buflen, int *status);
+
 /*================================*/
 /* hdsFlush - Flush locator group */
 /*=================================*/
