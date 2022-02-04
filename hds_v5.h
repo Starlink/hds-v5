@@ -1015,7 +1015,7 @@ int
 hdsEwild_v5(HDSWild *iwld, int *status);
 
 /*========================================================*/
-/* hdsExpandPath - Expand shell metacharacters in a path
+/* hdsExpandPath - Expand shell metacharacters in a path  */
 /*========================================================*/
 
 int
