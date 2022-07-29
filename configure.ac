@@ -29,7 +29,6 @@ STAR_CNF_COMPATIBLE_SYMBOLS
 
 dnl    We need HDF5
 AC_CHECK_LIB([hdf5],[H5Fopen])
-AC_CHECK_LIB([hdf5_hl],[H5LTfind_dataset])
 
 dnl    Look for standard headers rather than assuming availability
 dnl    by operating system
