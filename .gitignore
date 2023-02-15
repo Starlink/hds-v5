@@ -26,5 +26,6 @@ componentinfo.dtd
 fac_200_err
 hds_types.h
 *~
+.*.swp
 /make.log.err
 hds1_types.h
