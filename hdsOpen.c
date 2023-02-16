@@ -35,7 +35,7 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - A file extension of DAT__FLEXT (".h5sdf") is the default.
+*     - A file extension of DAT__FLEXT (".sdf") is the default.
 *     - There is no difference betwee UPDATE and WRITE mode in HDF5
 *     - If the top-level object is a structure array, loc will be
 *       associated with the complete array, not the first cell. Thus,

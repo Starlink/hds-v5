@@ -17,7 +17,7 @@
 
 *  Arguments:
 *     file = const char * (Given)
-*        Container file name. Use DAT__FLEXT (".h5sdf") if no suffix specified.
+*        Container file name. Use DAT__FLEXT (".sdf") if no suffix specified.
 *     isopen = int * (Returned)
 *        Pointer to a flag that is returned non-zero if the supplied
 *        container file is already open within HDS V5.
@@ -36,7 +36,7 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - A file extension of DAT__FLEXT (".h5sdf") is the default.
+*     - A file extension of DAT__FLEXT (".sdf") is the default.
 
 *  History:
 *     2020-10-15 (DSB):

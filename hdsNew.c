@@ -18,7 +18,7 @@
 
 *  Arguments:
 *     file = const char * (Given)
-*        Container file name. Use DAT__FLEXT (".h5sdf") if no suffix specified.
+*        Container file name. Use DAT__FLEXT (".sdf") if no suffix specified.
 *     name = const char * (Given)
 *        Name of the object in the container.
 *     type = const char * (Given)
@@ -51,7 +51,7 @@
 *     {enter_new_authors_here}
 
 *  Notes:
-*     - A file extension of DAT__FLEXT (".h5sdf") is the default.
+*     - A file extension of DAT__FLEXT (".sdf") is the default.
 *     - HDF5 file opened with mode H5F_ACC_TRUNC.
 *     - HDF5 does not know how to create arrays of structures. When the HDS layer is asked
 *     to create a structure array a group (in the HDF5 sense) is created of that name
