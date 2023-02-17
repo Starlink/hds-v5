@@ -815,16 +815,20 @@ void hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status  ){
          printf("Primary locators:\n");
          loc = hdsFile->primhead;
          while( loc ) {
+            namestr = NULL;
             objid = dat1RetrieveIdentifier( loc, status );
             if( objid > 0 ) {
                namestr = dat1GetFullName( objid, 0, NULL, status );
-            } else {
-               namestr = "no groups/datasets";
             }
 
-            printf("   %p [%s] (%s) group=%s\n", loc, namestr,
+            printf("   %p [%s] (%s) group=%s\n", loc,
+                   (namestr ? namestr : "no groups/datasets"),
                    (loc->isprimary ? "primary" : "secondary"),
                    loc->grpname );
+
+            if (namestr) {
+               MEM_FREE( namestr );
+            }
 
             loc = loc->prev;
          }
@@ -832,16 +836,20 @@ void hds1ShowFiles( hdsbool_t listfiles, hdsbool_t listlocs, int * status  ){
          printf("Secondary locators:\n");
          loc = hdsFile->sechead;
          while( loc ) {
+            namestr = NULL;
             objid = dat1RetrieveIdentifier( loc, status );
             if( objid > 0 ) {
                namestr = dat1GetFullName( objid, 0, NULL, status );
-            } else {
-               namestr = "no groups/datasets";
             }
 
-            printf("   %p [%s] (%s) group=%s\n", loc, namestr,
+            printf("   %p [%s] (%s) group=%s\n", loc,
+                   (namestr ? namestr : "no groups/datasets"),
                    (loc->isprimary ? "primary" : "secondary"),
                    loc->grpname );
+
+            if (namestr) {
+               MEM_FREE( namestr );
+            }
 
             loc = loc->prev;
          }

@@ -320,8 +320,8 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
 
 #if DEBUG_HDS
   {
-    char *name_str;
-    char * file_str;
+    char *name_str = NULL;
+    char *file_str = NULL;
     const char * reason;
     name_str = dat1GetFullName( locator->dataset_id, 0, NULL, status );
     file_str = dat1GetFullName( locator->dataset_id, 1, NULL, status );
@@ -336,6 +336,7 @@ datMap(HDSLoc *locator, const char *type_str, const char *mode_str, int ndim,
       printf("WILL TRY %s to mmap OFFSET=%zu %s:%s\n", reason, (size_t)offset, file_str, name_str);
     }
     MEM_FREE(name_str);
+    MEM_FREE(file_str);
   }
 #endif
 
