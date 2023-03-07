@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2014, Troy D. Hanson     http://troydhanson.github.com/uthash/
+Copyright (c) 2003-2016, Troy D. Hanson     http://troydhanson.github.com/uthash/
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@ typedef unsigned int uint32_t;
 typedef unsigned char uint8_t;
 #endif
 
-#define UTHASH_VERSION 1.9.9
+#define UTHASH_VERSION 2.0.0
 
 #ifndef uthash_fatal
 #define uthash_fatal(msg) exit(-1)        /* fatal error (out of memory,etc) */
@@ -100,15 +100,36 @@ typedef unsigned char uint8_t;
 #define HASH_INITIAL_NUM_BUCKETS_LOG2 5U /* lg2 of initial number of buckets */
 #define HASH_BKT_CAPACITY_THRESH 10U     /* expand when bucket count reaches */
 
-/* calculate the element whose hash handle address is hhe */
+/* calculate the element whose hash handle address is hhp */
 #define ELMT_FROM_HH(tbl,hhp) ((void*)(((char*)(hhp)) - ((tbl)->hho)))
+/* calculate the hash handle from element address elp */
+#define HH_FROM_ELMT(tbl,elp) ((UT_hash_handle *)(((char*)(elp)) + ((tbl)->hho)))
+
+#define HASH_VALUE(keyptr,keylen,hashv)                                          \
+do {                                                                             \
+ HASH_FCN(keyptr, keylen, hashv);                                                \
+} while (0)
 
 #define HASH_FIND(hh,head,keyptr,keylen,out)                                     \
 do {                                                                             \
   out=NULL;                                                                      \
   if (head != NULL) {                                                            \
      unsigned _hf_bkt,_hf_hashv;                                                 \
-     HASH_FCN(keyptr,keylen, (head)->hh.tbl->num_buckets, _hf_hashv, _hf_bkt);   \
+     HASH_FCN(keyptr, keylen, _hf_hashv);                                        \
+     HASH_TO_BKT(_hf_hashv, (head)->hh.tbl->num_buckets, _hf_bkt);               \
+     if (HASH_BLOOM_TEST((head)->hh.tbl, _hf_hashv) != 0) {                      \
+       HASH_FIND_IN_BKT((head)->hh.tbl, hh, (head)->hh.tbl->buckets[ _hf_bkt ],  \
+                        keyptr,keylen,out);                                      \
+     }                                                                           \
+  }                                                                              \
+} while (0)
+
+#define HASH_FIND_BY_HVAL(hh,head,keyptr,keylen,_hf_hashv,out)                   \
+do {                                                                             \
+  out=NULL;                                                                      \
+  if (head != NULL) {                                                            \
+     unsigned _hf_bkt;                                                           \
+     HASH_TO_BKT(_hf_hashv, (head)->hh.tbl->num_buckets, _hf_bkt);               \
      if (HASH_BLOOM_TEST((head)->hh.tbl, _hf_hashv) != 0) {                      \
        HASH_FIND_IN_BKT((head)->hh.tbl, hh, (head)->hh.tbl->buckets[ _hf_bkt ],  \
                         keyptr,keylen,out);                                      \
@@ -169,43 +190,116 @@ do {                                                                            
   (head)->hh.tbl->signature = HASH_SIGNATURE;                                    \
 } while(0)
 
-#define HASH_ADD(hh,head,fieldname,keylen_in,add)                                \
-        HASH_ADD_KEYPTR(hh,head,&((add)->fieldname),keylen_in,add)
+#define HASH_SADD(hh,head,fieldname,keylen_in,add,cmpfcn)                        \
+    HASH_SADD_KEYPTR(hh,(head),&((add)->fieldname),(keylen_in),(add),cmpfcn)
+
+#define HASH_SADD_BY_HVAL(hh,head,fieldname,keylen_in,hashval,add,cmpfcn)        \
+    HASH_SADD_KEYPTR_BY_HVAL(hh,(head),&((add)->fieldname),                      \
+                             (keylen_in),(add),cmpfcn)
+
+#define HASH_ADD_BY_HVAL(hh,head,fieldname,keylen_in,hashval,add)                \
+        HASH_ADD_KEYPTR_BY_HVAL(hh,head,&((add)->fieldname),                     \
+                                      keylen_in,hashval,add)
 
 #define HASH_REPLACE(hh,head,fieldname,keylen_in,add,replaced)                   \
 do {                                                                             \
-  replaced=NULL;                                                                 \
-  HASH_FIND(hh,head,&((add)->fieldname),keylen_in,replaced);                     \
-  if (replaced!=NULL) {                                                          \
-     HASH_DELETE(hh,head,replaced);                                              \
-  }                                                                              \
-  HASH_ADD(hh,head,fieldname,keylen_in,add);                                     \
+  unsigned _hr_hashv;                                                            \
+  HASH_VALUE(&((add)->fieldname), (keylen_in), _hr_hashv);                       \
+  HASH_REPLACE_BY_HVAL(hh,(head),fieldname,(keylen_in),                          \
+                             _hr_hashv,(add),(replaced));                        \
 } while(0)
 
-#define HASH_ADD_KEYPTR(hh,head,keyptr,keylen_in,add)                            \
+#define HASH_REPLACE_BY_HVAL(hh,head,fieldname,keylen_in,hashval,add,replaced)   \
 do {                                                                             \
- unsigned _ha_bkt;                                                               \
- (add)->hh.next = NULL;                                                          \
- (add)->hh.key = (char*)(keyptr);                                                \
- (add)->hh.keylen = (unsigned)(keylen_in);                                       \
- if (!(head)) {                                                                  \
-    head = (add);                                                                \
-    (head)->hh.prev = NULL;                                                      \
-    HASH_MAKE_TABLE(hh,head);                                                    \
- } else {                                                                        \
-    (head)->hh.tbl->tail->next = (add);                                          \
-    (add)->hh.prev = ELMT_FROM_HH((head)->hh.tbl, (head)->hh.tbl->tail);         \
-    (head)->hh.tbl->tail = &((add)->hh);                                         \
- }                                                                               \
- (head)->hh.tbl->num_items++;                                                    \
- (add)->hh.tbl = (head)->hh.tbl;                                                 \
- HASH_FCN(keyptr,keylen_in, (head)->hh.tbl->num_buckets,                         \
-         (add)->hh.hashv, _ha_bkt);                                              \
- HASH_ADD_TO_BKT((head)->hh.tbl->buckets[_ha_bkt],&(add)->hh);                   \
- HASH_BLOOM_ADD((head)->hh.tbl,(add)->hh.hashv);                                 \
- HASH_EMIT_KEY(hh,head,keyptr,keylen_in);                                        \
- HASH_FSCK(hh,head);                                                             \
+  replaced=NULL;                                                                 \
+  HASH_FIND_BY_HVAL(hh,(head),&((add)->fieldname),                               \
+                          (keylen_in),(hashval),(replaced));                     \
+  if ((replaced)!=NULL) {                                                        \
+     HASH_DELETE(hh,(head),(replaced));                                          \
+  }                                                                              \
+  HASH_ADD_BY_HVAL(hh,(head),fieldname,(keylen_in),(hashval),(add));             \
 } while(0)
+
+#define HASH_APPEND_LIST(hh, head, add)                                          \
+do {                                                                             \
+  (add)->hh.next = NULL;                                                         \
+  (add)->hh.prev = ELMT_FROM_HH((head)->hh.tbl, (head)->hh.tbl->tail);           \
+  (head)->hh.tbl->tail->next = (add);                                            \
+  (head)->hh.tbl->tail = &((add)->hh);                                           \
+} while(0)
+
+
+#define HASH_ADD_PROLOGUE(hh,head,keyptr,keylen_in,add)                          \
+  add->hh.key = (char*) keyptr;                                                  \
+  add->hh.keylen = (unsigned) keylen_in;                                         \
+  if (!head) {                                                                   \
+    add->hh.next = NULL;                                                         \
+    add->hh.prev = NULL;                                                         \
+    head = add;                                                                  \
+    HASH_MAKE_TABLE(hh,head);                                                    \
+  } else {
+
+#define HASH_ADD_EPILOGUE(hh,head,keyptr,keylen_in,hashval,add)                  \
+    HASH_APPEND_LIST(hh, head, add);                                             \
+  }                                                                              \
+  head->hh.tbl->num_items++;                                                     \
+  HASH_TO_BKT((hashval), (head)->hh.tbl->num_buckets, _ha_bkt);                  \
+  HASH_ADD_TO_BKT(head->hh.tbl->buckets[_ha_bkt],&add->hh);                      \
+  HASH_BLOOM_ADD(head->hh.tbl,add->hh.hashv);                                    \
+  HASH_EMIT_KEY(hh,head,keyptr,keylen_in);                                       \
+  HASH_FSCK(hh,head);                                                            \
+} while(0)
+
+#define HASH_GHV_DIRECT(hh, add, hashval)                                        \
+  (add)->hh.hashv = (hashval)
+#define HASH_GHV_COMPUTE(hh, keyptr, keylen_in, add)                             \
+  HASH_FCN((keyptr), (keylen_in), (add)->hh.hashv)
+
+#define HASH_SORTED_ADD(hh,head,keyptr,keylen_in,hashval,add,cmpfcn)             \
+    HASH_ADD_PROLOGUE(hh,(head),(keyptr),(keylen_in),(add))                      \
+    struct UT_hash_handle *_hs_iter = &(head)->hh;                               \
+    (add)->hh.tbl = (head)->hh.tbl;                                              \
+    do {                                                                         \
+      if(cmpfcn(DECLTYPE(head) ELMT_FROM_HH((head)->hh.tbl, _hs_iter), add) > 0) \
+        break;                                                                   \
+    } while((_hs_iter = _hs_iter->next));                                        \
+    if (_hs_iter) {                                                              \
+      (add)->hh.next = _hs_iter;                                                 \
+      if(((add)->hh.prev = _hs_iter->prev))                                      \
+        HH_FROM_ELMT((head)->hh.tbl, _hs_iter->prev)->next = add;                \
+      else                                                                       \
+        (head) = (add);                                                          \
+      _hs_iter->prev = add;                                                      \
+    }                                                                            \
+    else                                                                         \
+      HASH_ADD_EPILOGUE(hh,(head),(keyptr),(keylen_in),(hashval),(add))
+
+#define HASH_SADD_KEYPTR_BY_HVAL(hh,head,keyptr,keylen_in,hashval,add,cmpfcn)    \
+do { unsigned _ha_bkt;                                                           \
+    HASH_GHV_DIRECT(hh, add, hashval);                                           \
+    HASH_SORTED_ADD(hh,head,keyptr,keylen_in,hashval,add,cmpfcn)                 \
+
+#define HASH_SADD_KEYPTR(hh,head,keyptr,keylen_in,add,cmpfcn)                    \
+do { unsigned _ha_bkt;                                                           \
+    HASH_GHV_COMPUTE(hh, keyptr, keylen_in, add);                                \
+    HASH_SORTED_ADD(hh,head,keyptr,keylen_in,(add)->hh.hashv,add,cmpfcn)
+
+#define HASH_ADD(hh,head,fieldname,keylen_in,add)                                \
+    HASH_ADD_KEYPTR(hh,(head),&((add)->fieldname),(keylen_in),(add))
+
+#define HASH_ADD_KEYPTR_BY_HVAL(hh,head,keyptr,keylen_in,hashval,add)            \
+do { unsigned _ha_bkt;                                                           \
+    HASH_GHV_DIRECT(hh, add, hashval);                                           \
+    HASH_ADD_PROLOGUE(hh,(head),(keyptr),(keylen_in),(add))                      \
+    (add)->hh.tbl = (head)->hh.tbl;                                              \
+    HASH_ADD_EPILOGUE(hh,(head),(keyptr),(keylen_in),hashval,(add))
+
+#define HASH_ADD_KEYPTR(hh,head,keyptr,keylen_in,add)                            \
+do { unsigned _ha_bkt;                                                           \
+    HASH_GHV_COMPUTE(hh, keyptr, keylen_in, add);                                \
+    HASH_ADD_PROLOGUE(hh,(head),(keyptr),(keylen_in),(add))                      \
+    (add)->hh.tbl = (head)->hh.tbl;                                              \
+    HASH_ADD_EPILOGUE(hh,(head),(keyptr),(keylen_in),(add)->hh.hashv,(add))
 
 #define HASH_TO_BKT( hashv, num_bkts, bkt )                                      \
 do {                                                                             \
@@ -364,7 +458,7 @@ do {                                                                            
 #endif
 
 /* The Bernstein hash function, used in Perl prior to v5.6. Note (x<<5+x)=x*33. */
-#define HASH_BER(key,keylen,num_bkts,hashv,bkt)                                  \
+#define HASH_BER(key,keylen,hashv)                                               \
 do {                                                                             \
   unsigned _hb_keylen=(unsigned)keylen;                                          \
   const unsigned char *_hb_key=(const unsigned char*)(key);                      \
@@ -372,13 +466,12 @@ do {                                                                            
   while (_hb_keylen-- != 0U) {                                                   \
       (hashv) = (((hashv) << 5) + (hashv)) + *_hb_key++;                         \
   }                                                                              \
-  bkt = (hashv) & (num_bkts-1U);                                                 \
 } while (0)
 
 
 /* SAX/FNV/OAT/JEN hash functions are macro variants of those listed at
  * http://eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx */
-#define HASH_SAX(key,keylen,num_bkts,hashv,bkt)                                  \
+#define HASH_SAX(key,keylen,hashv)                                               \
 do {                                                                             \
   unsigned _sx_i;                                                                \
   const unsigned char *_hs_key=(const unsigned char*)(key);                      \
@@ -386,10 +479,9 @@ do {                                                                            
   for(_sx_i=0; _sx_i < keylen; _sx_i++) {                                        \
       hashv ^= (hashv << 5) + (hashv >> 2) + _hs_key[_sx_i];                     \
   }                                                                              \
-  bkt = hashv & (num_bkts-1U);                                                   \
 } while (0)
 /* FNV-1a variation */
-#define HASH_FNV(key,keylen,num_bkts,hashv,bkt)                                  \
+#define HASH_FNV(key,keylen,hashv)                                               \
 do {                                                                             \
   unsigned _fn_i;                                                                \
   const unsigned char *_hf_key=(const unsigned char*)(key);                      \
@@ -398,10 +490,9 @@ do {                                                                            
       hashv = hashv ^ _hf_key[_fn_i];                                            \
       hashv = hashv * 16777619U;                                                 \
   }                                                                              \
-  bkt = hashv & (num_bkts-1U);                                                   \
 } while(0)
 
-#define HASH_OAT(key,keylen,num_bkts,hashv,bkt)                                  \
+#define HASH_OAT(key,keylen,hashv)                                               \
 do {                                                                             \
   unsigned _ho_i;                                                                \
   const unsigned char *_ho_key=(const unsigned char*)(key);                      \
@@ -414,7 +505,6 @@ do {                                                                            
   hashv += (hashv << 3);                                                         \
   hashv ^= (hashv >> 11);                                                        \
   hashv += (hashv << 15);                                                        \
-  bkt = hashv & (num_bkts-1U);                                                   \
 } while(0)
 
 #define HASH_JEN_MIX(a,b,c)                                                      \
@@ -430,7 +520,7 @@ do {                                                                            
   c -= a; c -= b; c ^= ( b >> 15 );                                              \
 } while (0)
 
-#define HASH_JEN(key,keylen,num_bkts,hashv,bkt)                                  \
+#define HASH_JEN(key,keylen,hashv)                                               \
 do {                                                                             \
   unsigned _hj_i,_hj_j,_hj_k;                                                    \
   unsigned const char *_hj_key=(unsigned const char*)(key);                      \
@@ -468,7 +558,6 @@ do {                                                                            
      case 1:  _hj_i += _hj_key[0];                                               \
   }                                                                              \
   HASH_JEN_MIX(_hj_i, _hj_j, hashv);                                             \
-  bkt = hashv & (num_bkts-1U);                                                   \
 } while(0)
 
 /* The Paul Hsieh hash function */
@@ -482,7 +571,7 @@ do {                                                                            
 #define get16bits(d) ((((uint32_t)(((const uint8_t *)(d))[1])) << 8)             \
                        +(uint32_t)(((const uint8_t *)(d))[0]) )
 #endif
-#define HASH_SFH(key,keylen,num_bkts,hashv,bkt)                                  \
+#define HASH_SFH(key,keylen,hashv)                                               \
 do {                                                                             \
   unsigned const char *_sfh_key=(unsigned const char*)(key);                     \
   uint32_t _sfh_tmp, _sfh_len = (uint32_t)keylen;                                \
@@ -523,7 +612,6 @@ do {                                                                            
     hashv += hashv >> 17;                                                        \
     hashv ^= hashv << 25;                                                        \
     hashv += hashv >> 6;                                                         \
-    bkt = hashv & (num_bkts-1U);                                                 \
 } while(0)
 
 #ifdef HASH_USING_NO_STRICT_ALIASING
@@ -568,7 +656,7 @@ do {                 \
   _h ^= _h >> 16;    \
 } while(0)
 
-#define HASH_MUR(key,keylen,num_bkts,hashv,bkt)                        \
+#define HASH_MUR(key,keylen,hashv)                                     \
 do {                                                                   \
   const uint8_t *_mur_data = (const uint8_t*)(key);                    \
   const int _mur_nblocks = (int)(keylen) / 4;                          \
@@ -603,7 +691,6 @@ do {                                                                   \
   _mur_h1 ^= (uint32_t)(keylen);                                       \
   MUR_FMIX(_mur_h1);                                                   \
   hashv = _mur_h1;                                                     \
-  bkt = hashv & (num_bkts-1U);                                         \
 } while(0)
 #endif  /* HASH_USING_NO_STRICT_ALIASING */
 
