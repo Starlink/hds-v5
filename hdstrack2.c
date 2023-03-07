@@ -715,8 +715,7 @@ Handle *hds1FindHandle( hid_t file_id, int *status ){
    if( abspath ) {
       HASH_FIND_STR( hdsFiles, abspath, hdsFile );
 
-/* Free the momory holding the absolute path. Must use plain free, not
-   MEM_FREE, since realpath uses plain malloc. */
+/* Free the memory holding the absolute path. */
       MEM_FREE( abspath );
       abspath = NULL;
    }
