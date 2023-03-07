@@ -30,6 +30,9 @@ STAR_CNF_COMPATIBLE_SYMBOLS
 dnl    We need HDF5
 AC_CHECK_LIB([hdf5],[H5Fopen])
 
+dnl    Used for dynamic header files
+AC_CHECK_HEADERS(time.h)
+
 dnl    Look for standard headers rather than assuming availability
 dnl    by operating system
 AC_HEADER_STDC
