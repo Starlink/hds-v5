@@ -469,7 +469,7 @@ void hds1GetLocators( hid_t file_id, int *nloc, HDSLoc ***loclist,
    in which to store the next unique id. "pr" points to the array element
    from which to read the next candidate id (the element with index "ir"). */
          pw = pr = (*file_ids) + 1;
-         for( ir = 1; ir < *nloc; ir++ ) {
+         for( ir = 1; ir < *nloc; ir++, pr++) {
             if( (*pr != pw[-1]) && ( *pr != 0 )) {
                *(pw++) = *pr;
             }
