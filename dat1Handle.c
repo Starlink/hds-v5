@@ -149,7 +149,7 @@ Handle *dat1Handle( const HDSLoc *parent_loc, const char *name, int rdonly,
 
 /* If a parent Handle is available, search through the Handles for any
    known child objects to see if the requested component within the parent
-   (identified by 'name') is already known and therefore already has an
+   (identified by 'lname') is already known and therefore already has an
    associated Handle structure. If it does, return a pointer to the child
    Handle structure. Note "nchild" is the size of the "children" array -
    this is not necessarily the same as the actual number of active
