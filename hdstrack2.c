@@ -931,6 +931,9 @@ static char *hds2AbsPath( const char *path, int *status ){
             emsRepf( " ", "Failed to allocate %zu bytes of memory", status,
                      dlen+flen+2 );
          }
+
+/* Free memory allocated by realpath. */
+         free(absdir);
       }
 
 /* Free the local copy of the supplied path. */
