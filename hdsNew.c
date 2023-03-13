@@ -208,6 +208,13 @@ hdsNew(const char *file_str,
     }
   }
 
+  /* Free fname allocated by dau1CheckFileName.  Set to NULL in case
+     the CLEANUP block runs so that we don't try to free it twice? */
+  if (fname) {
+    MEM_FREE(fname);
+    fname = NULL;
+  }
+
   /* Return the locator */
   if (*status == SAI__OK) {
     *locator = thisloc;
