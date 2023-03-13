@@ -459,6 +459,8 @@ static int hds2Flush( const char *group_str, int *status) {
   utarray_free( entry->locators );
   HASH_DEL( groups, entry );
 
+  free(entry);
+
   return *status;
 }
 
