@@ -165,7 +165,7 @@ hdsInfoI(const HDSLoc* loc, const char *topic_str, const char *extra,
          comma in the char** array. */
       for (i=0; i<len; i++) {
         if ( extra[i] != ' ') {
-          if (extra[j] == ',') {
+          if (extra[i] == ',') {
             /* store a string terminator and indicate that next time
                around we store the pointer */
             filter[j] = '\0';
