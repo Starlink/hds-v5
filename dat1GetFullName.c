@@ -152,6 +152,9 @@ dat1GetFullName( hid_t objid, int asfile, ssize_t * namlen, int *status) {
              status, (asfile ? "file" : "path") );
     goto CLEANUP;
   }
+  else if (lenstr == 0) {
+    *tempstr = '\0';
+  }
   if (namlen) *namlen = lenstr;
 
  CLEANUP:
