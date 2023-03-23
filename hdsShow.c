@@ -107,7 +107,6 @@ hdsShow(const char *topic_str, int  *status) {
            status);
   } else if (strncasecmp( topic_str, "FIL", 3 ) == 0 ||
              strncasecmp( topic_str, "LOC", 3 ) == 0 ) {
-    hid_t *obj_id_list = NULL;
     ssize_t nobj = 0;
     ssize_t nret = 0;
     unsigned int types = 0;
