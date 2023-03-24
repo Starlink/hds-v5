@@ -114,8 +114,16 @@ datUnmap( HDSLoc * locator, int * status ) {
   if (!locator->regpntr) return *status;
 
   /* Validate input locator. */
-  dat1ValidateLocator( "datUnmap", 1, locator, (locator->accmode & HDSMODE_READ), status );
-  if( *status == SAI__OK) {
+  dat1ValidateLocator( "datUnmap", 1, locator, (locator->accmode & HDSMODE_READ), &lstat );
+  if( lstat != SAI__OK) {
+    if (*status == SAI__OK) {
+      /* Export the validation error status and add an additional message. */
+      *status = lstat;
+      emsRep("datUnmap_inv", "datUnmap: Specified locator could not be validated",
+             status);
+    }
+  }
+  else {
 
   /* We only copy back explicitly if we did not do a native mmap on the file */
      if (!locator->uses_true_mmap ) {
